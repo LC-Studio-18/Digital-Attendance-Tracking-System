@@ -21,7 +21,7 @@ export async function getAttendance() {
   } catch (err) {
     console.error('Google Sheets error:', err.message);
     const code = err.code || err.response?.status;
-    if (code === 401 || err.message?.includes('invalid_grant')) {
+    if (code === 401 || err.message?.includes('invalid_grant') || err.message?.includes('DECODER')) {
       throw fail(401, 'Google authentication failed');
     }
     if (code === 403) {
