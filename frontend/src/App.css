@@ -214,6 +214,30 @@
   opacity: .8;
 }
 
+.clock-action__spinner {
+  width: 25px;
+  height: 25px;
+  border: 3px solid #d9d9d9;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: clock-action-spin .8s linear infinite;
+}
+
+@keyframes clock-action-spin {
+  to { transform: rotate(360deg); }
+}
+
+.clock-action__message {
+  margin: 14px 0 0;
+  color: #333;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.clock-action__message--error {
+  color: #a12622;
+}
+
 .clock-action__play {
   width: 0;
   height: 0;
@@ -285,7 +309,12 @@
   .clock-action { margin-top: 56px; }
   .clock-action__button { min-height: 66px; border-radius: 18px; font-size: 29px; }
   .clock-action__play { border-top-width: 19px; border-bottom-width: 19px; border-left-width: 35px; }
-  .location-notice { margin-top: 34px; font-size: 19px; letter-spacing: 1.8px; }
+  .location-notice {
+    margin-top: 34px;
+    font-size: clamp(16px, 4.7vw, 19px);
+    letter-spacing: clamp(.4px, .45vw, 1.4px);
+    gap: 10px;
+  }
 }
 
 @media (max-width: 380px) {

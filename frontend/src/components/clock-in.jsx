@@ -33,6 +33,8 @@ export default function ClockIn() {
   const [now, setNow] = useState(() => new Date());
   const [clockedIn, setClockedIn] = useState(false);
   const [clockInTime, setClockInTime] = useState('');
+  const [requestState, setRequestState] = useState('idle');
+  const [clockInError, setClockInError] = useState('');
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 30_000);
@@ -59,11 +61,47 @@ export default function ClockIn() {
         ? 'Good Afternoon!'
         : 'Good Evening!';
 
-  function handleClockIn() {
-    if (clockedIn) return;
-    setClockInTime(timeLabel);
-    setClockedIn(true);
+  async function handleClockIn() {
+    if (clockedIn || requestState === 'loading') return;
+
+    setRequestState('loading');
+    setClockInError('');
+
+    try {
+      await new Promise((resolve) => window.setTimeout(resolve, 1500));
+      if (!navigator.onLine) {
+        throw new Error('You appear to be offline. Check your connection and try again.');
+      }
+
+      setClockInTime(
+        new Intl.DateTimeFormat('en-ZA', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        })
+          .format(new Date())
+          .toUpperCase(),
+      );
+      setClockedIn(true);
+      setRequestState('success');
+    } catch (error) {
+      setClockInError(
+        error instanceof Error
+          ? error.message
+          : 'Clock-in could not be completed. Please try again.',
+      );
+      setRequestState('error');
+    }
   }
+
+  const requestMessage =
+    requestState === 'loading'
+      ? 'Clocking you in...'
+      : requestState === 'success'
+        ? 'Clock-in confirmed successfully.'
+        : requestState === 'error'
+          ? clockInError
+          : '';
 
   return (
     <main className="clock-in-page">
@@ -94,11 +132,31 @@ export default function ClockIn() {
             className="clock-action__button"
             type="button"
             onClick={handleClockIn}
-            disabled={clockedIn}
+            disabled={clockedIn || requestState === 'loading'}
+            aria-busy={requestState === 'loading'}
           >
-            <span className="clock-action__play" aria-hidden="true" />
-            {clockedIn ? 'Clocked In' : 'Clock In'}
+            {requestState === 'loading' ? (
+              <span className="clock-action__spinner" aria-hidden="true" />
+            ) : (
+              <span className="clock-action__play" aria-hidden="true" />
+            )}
+            {requestState === 'loading'
+              ? 'Clocking In...'
+              : clockedIn
+                ? 'Clocked In'
+                : 'Clock In'}
           </button>
+          {requestMessage && (
+            <p
+              className={`clock-action__message${
+                requestState === 'error' ? ' clock-action__message--error' : ''
+              }`}
+              role={requestState === 'error' ? 'alert' : 'status'}
+              aria-live={requestState === 'error' ? 'assertive' : 'polite'}
+            >
+              {requestMessage}
+            </p>
+          )}
           <p className="location-notice">
             <svg
               className="location-notice__icon"
