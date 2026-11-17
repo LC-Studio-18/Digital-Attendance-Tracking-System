@@ -1,9 +1,9 @@
-const express = require('express');
+import express from 'express';
+import { authenticate } from '../middleware/authenticate.js';
+import { qrCheckin } from '../controllers/attendanceController.js';
+
 const router = express.Router();
 
-// Placeholder for now — we'll fill this in step by step
-router.post('/qr-checkin', (req, res) => {
-  res.status(200).json({ success: true, message: 'placeholder' });
-});
+router.post('/attendance/qr-checkin', authenticate, qrCheckin);
 
-module.exports = router;
+export default router;
