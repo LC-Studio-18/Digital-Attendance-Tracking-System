@@ -1,7 +1,7 @@
 export default function Spinner({ size = 18 }) {
   return (
     <svg
-      className="fb-spinner"
+      className="fb-Spinner"
       width={size}
       height={size}
       viewBox="0 0 24 24"

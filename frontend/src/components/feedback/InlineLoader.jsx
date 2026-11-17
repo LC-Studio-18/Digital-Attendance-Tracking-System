@@ -1,4 +1,4 @@
-import Spinner from './Spinner';
+import Spinner from '../Spinner';
 
 /**
  * Section-level loading message (staff list, dashboard refresh).
