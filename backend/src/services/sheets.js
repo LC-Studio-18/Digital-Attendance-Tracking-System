@@ -27,6 +27,9 @@ export async function getAttendance() {
     if (code === 403) {
       throw fail(403, 'No permission to access the spreadsheet');
     }
+    if (code === 400) {
+      throw fail(400, 'Invalid spreadsheet range');
+    }
     if (code === 404) {
       throw fail(404, 'Spreadsheet or range not found');
     }
