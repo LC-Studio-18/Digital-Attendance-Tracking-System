@@ -1,78 +1,42 @@
-# Digital Attendance Tracking System – Frontend
+# Frontend setup
 
-The frontend application for the Digital Attendance Tracking System, built using React and Vite.
+## Firebase Authentication
 
-## Prerequisites
+Install frontend dependencies, then copy `.env.example` to `.env` and add the
+Firebase web app configuration. The values are provided by the Firebase
+project owner:
 
-- Node.js (LTS version recommended)
-- npm
+```env
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+```
 
-## Installation
+Do not put a Firebase Admin service-account JSON or private key in the frontend
+environment. The React app uses the web app config above.
 
-Navigate to the frontend directory:
+Enable **Email/Password** as a sign-in provider in Firebase Authentication.
+The login page supports email and password sign-in, sign-out, persistence via
+“Remember Me”, and password reset emails.
 
-    cd frontend
+Admin controls use custom claims on the Firebase ID token. The trusted backend
+must assign either `{ "role": "admin" }` or `{ "admin": true }`; the frontend
+only reads these claims and cannot grant Admin access. All other users see the
+standard dashboard controls only.
 
-Install dependencies:
+## Backend requests
 
-    npm install
+Set `VITE_API_URL` to the backend API base URL. Requests made with
+`src/services/apiClient.js` automatically include the current Firebase ID token
+as `Authorization: Bearer <token>`. The backend must verify this token before
+serving protected routes; the current backend only has a public health route.
 
-Create a `.env` file in the frontend directory:
+## Development
 
-    VITE_API_URL=http://localhost:5000
-
-Alternatively, copy `.env.example` and configure the value.
-
-## Running the application
-
-Start the development server:
-
-    npm run dev
-
-Vite will provide a local URL, normally:
-
-http://localhost:5173
-
-## Available scripts
-
-| Command                | Description                          |
-| ---------------------- | ------------------------------------ |
-| `npm run dev`          | Starts the development server        |
-| `npm run build`        | Creates a production build           |
-| `npm run preview`      | Previews the production build        |
-| `npm run lint`         | Runs ESLint                          |
-| `npm run format`       | Formats project files using Prettier |
-| `npm run format:check` | Checks code formatting               |
-
-## Project structure
-
-    frontend/
-    ├── public/
-    ├── src/
-    │   ├── assets/
-    │   ├── components/
-    │   ├── hooks/
-    │   ├── pages/
-    │   ├── services/
-    │   ├── App.jsx
-    │   ├── App.css
-    │   ├── index.css
-    │   └── main.jsx
-    ├── .env.example
-    ├── .gitignore
-    ├── .prettierrc
-    ├── eslint.config.js
-    ├── package.json
-    └── vite.config.js
-
-## Technologies
-
-- React
-- Vite
-- React Router
-- Axios
-- Bootstrap
-- ESLint
-- Prettier
-
-**Note:** Never commit `.env` files or expose private credentials in frontend environment variables.
+```bash
+npm install
+npm run dev
+```
