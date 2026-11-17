@@ -38,5 +38,15 @@ describe('POST /api/attendance/qr-checkin', () => {
       .set('Authorization', 'Bearer bad-token');
 
     expect(res.statusCode).toBe(401);
+
+  it('returns 400 when JSON is malformed', async () => {
+  const res = await request(app)
+    .post('/api/attendance/qr-checkin')
+    .set('Content-Type', 'application/json')
+    .send('{"locationId":');
+
+  expect(res.statusCode).toBe(400);
+  expect(res.body.success).toBe(false);
+});
   });
 });

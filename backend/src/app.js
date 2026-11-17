@@ -16,9 +16,8 @@ app.use(express.json());
 
 app.use('/api', healthRoutes);
 
-app.use(errorHandler);
-
-
 app.use('/api', attendanceRoutes);
+
+app.use(errorHandler);
 
 export default app;
