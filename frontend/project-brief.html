@@ -1,0 +1,1224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Digital Time Attendance System — Project Brief</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #ffffff;
+        --ink: #1e293b;
+        --muted: #64748b;
+        --line: #e2e8f0;
+        --brand: #2563eb;
+        --frontend: #2563eb;
+        --backend: #059669;
+        --design: #d97706;
+        --fullstack: #7c3aed;
+        --chip-bg: #f1f5f9;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+          Arial, sans-serif;
+        background: #f8fafc;
+        color: var(--ink);
+        line-height: 1.55;
+      }
+      .wrap {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 32px 20px 80px;
+      }
+
+      header.hero {
+        background: linear-gradient(135deg, #0f172a, #1e3a8a);
+        color: #fff;
+        border-radius: 16px;
+        padding: 36px 32px;
+        margin-bottom: 28px;
+      }
+      header.hero h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+        letter-spacing: -0.02em;
+      }
+      header.hero p {
+        margin: 0;
+        color: #c7d2fe;
+        max-width: 720px;
+      }
+      .hero-tags {
+        margin-top: 18px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .hero-tags span {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 13px;
+      }
+
+      section {
+        margin-bottom: 32px;
+      }
+      h2 {
+        font-size: 20px;
+        margin: 0 0 14px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--line);
+      }
+      h3 {
+        font-size: 16px;
+        margin: 0 0 6px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+      .grid.two {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      }
+      .grid.three {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
+      .tldr {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 12px;
+        padding: 20px;
+      }
+      .tldr ul {
+        margin: 8px 0 0;
+        padding-left: 20px;
+      }
+      .tldr li {
+        margin-bottom: 6px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        font-size: 14px;
+        vertical-align: top;
+      }
+      th {
+        background: #f1f5f9;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--muted);
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      .ticket {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--muted);
+        border-radius: 10px;
+        padding: 18px 20px;
+        margin-bottom: 14px;
+      }
+      .ticket.frontend {
+        border-left-color: var(--frontend);
+      }
+      .ticket.backend {
+        border-left-color: var(--backend);
+      }
+      .ticket.design {
+        border-left-color: var(--design);
+      }
+      .ticket.fullstack {
+        border-left-color: var(--fullstack);
+      }
+
+      .ticket-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .ticket-id {
+        font-weight: 700;
+        color: var(--muted);
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+      }
+      .ticket-title {
+        font-weight: 700;
+        font-size: 16px;
+        flex: 1 1 240px;
+      }
+      .badge {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 3px 9px;
+        border-radius: 999px;
+        color: #fff;
+        white-space: nowrap;
+      }
+      .badge.frontend {
+        background: var(--frontend);
+      }
+      .badge.backend {
+        background: var(--backend);
+      }
+      .badge.design {
+        background: var(--design);
+      }
+      .badge.fullstack {
+        background: var(--fullstack);
+      }
+
+      .meta {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 10px;
+      }
+      .meta b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      .ticket p {
+        margin: 8px 0;
+        font-size: 14px;
+      }
+      .ticket ul {
+        margin: 6px 0 10px;
+        padding-left: 20px;
+        font-size: 14px;
+      }
+      .ticket li {
+        margin-bottom: 3px;
+      }
+      .label {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        margin-top: 12px;
+        display: block;
+      }
+
+      .note {
+        font-size: 13px;
+        color: var(--muted);
+        font-style: italic;
+      }
+      .callout {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 10px;
+        padding: 14px 16px;
+        font-size: 14px;
+        margin-top: 12px;
+      }
+      .callout strong {
+        color: #92400e;
+      }
+
+      .phase {
+        display: inline-block;
+        font-size: 12px;
+        background: var(--chip-bg);
+        border-radius: 6px;
+        padding: 2px 8px;
+        margin-right: 6px;
+      }
+
+      footer {
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+        margin-top: 40px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="hero">
+        <h1>Digital Time Attendance System</h1>
+        <p>
+          A web + mobile-friendly app where staff log in, clock in and out, and
+          admins see who is currently onsite. Data is stored in Google Sheets,
+          accessed only through a secure backend.
+        </p>
+        <div class="hero-tags">
+          <span>Sprint 1 (S1)</span>
+          <span>Frontend: React</span>
+          <span>Backend: Node.js + Express</span>
+          <span>Auth: Firebase</span>
+          <span>Data: Google Sheets API</span>
+        </div>
+      </header>
+
+      <section>
+        <div class="tldr">
+          <h2 style="border: none; margin: 0 0 4px">
+            The brief in plain English
+          </h2>
+          <ul>
+            <li>
+              <b>What it is:</b> A time-attendance app. Staff sign in with email
+              + password, then clock in when they arrive and clock out when they
+              leave. Admins see a live dashboard of who is IN and who is OUT.
+            </li>
+            <li>
+              <b>Two roles:</b> <b>Staff</b> can only do their own check-in/out.
+              <b>Admins</b> get the live dashboard, settings and control over
+              all staff. This is enforced on the backend (API) <i>and</i> the
+              UI.
+            </li>
+            <li>
+              <b>How attendance is captured:</b> Either a button on screen
+              (clock in / clock out) or by scanning a QR code at the entrance
+              with the phone camera.
+            </li>
+            <li>
+              <b>Where data lives:</b> A Google Sheet, which the backend reads
+              and writes. The frontend never touches Google Sheets directly, and
+              secrets are never exposed to the browser.
+            </li>
+            <li>
+              <b>Rules that protect the data:</b> The server (not the phone)
+              stamps the time, and duplicate clock-ins/clock-outs are rejected.
+            </li>
+            <li>
+              <b>UX expectation:</b> Every action gives clear feedback —
+              loading, success and friendly error messages (no technical errors
+              shown to users).
+            </li>
+            <li>
+              <b>Works everywhere:</b> Mobile and desktop. The QR scanner needs
+              a secure (HTTPS) connection to use the camera.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section>
+        <h2>How the work is split</h2>
+        <div class="grid three">
+          <div class="card">
+            <h3 style="color: var(--frontend)">Frontend (React)</h3>
+            <p style="font-size: 14px; margin: 0">
+              Project setup, login page, app layout, clock in/out screens,
+              attendance status, QR scanner UI, admin dashboard, loading/error
+              states.
+            </p>
+          </div>
+          <div class="card">
+            <h3 style="color: var(--backend)">Backend (Node/Express)</h3>
+            <p style="font-size: 14px; margin: 0">
+              Server + routes, Google Sheets integration, Firebase auth checks,
+              clock in/out endpoints, QR validation, duplicate prevention, RBAC.
+            </p>
+          </div>
+          <div class="card">
+            <h3 style="color: var(--design)">Design (Figma)</h3>
+            <p style="font-size: 14px; margin: 0">
+              Login page + app layout (wireframes then visual design), style
+              guide, and designs for loading/success/error states.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Timeline at a glance</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Tickets due</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>13 Nov 2026</td>
+              <td>S1-01 (React setup), S1-04 (Express server)</td>
+            </tr>
+            <tr>
+              <td>16 Nov 2026</td>
+              <td>
+                S1-02 (Login + layout design), S1-14a / S1-14b (Live dashboard)
+              </td>
+            </tr>
+            <tr>
+              <td>17 Nov 2026</td>
+              <td>
+                S1-09a / S1-09b (Clock in), S1-11a (QR scanner UI), S1-12
+                (Duplicate prevention), S1-16 (Loading/error states)
+              </td>
+            </tr>
+            <tr>
+              <td>18 Nov 2026</td>
+              <td>S1-11b (QR validation API)</td>
+            </tr>
+            <tr>
+              <td>20 Nov 2026</td>
+              <td>
+                S1-05 (Google Sheets API), S1-07 (RBAC permissions), S1-15
+                (Attendance status), S1-10a / S1-10b (Clock out)
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="note" style="margin-top: 10px">
+          Note: several tickets share the same title but are split — the "a"
+          ticket is usually frontend, the "b" ticket is usually backend (e.g.
+          S1-09a / S1-09b).
+        </p>
+      </section>
+
+      <section>
+        <h2>Frontend screens (pick your one page here)</h2>
+        <p style="font-size: 14px">
+          If you are only building <b>one frontend page</b>, it will almost
+          certainly be one of these. The backend provides the API; you build the
+          screen and wire it up.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Page / screen</th>
+              <th>Ticket</th>
+              <th>What it does</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Login page</b></td>
+              <td>S1-02 (design) + S1-16</td>
+              <td>
+                Email + password, show/hide password, loading/error states.
+              </td>
+            </tr>
+            <tr>
+              <td><b>Staff clock in / clock out</b></td>
+              <td>S1-09a / S1-10a</td>
+              <td>Button that records arrival/leaving; shows name + status.</td>
+            </tr>
+            <tr>
+              <td><b>Attendance status (IN/OUT)</b></td>
+              <td>S1-15</td>
+              <td>
+                Shows current status, updates after each action and on refresh.
+              </td>
+            </tr>
+            <tr>
+              <td><b>QR scanner</b></td>
+              <td>S1-11a</td>
+              <td>Phone camera scans entrance QR code to trigger check-in.</td>
+            </tr>
+            <tr>
+              <td><b>Admin live dashboard</b></td>
+              <td>S1-14a</td>
+              <td>
+                Lists everyone with IN/OUT + last time, auto-refreshes, admin
+                only.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout">
+          <strong>Tip:</strong> Whichever page you pick, the same rules apply —
+          follow the approved design, use the shared loading/success/error
+          components (S1-16), and test on both mobile and desktop. Tell me which
+          page you want and I can break that single ticket down into a build
+          plan.
+        </div>
+      </section>
+
+      <section>
+        <h2>Key concepts explained</h2>
+        <div class="grid two">
+          <div class="card">
+            <h3>Acceptance Criteria</h3>
+            <p style="font-size: 14px; margin: 0">
+              The checklist that says "this ticket is built correctly." Every
+              bullet must be true before the ticket is accepted.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Definition of Done (DoD)</h3>
+            <p style="font-size: 14px; margin: 0">
+              The wider quality bar: code reviewed + merged, tests passing,
+              deployed to staging, verified by the Product Owner, docs written.
+            </p>
+          </div>
+          <div class="card">
+            <h3>RBAC (Role-Based Access Control)</h3>
+            <p style="font-size: 14px; margin: 0">
+              Staff vs Admin. Admins see everything; staff only see their own
+              check-in/out. Enforced in the API (403 Forbidden) and hidden in
+              the UI.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Firebase Auth</h3>
+            <p style="font-size: 14px; margin: 0">
+              Handles login and issues a token. The backend verifies that token
+              on protected endpoints (401 if invalid).
+            </p>
+          </div>
+          <div class="card">
+            <h3>Google Sheets as the database</h3>
+            <p style="font-size: 14px; margin: 0">
+              Attendance rows live in a spreadsheet. Only the backend writes to
+              it via a secure service account. Credentials stay in
+              <code>.env</code>.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Staging</h3>
+            <p style="font-size: 14px; margin: 0">
+              A live-but-test copy of the app where features are verified before
+              going further. Needed for QR camera testing (HTTPS).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Every ticket, in order</h2>
+
+        <!-- S1-01 -->
+        <div class="ticket frontend">
+          <div class="ticket-head">
+            <span class="ticket-id">S1-01</span>
+            <span class="ticket-title"
+              >Initialize React project and folder structure</span
+            >
+            <span class="badge frontend">Frontend</span>
+            <span class="badge" style="background: #94a3b8">Due 13 Nov</span>
+          </div>
+          <p>
+            Set up the shared React boilerplate so everyone builds on the same
+            base.
+          </p>
+          <span class="label">Acceptance criteria</span>
+          <ul>
+            <li>
+              <code>npm install</code> + <code>npm run dev</code> starts with no
+              errors.
+            </li>
+            <li>
+              <code>src/</code> has an agreed structure:
+              <code>/components</code>, <code>/pages</code>,
+              <code>/services</code>, <code>/assets</code>.
+            </li>
+            <li>
+              <code>.env</code> created for local variables and added to
+              <code>.gitignore</code>.
+            </li>
+            <li>ESLint + Prettier configured.</li>
+            <li>README with clone / install / run steps.</li>
+            <li>Pushed to <code>main</code> on GitHub.</li>
+          </ul>
+          <span class="label">Definition of done</span>
+          <ul>
+            <li>
+              Zero ESLint/Prettier warnings; <code>.gitignore</code> blocks
+              <code>.env</code>; <code>.env.example</code> has placeholders
+              only.
+            </li>
+            <li>A second dev can clone, install and run with no help.</li>
+            <li>PR reviewed by a peer and merged into <code>develop</code>.</li>
+          </ul>
+          <p class="note">Out of scope: complex UI libraries, CI/CD.</p>
+        </div>
+
+        <!-- S1-02 -->
+        <div class="ticket design">
+          <div class="ticket-head">
+            <span class="ticket-id">S1-02</span>
+            <span class="ticket-title"
+              >Design login page and application layout</span
+            >
+            <span class="badge design">Design</span>
+            <span class="badge" style="background: #94a3b8">Due 16 Nov</span>
+          </div>
+          <p>
+            Two phases. <span class="phase">Phase 1</span> wireframes
+            (structure). <span class="phase">Phase 2</span> visual design (final
+            look).
+          </p>
+          <span class="label">Phase 1 — wireframes</span>
+          <ul>
+            <li>
+              Login page for mobile + desktop: email field, password field,
+              login button.
+            </li>
+            <li>Show/hide password option.</li>
+            <li>
+              Error states: wrong email/password, empty fields, no internet.
+            </li>
+            <li>Loading state after pressing login.</li>
+            <li>
+              App layout: header, navigation (with log out), main content area —
+              mobile + desktop.
+            </li>
+            <li>
+              Screen flow: login → main app. Notes on each element. Team
+              feedback applied and approved before Phase 2.
+            </li>
+          </ul>
+          <span class="label">Phase 2 — visual design</span>
+          <ul>
+            <li>
+              Final designs for mobile + desktop, incl. error and loading
+              states.
+            </li>
+            <li>
+              Consistent colours/fonts/spacing following brand guidelines; short
+              style guide.
+            </li>
+            <li>
+              Readable text and tappable buttons (contrast, phone-friendly).
+            </li>
+          </ul>
+          <p class="note">
+            Out of scope: check-in/out + dashboard design, building pages in
+            code, password reset, sign-up, creating brand identity.
+          </p>
+        </div>
+
+        <!-- S1-04 -->
+        <div class="ticket backend">
+          <div class="ticket-head">
+            <span class="ticket-id">S1-04</span>
+            <span class="ticket-title">Setup Node.js and Express server</span>
+            <span class="badge backend">Backend</span>
+            <span class="badge" style="background: #94a3b8">Due 13 Nov</span>
+          </div>
+          <p>The foundation the whole backend depends on. ~1 day.</p>
+          <span class="label">Acceptance criteria</span>
+          <ul>
+            <li>
+              Express project with clear folders: routes, controllers,
+              middleware, config.
+            </li>
+            <li>Starts locally with one documented command.</li>
+            <li><code>GET /api/health</code> returns 200.</li>
+            <li>Env vars from <code>.env</code>, no secrets committed.</li>
+            <li>CORS allows only the frontend origin.</li>
+            <li>JSON parsing + central error handling.</li>
+            <li>README explains install + run. HTTPS on staging.</li>
+          </ul>
+          <span class="label">Definition of done</span>
+          <ul>
+            <li>Reviewed, merged, tests passing, running on staging.</li>
+            <li>Frontend team can start the server from the README.</li>
+            <li>PO verified the health endpoint.</li>
+          </ul>
+        </div>
+
+        <!-- S1-05 -->
+        <div class="ticket backend">
+          <div class="ticket-head">
+            <span class="ticket-id">S1-05</span>
+            <span class="ticket-title">Connect Google Sheets API</span>
+            <span class="badge backend">Backend</span>
+            <span class="badge" style="background: #94a3b8">Due 20 Nov</span>
+          </div>
+          <p>Wire the backend to the attendance spreadsheet securely.</p>
+          <span class="label">Acceptance criteria</span>
+          <ul>
+            <li>Google Cloud API configured and enabled.</li>
+            <li>Service account credentials stored securely.</li>
+            <li>Backend authenticates and reads the spreadsheet.</li>
+            <li>API errors handled; spreadsheet permissions correct.</li>
+            <li>No sensitive credentials in frontend or public repos.</li>
+          </ul>
+          <span class="label">Definition of done</span>
+          <ul>
+            <li>
+              Connection + auth working, correct spreadsheet accessible, data
+              retrievable.
+            </li>
+            <li>Credentials via env vars / secrets manager.</li>
+            <li>
+              Error handling for auth failure, missing permissions, connection
+              issues.
+            </li>
+            <li>
+              Tested with valid + invalid access; no secrets leaked; reviewed
+              and merged.
+            </li>
+            <li>Technical documentation written; PO reviewed.</li>
+          </ul>
+          <p class="note">
+            Depends on S1-04 and an available Google Cloud project +
+            spreadsheet.
+          </p>
+        </div>
+
+        <!-- S1-07 -->
+        <div class="ticket fullstack">
+          <div class="ticket-head">
+            <span class="ticket-id">S1-07</span>
+            <span class="ticket-title"
+              >Implement staff &amp; admin permissions (RBAC)</span
+            >
+            <span class="badge fullstack">Frontend + Backend</span>
+            <span class="badge" style="background: #94a3b8">Due 20 Nov</span>
+          </div>
+          <p>Separate what a Staff member can do from what an Admin can do.</p>
+          <ul>
+            <li>
+              <b>Admin:</b> full access — user verification, system config, live
+              dashboard of all onsite staff.
+            </li>
+            <li>
+              <b>Staff:</b> only their own digital check-in/out. No admin
+              controls, no other staff's data.
+            </li>
+          </ul>
+          <span class="label">Acceptance criteria</span>
+          <ul>
+            <li>Role (Staff vs Admin) verified during login.</li>
+            <li>
+              Backend returns <b>403 Forbidden</b> for non-admin attempts on
+              admin endpoints.
+            </li>
+            <li>UI hides admin tabs/actions for Staff on mobile + desktop.</li>
+            <li>
+              Google Sheets write access protected — only backend can update
+              data.
+            </li>
+          </ul>
+          <span class="label">Definition of done</span>
+          <ul>
+            <li>Roles assigned in DB/schema and verified on auth.</li>
+            <li>
+              All admin + Sheets routes enforce role checks (403 otherwise).
+            </li>
+            <li>Admin controls hidden/disabled for staff on all devices.</li>
+            <li>
+              Unit + integration tests for allowed &amp; blocked paths pass
+              100%.
+            </li>
+            <li>
+              Graceful errors without exposing sensitive data. Reviewed, merged,
+              verified on staging.
+            </li>
+          </ul>
+        </div>
+
+        <!-- S1-09a -->
+        <div class="ticket frontend">
+          <div class="ticket-head">
+            <span class="ticket-id">S1-09a</span>
+            <span class="ticket-title"
+              >Develop clock-in functionality (UI)</span
+            >
+            <span class="badge frontend">Frontend</span>
+            <span class="badge" style="background: #94a3b8">Due 17 Nov</span>
+          </div>
+          <p>
+            As a staff member, I want to clock in so my arrival is recorded.
+          </p>
+          <span class="label">Acceptance criteria</span>
+          <ul>
+            <li>Clock-in screen accessible after authentication.</li>
+            <li>Clock In button shown when status is OUT.</li>
+            <li>Frontend sends the clock-in request to the backend.</li>
+            <li>
+              Success message after backend confirms; error message if it fails.
+            </li>
+            <li>Status updates to IN after success.</li>
+          </ul>
+          <span class="label">Definition of done</span>
+          <ul>
+            <li>
+              Built to approved design; name + status shown; connected to the
+              API.
+            </li>
+            <li>Loading/success/error messages correct; status → IN.</li>
+            <li>
+              Tested on mobile + desktop; bugs fixed; code reviewed and
+              approved.
+            </li>
+          </ul>
+        </div>
+
+        <!-- S1-09b -->
+        <div class="ticket backend">
+          <div class="ticket-head">
+            <span class="ticket-id">S1-09b</span>
+            <span class="ticket-title"
+              >Develop clock-in functionality (API)</span
+            >
+            <span class="badge backend">Backend</span>
+            <span class="badge" style="background: #94a3b8">Due 17 Nov</span>
+          </div>
+          <span class="label">Acceptance criteria</span>
+          <ul>
+            <li>Only authenticated + active staff can clock in.</li>
+            <li>Identity verified via Firebase.</li>
+            <li>QR location ID validated when supplied.</li>
+            <li>Duplicate clock-ins rejected.</li>
+            <li>
+              Records saved to Google Sheets; server generates the timestamp.
+            </li>
+            <li>Correct success/error responses returned.</li>
+          </ul>
+          <span class="label">Definition of done</span>
+          <ul>
+            <li>
+              Endpoint implemented; Firebase auth enforced; only active staff
+              allowed.
+            </li>
+            <li>
+              QR IDs validated; duplicates prevented; server timestamp used.
+            </li>
+            <li>
+              Saved to Sheets; status → IN; correct responses; tests pass;
+              reviewed and approved.
+            </li>
+          </ul>
+        </div>
+
+        <!-- S1-10a -->
+        <div class="ticket frontend">
+          <div class="ticket-head">
+            <span class="ticket-id">S1-10a</span>
+            <span class="ticket-title"
+              >Develop the clock-out functionality (UI)</span
+            >
+            <span class="badge frontend">Frontend</span>
+            <span class="badge" style="background: #94a3b8">Due 20 Nov</span>
+          </div>
+          <p>
+            As a staff member, I want to clock out so my departure is recorded.
+          </p>
+          <span class="label">Acceptance criteria</span>
+          <ul>
+            <li>Clock-out screen accessible after authentication.</li>
+            <li>Clock Out button shown when status is IN.</li>
+            <li>Frontend sends the clock-out request to the backend.</li>
+            <li>
+              Success message after confirmation; error message on failure.
+            </li>
+            <li>Status updates to OUT after success.</li>
+          </ul>
+          <span class="label">Definition of done</span>
+          <ul>
+            <li>
+              Built to approved design; name + status shown; connected to API.
+            </li>
+            <li>Loading/success/error messages correct; status → OUT.</li>
+            <li>
+              Tested on mobile + desktop; bugs fixed; code reviewed and
+              approved.
+            </li>
+          </ul>
+        </div>
+
+        <!-- S1-10b -->
+        <div class="ticket backend">
+          <div class="ticket-head">
+            <span class="ticket-id">S1-10b</span>
+            <span class="ticket-title"
+              >Develop the clock-out functionality (API)</span
+            >
+            <span class="badge backend">Backend</span>
+            <span class="badge" style="background: #94a3b8">Due 20 Nov</span>
+          </div>
+          <span class="label">Acceptance criteria</span>
+          <ul>
+            <li>Only authenticated + active staff can clock out.</li>
+            <li>Employee must currently be IN before clocking out.</li>
+            <li>Server generates the official clock-out timestamp.</li>
+            <li>Record saved to Google Sheets; status → OUT.</li>
+            <li>Duplicate clock-out requests rejected.</li>
+            <li>Correct success/error response returned.</li>
+          </ul>
+          <span class="label">Definition of done</span>
+          <ul>
+            <li>
+              Endpoint implemented; Firebase auth verified; only active staff
+              allowed.
+            </li>
+            <li>Checks employee is clocked in; duplicates prevented.</li>
+            <li>
+              Correct server timestamp; saved to Sheets; status → OUT; correct
+              responses.
+            </li>
+            <li>Tests pass; reviewed and approved.</li>
+          </ul>
+        </div>
+
+        <!-- S1-11a -->
+        <div class="ticket frontend">
+          <div class="ticket-head">
+            <span class="ticket-id">S1-11a</span>
+            <span class="ticket-title"
+              >Build QR code scanning camera interface</span
+            >
+            <span class="badge frontend">Frontend</span>
+            <span class="badge" style="background: #94a3b8">Due 17 Nov</span>
+          </div>
+          <p>
+            First half of the QR check-in feature (S1-11): the phone camera view
+            + permissions. Mock the backend until S1-11b exists.
+          </p>
+          <div class="callout">
+            <strong>Important:</strong> Mobile browsers block the camera on
+            insecure <code>http://</code>. Test on <code>localhost</code> or an
+            HTTPS staging environment.
+          </div>
+          <span class="label">Acceptance criteria</span>
+          <ul>
+            <li>Opening the scanner page prompts for camera access.</li>
+            <li>If granted, a live camera feed is shown.</li>
+            <li>
+              Pointing at a valid QR pauses the feed and extracts the payload.
+            </li>
+            <li>If denied, a clear message explains how to enable it.</li>
+            <li>A loading state is visible while waiting for the API.</li>
+            <li>Clear success/error message based on the (mocked) response.</li>
+          </ul>
+          <span class="label">Definition of done</span>
+          <ul>
+            <li>Camera initializes and scans within 3 seconds of page load.</li>
+            <li>
+              Handles: permission denied, no camera, navigating away (camera
+              turns off).
+            </li>
+            <li>No browser lag/crash; component unmounts cleanly.</li>
+            <li>Tested on iOS Safari, Android Chrome, desktop webcam.</li>
+            <li>
+              Connects to a mock API to demo loading/success/failure UI; matches
+              Figma; readable on mobile; peer reviewed and merged.
+            </li>
+          </ul>
+          <p class="note">
+            Out of scope: validating the QR itself (backend), saving to the
+            database.
+          </p>
+        </div>
+
+        <!-- S1-11b -->
+        <div class="ticket backend">
+          <div class="ticket-head">
+            <span class="ticket-id">S1-11b</span>
+            <span class="ticket-title"
+              >Create API endpoint for QR code validation and check-in</span
+            >
+            <span class="badge backend">Backend</span>
+            <span class="badge" style="background: #94a3b8">Due 18 Nov</span>
+          </div>
+          <p>
+            Second half of S1-11: server-side validation and secure logging of
+            QR check-ins.
+          </p>
+          <span class="label">Acceptance criteria</span>
+          <ul>
+            <li>
+              Express endpoint (e.g.
+              <code>POST /api/attendance/qr-checkin</code>) receives the QR
+              payload.
+            </li>
+            <li>Verifies the Firebase token (401 if invalid).</li>
+            <li>
+              Validates the QR against the expected building/location ID (400 if
+              invalid).
+            </li>
+            <li>Writes a row with User ID + server-generated timestamp.</li>
+            <li>Returns 200 OK on success.</li>
+            <li>Invalid QR codes write nothing to the Sheet.</li>
+          </ul>
+          <span class="label">Definition of done</span>
+          <ul>
+            <li>API contract documented and shared (Postman/Swagger).</li>
+            <li>
+              Rejects missing/invalid tokens (verified in
+              Postman/ThunderClient).
+            </li>
+            <li>
+              Timestamp generated server-side; row aligns with existing column
+              headers.
+            </li>
+            <li>
+              Correct status codes (200/400/401/500); no stack traces leaked.
+            </li>
+            <li>
+              Unit/integration tests cover happy + sad paths; merged and
+              deployed to staging.
+            </li>
+          </ul>
+        </div>
+
+        <!-- S1-12 -->
+        <div class="ticket backend">
+          <div class="ticket-head">
+            <span class="ticket-id">S1-12</span>
+            <span class="ticket-title"
+              >Prevent duplicate clock-ins and clock-outs</span
+            >
+            <span class="badge backend">Backend</span>
+            <span class="badge" style="background: #94a3b8">Due 17 Nov</span>
+          </div>
+          <p>
+            Stop double taps, double scans and slow-connection retries from
+            corrupting the Sheet.
+          </p>
+          <span class="label">Acceptance criteria</span>
+          <ul>
+            <li>
+              Clock-in rejected if the latest action is already "Clock In".
+            </li>
+            <li>
+              Clock-out rejected if the latest action is already "Clock Out", or
+              if there is no clock-in yet.
+            </li>
+            <li>A rejected request saves nothing to the Sheet.</li>
+            <li>
+              A rejected request returns a clear message, e.g. "You are already
+              clocked in".
+            </li>
+            <li>Two identical entries sent at the same time save only one.</li>
+            <li>
+              A valid first clock-in and first clock-out still save correctly.
+            </li>
+          </ul>
+          <span class="label">Definition of done</span>
+          <ul>
+            <li>Duplicate checks added for both clock-in and clock-out.</li>
+            <li>All acceptance criteria tested and passing.</li>
+          </ul>
+          <p class="note">
+            Out of scope: showing the message on screen, staff login, admin
+            editing past entries. Agree error wording with the frontend dev.
+          </p>
+        </div>
+
+        <!-- S1-14a -->
+        <div class="ticket frontend">
+          <div class="ticket-head">
+            <span class="ticket-id">S1-14a</span>
+            <span class="ticket-title"
+              >Develop basic live attendance dashboard (UI)</span
+            >
+            <span class="badge frontend">Frontend</span>
+            <span class="badge" style="background: #94a3b8">Due 16 Nov</span>
+          </div>
+          <p>
+            Admin dashboard showing who is currently clocked in/out, using the
+            S1-14b API and the S1-13 design. ~2 days.
+          </p>
+          <span class="label">Acceptance criteria</span>
+          <ul>
+            <li>Admins only; staff are redirected away.</li>
+            <li>
+              Lists each staff member with name, status (IN/OUT) and last clock
+              time.
+            </li>
+            <li>Summary shows total staff currently IN.</li>
+            <li>Auto-refreshes without a full page reload.</li>
+            <li>Loading, error (with retry) and empty states shown.</li>
+            <li>Matches approved design on desktop.</li>
+            <li>A new clock-in/out appears within 5 seconds.</li>
+          </ul>
+          <span class="label">Definition of done</span>
+          <ul>
+            <li>Reviewed, merged, tests passing, running on staging.</li>
+            <li>
+              Layout checked against approved design; PO verified against
+              criteria.
+            </li>
+          </ul>
+        </div>
+
+        <!-- S1-14b -->
+        <div class="ticket backend">
+          <div class="ticket-head">
+            <span class="ticket-id">S1-14b</span>
+            <span class="ticket-title"
+              >Develop basic live attendance dashboard (API)</span
+            >
+            <span class="badge backend">Backend</span>
+            <span class="badge" style="background: #94a3b8">Due 16 Nov</span>
+          </div>
+          <p>
+            Endpoint that reads attendance records from Google Sheets and
+            returns each staff member's current IN/OUT status. ~2 days.
+          </p>
+          <span class="label">Acceptance criteria</span>
+          <ul>
+            <li>
+              <code>GET /api/attendance/live</code> returns each active staff
+              member's name, status (IN/OUT) and last clock event time.
+            </li>
+            <li>Status is worked out from the latest event per employee.</li>
+            <li>Response includes the total number of staff currently IN.</li>
+            <li>Requires a valid Firebase token + admin role.</li>
+            <li>Deactivated staff excluded.</li>
+            <li>
+              Sheets errors handled without crashing or leaking raw details.
+            </li>
+            <li>Response format documented for the frontend team.</li>
+            <li>
+              Responds within 2 seconds; correct data under concurrent admin
+              requests.
+            </li>
+          </ul>
+          <span class="label">Definition of done</span>
+          <ul>
+            <li>Reviewed, merged, tests passing, running on staging.</li>
+            <li>
+              Response format documented and shared; PO verified against
+              criteria.
+            </li>
+          </ul>
+        </div>
+
+        <!-- S1-15 -->
+        <div class="ticket frontend">
+          <div class="ticket-head">
+            <span class="ticket-id">S1-15</span>
+            <span class="ticket-title"
+              >Display user attendance status (IN/OUT)</span
+            >
+            <span class="badge frontend">Frontend</span>
+            <span class="badge" style="background: #94a3b8">Due 20 Nov</span>
+          </div>
+          <p>Show the logged-in staff member's current attendance status.</p>
+          <span class="label">Acceptance criteria</span>
+          <ul>
+            <li>Status retrieved from attendance records.</li>
+            <li>
+              IN shown after a successful clock-in; OUT after a successful
+              clock-out.
+            </li>
+            <li>
+              Status updates after attendance actions and stays correct after
+              refresh.
+            </li>
+            <li>Appropriate message if no attendance record exists.</li>
+            <li>Loading + error messages while fetching / on failure.</li>
+          </ul>
+          <span class="label">Definition of done</span>
+          <ul>
+            <li>
+              Component developed and connected to the correct backend API.
+            </li>
+            <li>Correct status shown; IN and OUT visually distinguishable.</li>
+            <li>
+              Follows approved design; updates after clock-in/out and after
+              refresh.
+            </li>
+            <li>Tested with valid records; loading/empty/error states work.</li>
+            <li>No critical bugs; reviewed and merged; PO accepted.</li>
+          </ul>
+          <p class="note">
+            Deliverable: a working attendance status display on the staff
+            dashboard.
+          </p>
+        </div>
+
+        <!-- S1-16 -->
+        <div class="ticket fullstack">
+          <div class="ticket-head">
+            <span class="ticket-id">S1-16</span>
+            <span class="ticket-title"
+              >Implement basic loading and error messages</span
+            >
+            <span class="badge fullstack">Frontend + Design</span>
+            <span class="badge" style="background: #94a3b8">Due 17 Nov</span>
+          </div>
+          <p>
+            Type: Feature/UI · Priority: Medium · ~2 days. Reusable
+            loading/success/error states for login, clock in/out and dashboard.
+          </p>
+          <span class="label">Acceptance criteria</span>
+          <ul>
+            <li>
+              Loading indicator during login, clock-in/out and dashboard
+              requests.
+            </li>
+            <li>Buttons disabled while loading (no double submits).</li>
+            <li>Success message only after the server confirms.</li>
+            <li>
+              Failed login: "Email or password is incorrect." (don't say which
+              is wrong).
+            </li>
+            <li>
+              401 → message + redirect to login. 403 → "You don't have access to
+              this page."
+            </li>
+            <li>
+              409 duplicate → "You're already clocked in." 500 → "Something went
+              wrong. Please try again."
+            </li>
+            <li>
+              Offline → "You're offline. Check your connection and try again."
+            </li>
+            <li>Failed data loads show a "Try again" button.</li>
+            <li>Never show raw errors, status codes or stack traces.</li>
+            <li>Readable on mobile; errors use icon/text, not colour alone.</li>
+            <li>Components reusable, not hard-coded to one screen.</li>
+          </ul>
+          <span class="label">Definition of done</span>
+          <ul>
+            <li>Design approved by PO before development.</li>
+            <li>
+              Every case triggered and checked; verified on phone + desktop.
+            </li>
+            <li>
+              No technical/sensitive data in messages; components documented.
+            </li>
+            <li>Reviewed, merged, deployed to staging, verified by PO.</li>
+          </ul>
+          <p class="note">
+            Out of scope: automatic/safe retries, offline mode or queuing, full
+            responsiveness, full a11y audit, logging/monitoring, full-page
+            skeletons, translations.
+          </p>
+        </div>
+      </section>
+
+      <footer>
+        Project brief summary generated for reference — Digital Time Attendance
+        System, Sprint 1.
+      </footer>
+    </div>
+  </body>
+</html>
