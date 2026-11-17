@@ -1,0 +1,15 @@
+.ClockOut-btn {
+    background-color: #136163;
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.ClockOut-btn:hover {
+    background-color: #0e494a;
+}
