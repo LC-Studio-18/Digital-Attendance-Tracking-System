@@ -1,5 +1,7 @@
-import 'dotenv/config';
+
 import { google } from 'googleapis';
+
+const fail = (status, message) => Object.assign(new Error(message), { status });
 
 const auth = new google.auth.JWT({
   email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -17,16 +19,17 @@ export async function getAttendance() {
     });
     return res.data.values || [];
   } catch (err) {
+    console.error('Google Sheets error:', err.message);
     const code = err.code || err.response?.status;
     if (code === 401 || err.message?.includes('invalid_grant')) {
-      throw { status: 401, message: 'Google authentication failed' };
+      throw fail(401, 'Google authentication failed');
     }
     if (code === 403) {
-      throw { status: 403, message: 'No permission to access the spreadsheet' };
+      throw fail(403, 'No permission to access the spreadsheet');
     }
     if (code === 404) {
-      throw { status: 404, message: 'Spreadsheet or range not found' };
+      throw fail(404, 'Spreadsheet or range not found');
     }
-    throw { status: 502, message: 'Could not reach Google Sheets API' };
+    throw fail(502, 'Could not reach Google Sheets API');
   }
 }
