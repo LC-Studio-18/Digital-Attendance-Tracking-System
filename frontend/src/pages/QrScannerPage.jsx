@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import ScannerFeedback from '../components/scanner/ScannerFeedback';
+import ScannerFeedback from '../components/ScannerFeedback';
+import QrScanner from '../components/QrScanner';
 import { submitAttendanceScan } from '../services/attendanceServices';
 
 export default function QrScannerPage() {
@@ -25,6 +26,14 @@ export default function QrScannerPage() {
     }
   };
 
+  // The camera runs only while idle and without a camera error.
+  const isScanning = submissionState === 'idle' && cameraStatus === 'scanning';
+
+  const handleCameraError = (error) => {
+    setCameraError(error);
+    setCameraStatus('error');
+  };
+
   const handleReset = () => {
     setSubmissionState('idle');
     setScannedPayload('');
@@ -45,9 +54,11 @@ export default function QrScannerPage() {
 
         {/* Camera Preview Area with Targeting Overlay */}
         <div className="relative w-full aspect-square bg-black rounded-xl overflow-hidden flex items-center justify-center shadow-inner">
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
-            [Camera Stream Placeholder]
-          </div>
+          <QrScanner
+            active={isScanning}
+            onDecoded={handleDecoded}
+            onCameraError={handleCameraError}
+          />
 
           {/* Target Box Overlay */}
           <div className="absolute pointer-events-none border-2 border-dashed border-white/80 w-52 h-52 rounded-xl flex items-center justify-center shadow-2xl">
