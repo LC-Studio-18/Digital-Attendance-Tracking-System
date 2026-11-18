@@ -15,9 +15,10 @@ router.post('/check-in', verifyFirebaseToken, async (req, res) => {
 
     const timestamp = new Date().toISOString();
 
-    await appendAttendanceRow({ userID: uid, name, status, timestamp });
+    const eventType = status === 'IN' ? 'Clock In' : 'Clock Out';
+    await appendAttendanceRow({ userID: uid, timestamp, eventType });
 
-    res.status(200).json({ success: true, message: `Check ${status === 'IN' ? 'in' : 'OUT'} successful.` });
+    res.status(200).json({ success: true, message: `${eventType} successful.` });
   } catch (error) {
     console.error('Error checking in attendance:', error);
     res.status(409).json({ message: 'Internal server error.' });
