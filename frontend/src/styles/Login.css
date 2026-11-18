@@ -238,6 +238,53 @@
   margin: 0 auto;
 }
 
+.signup-page .login-card,
+.email-page .login-card {
+  justify-content: flex-start;
+}
+
+.signup-page .login-logo,
+.email-page .login-logo {
+  align-self: center;
+  margin: 38px 0 45px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.login-card h1.form-title {
+  margin: 0 0 27px;
+  font-size: 23px;
+  font-weight: 700;
+}
+
+.signup-page .login-card form,
+.email-page .login-card form {
+  gap: 20px;
+}
+
+.signup-page .login-error,
+.signup-page .login-notice,
+.email-page .login-error,
+.email-page .login-notice {
+  margin: 0 auto;
+}
+
+.auth-mode-switch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.auth-mode-switch button {
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: #5574f5;
+  font-size: 11px;
+}
+
 @media (max-width: 700px) {
   .login-page {
     display: block;
@@ -327,5 +374,32 @@
 
   .reset-page .back-to-login {
     margin-top: 20px;
+  }
+
+  .signup-page .login-card,
+  .email-page .login-card {
+    padding-top: 35px;
+  }
+
+  .signup-page .login-logo,
+  .email-page .login-logo {
+    margin: 16px 0 30px;
+  }
+
+  .login-card h1.form-title {
+    margin: 0 0 29px;
+    font-size: 19px;
+  }
+
+  .signup-page .login-card form,
+  .email-page .login-card form {
+    gap: 20px;
+  }
+
+  .signup-page .login-error,
+  .signup-page .login-notice,
+  .email-page .login-error,
+  .email-page .login-notice {
+    margin: 0 auto;
   }
 }

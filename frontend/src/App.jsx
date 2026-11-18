@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { onIdTokenChanged } from 'firebase/auth';
 import { auth } from './services/firebase';
 import Login from './pages/Login';
@@ -61,6 +61,10 @@ function App() {
     role: null,
   });
 
+  const handleLoginSuccess = useCallback((user) => {
+    setAuthState({ loading: false, user, role: 'user' });
+  }, []);
+
   useEffect(() => {
     if (!auth) return;
 
@@ -97,7 +101,7 @@ function App() {
   }
 
   if (!authState.user) {
-    return <Login onLoginSuccess={(user) => setAuthState({ loading: false, user, role: 'user' })} />;
+    return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 
   return (

@@ -2,37 +2,35 @@
 
 ## Firebase Authentication
 
-Install frontend dependencies, then copy `.env.example` to `.env` and add the
-Firebase web app configuration. The values are provided by the Firebase
-project owner:
+Copy `.env.example` to `.env` and add the Firebase Web app configuration from
+the Firebase project owner. Enable **Email/Password** in Firebase
+Authentication. The login screen supports password sign-in, account creation,
+password reset, and email-link sign-in. Google Sheets is used by the backend for
+attendance data; it is not the login credential store.
 
-```env
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
-```
+For email-link sign-in, also enable the **Email link (passwordless sign-in)**
+provider and add the app host to Firebase Authentication → Settings →
+Authorized domains. Set `VITE_EMAIL_LINK_URL` to the page Firebase should return
+to after the link is clicked.
 
-Do not put a Firebase Admin service-account JSON or private key in the frontend
-environment. The React app uses the web app config above.
+Do not put Firebase Admin service-account credentials or private keys in the
+frontend environment.
 
-Enable **Email/Password** as a sign-in provider in Firebase Authentication.
-The login page supports email and password sign-in, sign-out, persistence via
-“Remember Me”, and password reset emails.
+Admin controls read custom claims from the Firebase ID token. The frontend
+recognizes `{ "role": "admin" }` or `{ "admin": true }`; the trusted backend
+must assign those claims.
 
-Admin controls use custom claims on the Firebase ID token. The trusted backend
-must assign either `{ "role": "admin" }` or `{ "admin": true }`; the frontend
-only reads these claims and cannot grant Admin access. All other users see the
-standard dashboard controls only.
+`src/services/authService.js` exposes the Firebase user-management helpers for
+profile updates, email changes, email verification, password changes,
+re-authentication, and account deletion. Sensitive operations require the user
+to have signed in recently.
 
 ## Backend requests
 
-Set `VITE_API_URL` to the backend API base URL. Requests made with
-`src/services/apiClient.js` automatically include the current Firebase ID token
-as `Authorization: Bearer <token>`. The backend must verify this token before
-serving protected routes; the current backend only has a public health route.
+Set `VITE_API_URL` to the backend API base URL. Requests through
+`src/services/apiClient.js` include the current Firebase ID token as
+`Authorization: Bearer <token>`. The backend must verify this token before
+serving protected routes.
 
 ## Development
 
