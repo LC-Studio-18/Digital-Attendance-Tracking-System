@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import healthRoutes from './routes/healthRoutes.js';
+import attendanceRoutes from './routes/attendanceRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -14,11 +15,8 @@ app.use(
 app.use(express.json());
 
 app.use('/api', healthRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 app.use(errorHandler);
 
 export default app;
-
-import attendanceRoutes from "./routes/attendanceRoutes.js";
-
-app.use("/api/attendance", attendanceRoutes);
