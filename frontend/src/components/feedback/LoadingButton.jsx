@@ -1,4 +1,4 @@
-import Spinner from '../Spinner';
+import Spinner from './Spinner';
 
 /**
  * A button that disables itself while its action is running.
