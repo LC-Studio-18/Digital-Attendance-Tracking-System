@@ -18,3 +18,7 @@ app.use('/api', healthRoutes);
 app.use(errorHandler);
 
 export default app;
+
+import attendanceRoutes from "./routes/attendanceRoutes.js";
+
+app.use("/api/attendance", attendanceRoutes);
