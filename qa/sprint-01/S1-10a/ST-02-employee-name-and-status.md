@@ -3,7 +3,7 @@
 ## Information
 - Ticket ID: S1-10a
 - Assigned developer: Phumezile Sibeko
-- Current QA status: Not Run
+- Current QA status: Blocked for live-data testing
 
 ## Objective
 - Display the employee name and attendance status on the clock-out page.
@@ -17,11 +17,11 @@
 
 | Test ID | Scenario | Expected Result | Status |
 |---|---|---|---|
-| TC-01 | Verify employee name and attendance status with API data | Current employee information and status display accurately | Blocked |
-| TC-02 | Review clocked-out and unexpected-status handling | Messages accurately describe the employee's attendance state | Not Run |
+| TC-01 | Visually observe displayed employee name and attendance status | Name and status are displayed; live-data accuracy is verified against API data | Blocked for live-data verification; mock-data display observed |
+| TC-02 | Review clocked-out and unexpected-status fallback handling | Accurate, distinct messages are presented for supported and unexpected statuses | Fail - static code-review finding; runtime verification pending |
 
 ## Linked Bugs
-- Preliminary code-review finding: Clocked-out and unexpected attendance statuses use an inaccurate fallback message. Requires verification and retesting; not yet confirmed through runtime testing.
+- [BUG-S1-10a-02](bugs/BUG-S1-10a-02-attendance-fallback.md) - Incorrect attendance fallback messaging (proposed severity: Medium; static finding pending runtime verification).
 
 ## Testing History
 
@@ -56,3 +56,37 @@ Not Run
 
 #### Notes
 - Dynamic-data testing is Blocked pending API availability. This is a preliminary code-review finding, not a confirmed runtime defect. Do not attribute incomplete functionality assigned to Elijah to Phumezile's work.
+
+### 18 November 2026 - Mock-data visual observation and static code review
+- Tester: Adam Jattiem.
+- Test case ID: TC-01 (mock-data visual observation successful; live-data portion Blocked), TC-02 (static review Fail; runtime verification pending).
+- Branch: QA4 documentation branch; developer source retrieved from `frontend4-feature/s1-10a-clock-out` into the existing detached testing worktree.
+- Commit SHA / Figma version: `d7fb9f83f8f47d4f2e001097fbfa20fccc760ce0`.
+- Environment: Windows, detached Git worktree, React, Vite 8.3.8; `http://localhost:5173/`.
+- Preconditions: Clock-out page rendered; backend/API was not available for live employee data.
+
+#### Steps to Reproduce
+1. Open the running clock-out page at `http://localhost:5173/`.
+2. Observe the name and status presented by the current placeholder/mock data.
+3. Inspect the reviewed code paths for clocked-out and unexpected attendance statuses.
+
+#### Expected Result
+- The displayed name, attendance status, and clock-in time come from current employee/API data.
+- Clocked-out and unexpected statuses receive accurate handling and messages.
+
+#### Actual Result
+- Placeholder employee name, `Clocked In` status, and `Since 08:15` were visible: the mock-data display is a successful visual observation only.
+- Live employee name, status, and clock-in time were not verified because API data was unavailable.
+- Static code review found that employees who have already clocked out may incorrectly be told they have not clocked in; unexpected status values fall into the same fallback. This finding requires runtime verification.
+
+#### Result
+Mock-data visual observation: Pass. Live-data test: Blocked. Static fallback logic review: Fail, runtime verification pending.
+
+#### Bug Reference
+- [BUG-S1-10a-02](bugs/BUG-S1-10a-02-attendance-fallback.md) (proposed severity: Medium).
+
+#### Evidence
+- Placeholder values were observed in the running page. No screenshot file is present in the ticket evidence directory.
+
+#### Notes
+- Do not treat the mock-data observation as live-data testing or as a pass for API-backed acceptance criteria.
