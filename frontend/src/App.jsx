@@ -125,24 +125,31 @@ function App() {
     };
   }, []);
 
+  const isLoginRoute = pathname === '/login';
+
   useEffect(() => {
     if (authState.loading) return;
 
     if (!authState.user) {
-      if (pathname !== '/login') navigateTo('/login', { replace: true });
+      if (!isLoginRoute) navigateTo('/login', { replace: true });
       return;
     }
 
-    if (pathname === '/login' || pathname === '/') {
+    if (isLoginRoute || pathname === '/') {
       navigateTo('/dashboard', { replace: true });
     }
-  }, [authState.loading, authState.user, pathname]);
+  }, [authState.loading, authState.user, isLoginRoute, pathname]);
 
   if (authState.loading) {
     return <div className="auth-loading" aria-label="Loading account" />;
   }
 
   if (!authState.user) {
+    if (!isLoginRoute) {
+      return (
+        <div className="auth-loading" aria-label="Redirecting to sign in" />
+      );
+    }
     return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 

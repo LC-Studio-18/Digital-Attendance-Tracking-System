@@ -11,6 +11,8 @@ import {
 import logo from '../assets/logo.png';
 import '../styles/Login.css';
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const authErrorMessages = {
   'auth/invalid-email': 'Please enter a valid email address.',
   'auth/user-not-found': 'Incorrect email or password.',
@@ -51,6 +53,7 @@ function Login({ onLoginSuccess }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -64,7 +67,18 @@ function Login({ onLoginSuccess }) {
   const clearMessages = () => {
     setError('');
     setNotice('');
+    setFieldErrors({});
   };
+
+  const validateEmail = (value) => {
+    const trimmed = value.trim();
+    if (!trimmed) return 'Email address is required.';
+    if (!EMAIL_PATTERN.test(trimmed)) return 'Enter a valid email address.';
+    return '';
+  };
+
+  const validateRequired = (value, label) =>
+    value.trim() ? '' : `${label} is required.`;
 
   const switchMode = (nextMode) => {
     setMode(nextMode);
@@ -104,10 +118,12 @@ function Login({ onLoginSuccess }) {
     if (busyRef.current) return;
     clearMessages();
 
-    if (!email.trim() || !password) {
-      setError('Please enter your email address and password.');
-      return;
-    }
+    const errors = {};
+    const emailError = validateEmail(email);
+    if (emailError) errors.email = emailError;
+    if (!password) errors.password = 'Password is required.';
+    setFieldErrors(errors);
+    if (Object.keys(errors).length) return;
 
     busyRef.current = true;
     setLoading(true);
@@ -127,14 +143,20 @@ function Login({ onLoginSuccess }) {
     if (busyRef.current) return;
     clearMessages();
 
-    if (!name.trim() || !email.trim() || !password) {
-      setError('Please complete all fields.');
-      return;
+    const errors = {};
+    const nameError = validateRequired(name, 'Full name');
+    if (nameError) errors.name = nameError;
+    const emailError = validateEmail(email);
+    if (emailError) errors.email = emailError;
+    if (!password) errors.password = 'Password is required.';
+    if (!confirmPassword) {
+      errors.confirmPassword = 'Please confirm your password.';
     }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
+    if (password && confirmPassword && password !== confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match.';
     }
+    setFieldErrors(errors);
+    if (Object.keys(errors).length) return;
 
     busyRef.current = true;
     setLoading(true);
@@ -154,10 +176,11 @@ function Login({ onLoginSuccess }) {
     if (busyRef.current) return;
     clearMessages();
 
-    if (!email.trim()) {
-      setError('Please enter your email address.');
-      return;
-    }
+    const errors = {};
+    const emailError = validateEmail(email);
+    if (emailError) errors.email = emailError;
+    setFieldErrors(errors);
+    if (Object.keys(errors).length) return;
 
     busyRef.current = true;
     setLoading(true);
@@ -179,10 +202,11 @@ function Login({ onLoginSuccess }) {
     if (busyRef.current) return;
     clearMessages();
 
-    if (!email.trim()) {
-      setError('Please enter your email address.');
-      return;
-    }
+    const errors = {};
+    const emailError = validateEmail(email);
+    if (emailError) errors.email = emailError;
+    setFieldErrors(errors);
+    if (Object.keys(errors).length) return;
 
     busyRef.current = true;
     setLoading(true);
@@ -290,8 +314,10 @@ function Login({ onLoginSuccess }) {
                   autoComplete="name"
                   placeholder="Enter your full name"
                   value={name}
+                  aria-invalid={Boolean(fieldErrors.name)}
                   onChange={(event) => setName(event.target.value)}
                 />
+                <FieldError message={fieldErrors.name} />
               </div>
               <div className="form-group">
                 <label htmlFor="signup-email">Email address</label>
@@ -302,8 +328,10 @@ function Login({ onLoginSuccess }) {
                   autoComplete="email"
                   placeholder="Enter your email address"
                   value={email}
+                  aria-invalid={Boolean(fieldErrors.email)}
                   onChange={(event) => setEmail(event.target.value)}
                 />
+                <FieldError message={fieldErrors.email} />
               </div>
               <div className="form-group">
                 <label htmlFor="signup-password">Password</label>
@@ -315,6 +343,7 @@ function Login({ onLoginSuccess }) {
                     autoComplete="new-password"
                     placeholder="At least 6 characters"
                     value={password}
+                    aria-invalid={Boolean(fieldErrors.password)}
                     onChange={(event) => setPassword(event.target.value)}
                   />
                   <button
@@ -329,6 +358,7 @@ function Login({ onLoginSuccess }) {
                     {showPassword ? 'Hide' : 'Show'}
                   </button>
                 </div>
+                <FieldError message={fieldErrors.password} />
               </div>
               <div className="form-group">
                 <label htmlFor="signup-confirm">Confirm password</label>
@@ -339,8 +369,10 @@ function Login({ onLoginSuccess }) {
                   autoComplete="new-password"
                   placeholder="Confirm your password"
                   value={confirmPassword}
+                  aria-invalid={Boolean(fieldErrors.confirmPassword)}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                 />
+                <FieldError message={fieldErrors.confirmPassword} />
               </div>
               <FormMessage error={configError || error} notice={notice} />
               <button
@@ -376,8 +408,10 @@ function Login({ onLoginSuccess }) {
                   autoComplete="email"
                   placeholder="Enter your email address"
                   value={email}
+                  aria-invalid={Boolean(fieldErrors.email)}
                   onChange={(event) => setEmail(event.target.value)}
                 />
+                <FieldError message={fieldErrors.email} />
               </div>
               <FormMessage error={configError || error} notice={notice} />
               <button
@@ -417,8 +451,10 @@ function Login({ onLoginSuccess }) {
                   autoComplete="email"
                   placeholder="Enter your email address"
                   value={email}
+                  aria-invalid={Boolean(fieldErrors.email)}
                   onChange={(event) => setEmail(event.target.value)}
                 />
+                <FieldError message={fieldErrors.email} />
               </div>
               <FormMessage error={configError || error} notice={notice} />
               <button
@@ -452,8 +488,10 @@ function Login({ onLoginSuccess }) {
                   autoComplete="username"
                   placeholder="Enter your email address"
                   value={email}
+                  aria-invalid={Boolean(fieldErrors.email)}
                   onChange={(event) => setEmail(event.target.value)}
                 />
+                <FieldError message={fieldErrors.email} />
               </div>
               <div className="form-group">
                 <label htmlFor="login-password">Password</label>
@@ -465,6 +503,7 @@ function Login({ onLoginSuccess }) {
                     autoComplete="current-password"
                     placeholder="Enter your password"
                     value={password}
+                    aria-invalid={Boolean(fieldErrors.password)}
                     onChange={(event) => setPassword(event.target.value)}
                   />
                   <button
@@ -479,6 +518,7 @@ function Login({ onLoginSuccess }) {
                     {showPassword ? 'Hide' : 'Show'}
                   </button>
                 </div>
+                <FieldError message={fieldErrors.password} />
               </div>
               <FormMessage error={configError || error} notice={notice} />
               <div className="login-options">
@@ -558,6 +598,15 @@ function Login({ onLoginSuccess }) {
         <span>STAFF ATTENDANCE MANAGEMENT SYSTEM</span>
       </footer>
     </main>
+  );
+}
+
+function FieldError({ message }) {
+  if (!message) return null;
+  return (
+    <span className="field-error" role="alert">
+      {message}
+    </span>
   );
 }
 
