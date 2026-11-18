@@ -1,122 +1,130 @@
-import { useState } from 'react';
-import heroImg from './assets/hero.png';
-import reactLogo from './assets/react.svg';
-import viteLogo from './assets/vite.svg';
-import './App.css';
+import { useState, useEffect } from 'react';
+import CorrectionModal from './components/CorrectionModal';
+import { handleApiError } from './utils/errorHandler';
 
-function App() {
-  const [count, setCount] = useState(0);
+export default function App() {
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Fetch real attendance records from the backend when the page loads
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const apiUrl = import.meta.env.VITE_API_URL;
+
+        const response = await fetch(`${apiUrl}/api/attendance`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          const err = new Error('Failed to fetch attendance records');
+          err.status = response.status;
+          throw err;
+        }
+
+        const data = await response.json();
+        setAttendanceRecords(data);
+      } catch (err) {
+        const handled = handleApiError(err);
+        setError(handled.message);
+        if (handled.isUnauthorized) {
+          window.location.href = '/login';
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAttendance();
+  }, []);
+
+  // Updates the specific row locally after a successful correction
+  const handleSaveSuccess = (updatedRecord) => {
+    setAttendanceRecords((prev) =>
+      prev.map((item) => (item.id === updatedRecord.id ? updatedRecord : item))
+    );
+    setSelectedRecord(null);
+  };
+
+  if (loading) {
+    return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading attendance records...</div>;
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div style={{ padding: '2rem', fontFamily: 'Inter, sans-serif' }}>
+      <h2>Staff Attendance Records</h2>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      {error && (
+        <div style={errorBannerStyle}>
+          {error}
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      {attendanceRecords.length === 0 && !error ? (
+        <p style={{ color: '#666', marginTop: '1rem' }}>No attendance records found.</p>
+      ) : (
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '1rem' }}>
+          <thead>
+            <tr style={{ background: '#f1f3f4', textAlign: 'left' }}>
+              <th style={thStyle}>Staff Member</th>
+              <th style={thStyle}>Date</th>
+              <th style={thStyle}>Clock-In</th>
+              <th style={thStyle}>Clock-Out</th>
+              <th style={thStyle}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {attendanceRecords.map((record) => (
+              <tr key={record.id || record._id} style={{ borderBottom: '1px solid #eaeaea' }}>
+                <td style={tdStyle}>{record.employeeName}</td>
+                <td style={tdStyle}>{record.date}</td>
+                <td style={tdStyle}>{record.clockIn}</td>
+                <td style={tdStyle}>{record.clockOut}</td>
+                <td style={tdStyle}>
+                  <button 
+                    onClick={() => setSelectedRecord(record)} 
+                    style={correctButtonStyle}
+                  >
+                    Correct
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {selectedRecord && (
+        <CorrectionModal
+          record={selectedRecord}
+          onClose={() => setSelectedRecord(null)}
+          onSave={handleSaveSuccess}
+        />
+      )}
+    </div>
   );
 }
 
-export default App;
+const thStyle = { padding: '12px', fontSize: '0.85rem', color: '#444', fontWeight: '600' };
+const tdStyle = { padding: '12px', fontSize: '0.9rem', color: '#333' };
+const correctButtonStyle = { 
+  padding: '6px 12px', 
+  background: '#202124', 
+  color: '#fff', 
+  border: 'none', 
+  borderRadius: '4px', 
+  fontWeight: '500', 
+  cursor: 'pointer',
+  fontSize: '0.85rem'
+};
+
+const errorBannerStyle = {
+  padding: '10px 12px', background: '#fce8e6', color: '#c5221f', border: '1px solid #f6aea9',
+  borderRadius: '6px', fontSize: '0.85rem', marginTop: '1rem', fontWeight: '500'
+};
