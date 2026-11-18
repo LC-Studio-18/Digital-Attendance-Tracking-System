@@ -2,9 +2,33 @@ import { appendRow, findTodayCheckin } from '../services/googleSheetsService.js'
 
 export async function qrCheckin(req, res, next) {
   try {
+    if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request body must be a JSON object',
+      });
+    }
+
+    if (Object.keys(req.body).some((field) => field !== 'locationId')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request body contains unexpected fields',
+      });
+    }
+
     const { locationId } = req.body;
 
-    if (locationId !== process.env.VALID_LOCATION_IDS) {
+    if (
+      typeof locationId !== 'string' ||
+      !/^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/.test(locationId.trim())
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'locationId must be a non-empty, hyphen-separated alphanumeric string',
+      });
+    }
+
+    if (locationId.trim() !== process.env.VALID_LOCATION_IDS) {
       return res.status(400).json({
         success: false,
         message: 'Invalid QR code or unknown location',

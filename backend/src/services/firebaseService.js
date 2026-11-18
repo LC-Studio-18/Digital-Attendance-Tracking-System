@@ -1,32 +1,41 @@
 import { cert, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { readFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 let initialized = false;
+const serviceAccountPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../serviceAccountKey.json');
 
-function initFirebase() {
+async function initFirebase() {
   if (initialized) return;
 
   const { FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY } = process.env;
+  let credentials;
 
-  if (!FIREBASE_PROJECT_ID || !FIREBASE_CLIENT_EMAIL || !FIREBASE_PRIVATE_KEY) {
-    console.warn('Firebase credentials are not set — auth will fail until they are added to .env');
-    return;
-  }
-
-  initializeApp({
-    credential: cert({
+  if (FIREBASE_PROJECT_ID && FIREBASE_CLIENT_EMAIL && FIREBASE_PRIVATE_KEY) {
+    credentials = {
       projectId: FIREBASE_PROJECT_ID,
       clientEmail: FIREBASE_CLIENT_EMAIL,
-      // .env stores newlines as \n — convert back to real line breaks
       privateKey: FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    }),
-  });
+    };
+  } else {
+    try {
+      credentials = JSON.parse(await readFile(serviceAccountPath, 'utf8'));
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+      console.warn('Firebase credentials are not set — auth will fail until they are added to .env or serviceAccountKey.json');
+      return;
+    }
+  }
+
+  initializeApp({ credential: cert(credentials) });
 
   initialized = true;
 }
 
 export async function verifyIdToken(token) {
-  initFirebase();
+  await initFirebase();
 
   if (!initialized) {
     const error = new Error('Firebase is not configured');
