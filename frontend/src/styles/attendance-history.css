@@ -1,0 +1,221 @@
+/* Attendance history page (Phase 2). Uses the shared design tokens in base.css. */
+
+.history-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 2.75rem 1.25rem 4rem;
+}
+
+.history-page__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.history-page__kicker {
+  margin: 0 0 0.35rem;
+  color: var(--color-brand);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.history-page__title {
+  margin: 0;
+  font-size: clamp(1.6rem, 4vw, 2.15rem);
+  line-height: 1.2;
+}
+
+.history-page__subtitle {
+  margin: 0.45rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.95rem;
+}
+
+.history-page__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.history-role {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink-soft);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.history-role--admin {
+  border-color: #bfdbfe;
+  background: var(--color-brand-soft);
+  color: var(--color-brand-dark);
+}
+
+.history-refresh {
+  min-height: 38px;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-ink-soft);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.history-refresh:hover:not(:disabled) {
+  border-color: var(--color-brand);
+  color: var(--color-brand-dark);
+}
+
+.history-refresh:disabled {
+  opacity: 0.6;
+}
+
+.history-card {
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.history-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.history-card__head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.history-card__count {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.history-table-wrap {
+  overflow-x: auto;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.history-table th,
+.history-table td {
+  padding: 0.8rem 1rem;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.history-table th {
+  background: #f8fafc;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.history-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.history-table tbody tr:hover {
+  background: #fafcff;
+}
+
+.history-table__muted {
+  color: var(--color-muted);
+}
+
+.history-status {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.history-status--in {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.history-status--out {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.history-loading {
+  display: grid;
+  min-height: 260px;
+  place-items: center;
+  padding: 2rem;
+}
+
+.history-feedback {
+  padding: 1.25rem;
+}
+
+.history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 300px;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.history-empty__icon {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 1rem;
+  border-radius: 50%;
+  place-items: center;
+  background: var(--color-brand-soft);
+  color: var(--color-brand);
+}
+
+.history-empty__title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.history-empty__text {
+  max-width: 360px;
+  margin: 0.4rem 0 1rem;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .history-page {
+    padding: 1.75rem 1rem 3rem;
+  }
+
+  .history-page__actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
