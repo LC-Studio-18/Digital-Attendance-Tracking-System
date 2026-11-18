@@ -5,16 +5,22 @@
  * ============================================================
  *
  * PURPOSE:
- * - Connect directly to Google Sheets.
- * - Authenticate using the shared backend environment variables.
- * - Retrieve attendance records from the configured sheet.
- * - Convert spreadsheet rows into JavaScript objects.
- * - Validate employee IDs, event types and timestamps.
- * - Identify the latest check-in and check-out per employee.
- * - Return processed timestamps for dashboard display.
+ * - Authenticate directly with Google Sheets.
+ * - Retrieve the Users and Events spreadsheet tabs.
+ * - Identify each tab using its column headings.
+ * - Convert spreadsheet records into JavaScript objects.
+ * - Match Firebase user IDs to clock event records.
+ * - Validate clock event types and timestamps.
+ * - Identify the latest check-in timestamp per employee.
+ * - Identify the latest check-out timestamp per employee.
+ * - Return timestamp information for dashboard display.
+ *
+ * IMPORTANT:
+ * This service handles its own Google Sheets connection.
+ * It does not depend on a separate spreadsheet integration service.
  *
  * SCOPE:
- * This service only handles timestamp retrieval and processing.
+ * This service ONLY handles check-in and check-out timestamps.
  * It does not calculate employee attendance status or totals.
  */
 
@@ -26,76 +32,145 @@
 // Google API library for accessing Google Sheets.
 import { google } from "googleapis";
 
-// Load the backend environment variables.
+// Load backend environment variables.
 import dotenv from "dotenv";
 
-// Resolve the backend .env file relative to this service.
+// Resolve the shared backend environment file.
 import { fileURLToPath } from "node:url";
 
-// Load the shared environment file without overwriting
-// environment variables that have already been supplied.
+// Validate and prepare the Google RSA private key.
+import { createPrivateKey } from "node:crypto";
+
+
+// ============================================================
+// 2. LOAD SHARED ENVIRONMENT VARIABLES
+// ============================================================
+
+/**
+ * Resolve the shared backend .env file.
+ *
+ * WHY:
+ * The service needs access to the existing Google service
+ * account credentials and spreadsheet configuration.
+ */
+const ENV_PATH = fileURLToPath(
+  new URL("../../.env", import.meta.url)
+);
+
+// Load the shared environment variables.
 dotenv.config({
-  path: fileURLToPath(new URL("../../.env", import.meta.url)),
+  path: ENV_PATH,
+  override: false,
 });
 
 
+// ============================================================
+// 3. CLEAN ENVIRONMENT VALUES
+// ============================================================
+
 /**
- * ============================================================
- * 2. NORMALISE THE GOOGLE PRIVATE KEY
- * ============================================================
+ * Remove whitespace and surrounding quotation marks.
  *
- * Prepares the private key for Google authentication.
- *
- * Supports keys stored with escaped newline characters
- * and keys supplied as raw base64 content without PEM headers.
+ * WHY:
+ * Environment variables may contain quotation marks
+ * that should not be included in API requests.
+ */
+function cleanEnvValue(value) {
+
+  return String(value ?? "")
+    .trim()
+    .replace(/^[\s"'“”‘’]+|[\s"'“”‘’]+$/g, "");
+}
+
+
+// ============================================================
+// 4. NORMALISE GOOGLE PRIVATE KEY
+// ============================================================
+
+/**
+ * Prepare and validate the Google service account private key.
  *
  * WHY:
  * Google authentication requires a correctly formatted
- * private key. This function prepares the configured value
- * without changing the shared .env file.
+ * RSA private key.
+ *
+ * This function:
+ * - Removes surrounding quotation marks.
+ * - Restores escaped newline characters.
+ * - Restores missing PEM boundaries when necessary.
+ * - Checks that Node.js can decode the private key.
+ * - Returns a consistent PKCS#8 PEM key.
+ *
+ * The private key is never returned to the frontend.
  */
 function normalisePrivateKey(value) {
-  let key = String(value ?? "")
-    .trim()
+
+  let key = cleanEnvValue(value)
     .replace(/\\n/g, "\n")
-    .replace(/\r\n/g, "\n");
+    .replace(/\r\n/g, "\n")
+    .trim();
 
   if (!key) {
     throw new Error("Google private key is missing.");
   }
 
-  // Keep an existing PEM-formatted private key unchanged.
-  if (key.includes("-----BEGIN PRIVATE KEY-----")) {
-    return key;
+  // Restore the PEM boundaries when only the Base64
+  // private key content is supplied.
+  if (!key.includes("-----BEGIN PRIVATE KEY-----")) {
+
+    const base64Content = key.replace(/\s+/g, "");
+
+    if (!/^[A-Za-z0-9+/]+=*$/.test(base64Content)) {
+      throw new Error(
+        "Google private key contains invalid characters."
+      );
+    }
+
+    const keyLines = base64Content.match(/.{1,64}/g);
+
+    key = [
+      "-----BEGIN PRIVATE KEY-----",
+      ...keyLines,
+      "-----END PRIVATE KEY-----",
+    ].join("\n");
   }
 
-  // Remove whitespace so the raw key can be wrapped correctly.
-  const base64Content = key.replace(/\s+/g, "");
+  try {
 
-  // Reject values that do not contain valid base64 characters.
-  if (!/^[A-Za-z0-9+/]+=*$/.test(base64Content)) {
-    throw new Error("Google private key has an invalid format.");
+    // Parse the private key using Node.js cryptography.
+    const parsedKey = createPrivateKey({
+      key,
+      format: "pem",
+    });
+
+    // Google service account keys should use RSA.
+    if (parsedKey.asymmetricKeyType !== "rsa") {
+      throw new Error("The private key must use RSA.");
+    }
+
+    // Export a consistent PKCS#8 PEM representation.
+    return parsedKey.export({
+      type: "pkcs8",
+      format: "pem",
+    }).toString();
+
+  } catch (error) {
+
+    throw new Error(
+      `Google private key validation failed: ${error.message}`
+    );
   }
-
-  // Restore the PEM header and footer around the raw key.
-  const formattedContent = base64Content.match(/.{1,64}/g);
-
-  return [
-    "-----BEGIN PRIVATE KEY-----",
-    ...formattedContent,
-    "-----END PRIVATE KEY-----",
-  ].join("\n");
 }
 
 
+// ============================================================
+// 5. GOOGLE SHEETS AUTHENTICATION
+// ============================================================
+
 /**
- * ============================================================
- * 3. GOOGLE SHEETS AUTHENTICATION
- * ============================================================
+ * Create an authenticated Google Sheets API client.
  *
- * Creates an authenticated Google Sheets API client.
- *
- * Uses the existing shared environment variable names:
+ * Uses the existing shared environment variables:
  *
  * GOOGLE_CLIENT_EMAIL
  * GOOGLE_PRIVATE_KEY
@@ -104,40 +179,44 @@ function normalisePrivateKey(value) {
  * The backend needs authorised access to retrieve
  * the spreadsheet records.
  *
- * Read-only permission prevents this service from modifying
- * spreadsheet contents.
+ * JWT authentication avoids the deprecated GoogleAuth
+ * credentials configuration.
+ *
+ * Read-only access prevents this service from modifying
+ * the spreadsheet.
  */
 async function getGoogleSheetsClient() {
 
-  // Retrieve the service account email.
-  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+  // Retrieve the Google service account email.
+  const clientEmail = cleanEnvValue(
+    process.env.GOOGLE_CLIENT_EMAIL
+  );
 
-  // Retrieve and prepare the private key.
+  // Retrieve and validate the private key.
   const privateKey = normalisePrivateKey(
     process.env.GOOGLE_PRIVATE_KEY
   );
 
-  // Stop authentication if the service account email is missing.
+  // Stop authentication if the email is missing.
   if (!clientEmail) {
     throw new Error(
       "GOOGLE_CLIENT_EMAIL is missing from the environment."
     );
   }
 
-  // Configure Google service account authentication.
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: clientEmail,
-      private_key: privateKey,
-    },
-
-    // Grant permission to read spreadsheet information.
+  // Create the Google service account JWT client.
+  const auth = new google.auth.JWT({
+    email: clientEmail,
+    key: privateKey,
     scopes: [
       "https://www.googleapis.com/auth/spreadsheets.readonly",
     ],
   });
 
-  // Return the authenticated Google Sheets client.
+  // Complete authentication before accessing the spreadsheet.
+  await auth.authorize();
+
+  // Return the authenticated Google Sheets API client.
   return google.sheets({
     version: "v4",
     auth,
@@ -145,57 +224,97 @@ async function getGoogleSheetsClient() {
 }
 
 
+// ============================================================
+// 6. RETRIEVE ALL SPREADSHEET TABS
+// ============================================================
+
 /**
- * ============================================================
- * 4. RETRIEVE THE GOOGLE SHEETS DATA
- * ============================================================
+ * Retrieve the available tabs and their spreadsheet records.
  *
- * Connects to Google Sheets and retrieves the configured
- * spreadsheet range.
- *
- * Uses the existing environment variables:
+ * Uses the existing environment variable:
  *
  * SPREADSHEET_ID
- * SHEET_RANGE
  *
  * WHY:
- * The attendance service needs to retrieve the actual
- * employee and clock-event records before processing
- * their timestamps.
+ * The attendance system stores employee information
+ * and clock events in separate spreadsheet tabs.
  *
- * @returns {Promise<Array>} Raw spreadsheet rows.
+ * Rather than assuming tab names, this function retrieves
+ * the spreadsheet metadata and identifies every available tab.
+ *
+ * Each tab is retrieved independently so that the service
+ * can identify the correct employee and event structures.
+ *
+ * @returns {Promise<Array<Object>>} Spreadsheet tab records.
  */
-export async function getAttendanceSheetValues() {
+export async function getAttendanceSheetTables() {
 
-  // Retrieve the spreadsheet ID from the shared environment.
-  const spreadsheetId = process.env.SPREADSHEET_ID;
+  // Retrieve the configured spreadsheet ID.
+  const spreadsheetId = cleanEnvValue(
+    process.env.SPREADSHEET_ID
+  );
 
-  // Retrieve the configured spreadsheet range.
-  const range = process.env.SHEET_RANGE;
-
-  // Check that the spreadsheet ID exists.
   if (!spreadsheetId) {
     throw new Error(
       "SPREADSHEET_ID is missing from the environment."
     );
   }
 
-  // Check that the spreadsheet range exists.
-  if (!range) {
-    throw new Error(
-      "SHEET_RANGE is missing from the environment."
-    );
-  }
-
-  // Authenticate before requesting spreadsheet information.
+  // Authenticate with Google Sheets.
   const sheets = await getGoogleSheetsClient();
 
-  // Request the configured spreadsheet range.
-  const response = await sheets.spreadsheets.values.get({
+  // Retrieve the spreadsheet's tab information.
+  const spreadsheetInfo = await sheets.spreadsheets.get({
 
     spreadsheetId,
 
-    range,
+    fields: "sheets.properties(sheetId,title)",
+
+  });
+
+  // Retrieve the available spreadsheet tabs.
+  const sheetProperties = (
+    spreadsheetInfo.data.sheets ?? []
+  )
+    .map((sheet) => sheet.properties)
+    .filter((properties) => properties?.title);
+
+
+  // Stop if the spreadsheet has no available tabs.
+  if (sheetProperties.length === 0) {
+    throw new Error(
+      "No spreadsheet tabs were found."
+    );
+  }
+
+  /**
+   * Convert each tab name into a valid Google Sheets range.
+   *
+   * Tab names are quoted so that spaces and special
+   * characters do not interfere with range interpretation.
+   */
+  const ranges = sheetProperties.map(({ title }) => {
+
+    // Escape apostrophes within the tab name.
+    const escapedTitle = title.replace(/'/g, "''");
+
+    // Retrieve all rows across columns A through Z.
+    return `'${escapedTitle}'!A:Z`;
+  });
+
+
+  /**
+   * Retrieve every tab in one batch request.
+   *
+   * WHY:
+   * Batch retrieval reduces unnecessary API requests and
+   * allows the service to compare the different tab structures.
+   */
+  const response = await sheets.spreadsheets.values.batchGet({
+
+    spreadsheetId,
+
+    ranges,
 
     majorDimension: "ROWS",
 
@@ -204,23 +323,33 @@ export async function getAttendanceSheetValues() {
 
   });
 
-  // Return the spreadsheet rows.
-  // An empty spreadsheet response becomes an empty array.
-  return response.data.values ?? [];
+
+  // Associate each retrieved range with its tab name.
+  return sheetProperties.map((properties, index) => ({
+
+    sheetId: properties.sheetId,
+
+    title: properties.title,
+
+    // Empty spreadsheet tabs return an empty array.
+    values:
+      response.data.valueRanges?.[index]?.values ?? [],
+
+  }));
 }
 
 
 /**
  * ============================================================
- * 5. NORMALISE GOOGLE SHEETS HEADERS
+ * 7. NORMALISE GOOGLE SHEETS HEADERS
  * ============================================================
  *
- * Converts spreadsheet column headings into consistent
+ * Converts spreadsheet headings into consistent
  * JavaScript property names.
  *
  * WHY:
- * Consistent property names make spreadsheet records
- * easier to process throughout the service.
+ * The service needs consistent property names to identify
+ * the Users and Events spreadsheet structures.
  */
 function normaliseHeader(header) {
 
@@ -240,40 +369,38 @@ function normaliseHeader(header) {
 
 /**
  * ============================================================
- * 6. CONVERT GOOGLE SHEETS ROWS INTO OBJECTS
+ * 8. CONVERT SPREADSHEET ROWS INTO OBJECTS
  * ============================================================
  *
- * Uses the first spreadsheet row as column headings
- * and converts the remaining rows into JavaScript objects.
+ * Converts spreadsheet rows into JavaScript objects.
  *
- * Empty spreadsheet rows are ignored.
+ * The first row is used as the column heading row.
  *
  * WHY:
- * Objects allow the service to access employee and clock-event
- * data through property names instead of column positions.
+ * Objects allow the service to retrieve employee and clock
+ * event information using consistent property names.
  *
- * @param {Array} values - Raw Google Sheets rows.
- * @returns {Array<Object>} Converted spreadsheet records.
+ * @param {Array} values - Raw spreadsheet rows.
+ * @returns {Array<Object>} Converted records.
  */
 export function mapSheetRowsToObjects(values = []) {
 
-  // Check that the spreadsheet response contains usable rows.
+  // Ensure the spreadsheet contains headings and records.
   if (!Array.isArray(values) || values.length < 2) {
     return [];
   }
 
-  // Separate the column headings from the data rows.
+  // Separate column headings from the remaining rows.
   const [headers, ...rows] = values;
 
-  // Prevent processing when the header row is invalid.
   if (!Array.isArray(headers)) {
     return [];
   }
 
-  // Convert spreadsheet headings into JavaScript property names.
+  // Standardise each spreadsheet heading.
   const normalisedHeaders = headers.map(normaliseHeader);
 
-  // Convert each remaining spreadsheet row into an object.
+  // Convert spreadsheet rows into JavaScript objects.
   return rows
     .filter(
       (row) =>
@@ -290,14 +417,12 @@ export function mapSheetRowsToObjects(values = []) {
       // Create an object for the current spreadsheet record.
       const record = {};
 
-      // Associate each cell with its corresponding heading.
+      // Match each spreadsheet value to its column heading.
       normalisedHeaders.forEach((header, index) => {
 
         // Ignore columns without a valid heading.
         if (!header) return;
 
-        // Store the spreadsheet value under its property name.
-        // Missing cells become empty strings.
         record[header] = row[index] ?? "";
       });
 
@@ -306,59 +431,143 @@ export function mapSheetRowsToObjects(values = []) {
 }
 
 
+// ============================================================
+// 9. IDENTIFY THE USERS AND EVENTS TABS
+// ============================================================
+
 /**
- * ============================================================
- * 7. PREPARE EMPLOYEE RECORDS
- * ============================================================
- *
- * Extracts employee IDs and names from the retrieved sheet.
- *
- * Because the shared configuration uses one spreadsheet tab,
- * employee information is collected from the same records
- * that contain the clock events.
+ * Identify a spreadsheet tab using its required headings.
  *
  * WHY:
- * Employee IDs are needed to connect clock events to the
- * correct employee. Names identify employees on the dashboard.
+ * The service should not depend on a particular tab name.
+ * It identifies the correct tab by checking its structure.
  *
- * Duplicate employee records are combined into one record.
+ * @param {Array} sheetTables - Retrieved spreadsheet tabs.
+ * @param {Array} requiredHeaders - Required column names.
+ * @param {string} description - Description for error reporting.
+ * @returns {Object} Matching spreadsheet tab.
+ */
+function findSheetByHeaders(
+  sheetTables,
+  requiredHeaders,
+  description
+) {
+
+  const matchingSheet = sheetTables.find((sheet) => {
+
+    if (!Array.isArray(sheet.values) || sheet.values.length === 0) {
+      return false;
+    }
+
+    // Normalise the first row of the spreadsheet tab.
+    const headers = sheet.values[0].map(normaliseHeader);
+
+    // Check whether every required column exists.
+    return requiredHeaders.every((requiredHeader) =>
+      headers.includes(requiredHeader)
+    );
+  });
+
+  // Report a useful error when no matching tab exists.
+  if (!matchingSheet) {
+    throw new Error(
+      `Unable to find the ${description} spreadsheet tab. ` +
+      `Check that its required column headings are present.`
+    );
+  }
+
+  return matchingSheet;
+}
+
+
+/**
+ * ============================================================
+ * 10. NORMALISE EMPLOYEE IDENTIFIERS
+ * ============================================================
  *
- * @param {Array} values - Raw spreadsheet rows.
- * @returns {Array<Object>} Unique employee records.
+ * Standardises Firebase user IDs and employee identifiers.
+ *
+ * WHY:
+ * The Users tab identifies people using Firebase UIDs.
+ * The Events tab also stores Firebase UIDs.
+ *
+ * Using the Firebase UID ensures the correct user is
+ * associated with each clock event.
+ */
+function normaliseIdentifier(value) {
+
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  return String(value).trim();
+}
+
+
+// ============================================================
+// 11. PREPARE USERS SHEET DATA
+// ============================================================
+
+/**
+ * Convert Users tab records into employee objects.
+ *
+ * EXPECTED STRUCTURE:
+ *
+ * User ID (Firebase UID)
+ * Employee ID
+ * Full Name
+ * Email
+ * Department
+ * Role (Staff/Admin)
+ * Status (Active/Inactive)
+ *
+ * WHY:
+ * This information identifies each employee and provides
+ * the Firebase UID required to match clock event records.
+ *
+ * @param {Array} values - Users spreadsheet rows.
+ * @returns {Array<Object>} Prepared employee records.
  */
 export function mapStaffSheetValues(values = []) {
 
   const rows = mapSheetRowsToObjects(values);
 
-  // Use a Map to prevent duplicate employee records.
   const employees = new Map();
 
   for (const row of rows) {
 
-    // Retrieve and standardise the employee ID.
-    const employeeId = normaliseEmployeeId(
-      row.employeeId ?? row.staffId ?? row.id
+    // Retrieve the Firebase UID from the Users tab.
+    const userId = normaliseIdentifier(
+      row.userIdFirebaseUid ??
+      row.firebaseUid ??
+      row.userId ??
+      row.uid
     );
 
-    // Employee IDs are required for matching clock events.
-    if (!employeeId) {
+    // A Firebase UID is required to match clock events.
+    if (!userId) {
       continue;
     }
 
-    // Preserve an existing employee record if one exists.
-    const existing = employees.get(employeeId);
+    // Preserve an existing employee name if necessary.
+    const existing = employees.get(userId);
 
-    // Store employee information.
-    employees.set(employeeId, {
-      employeeId,
+    // Store the employee information.
+    employees.set(userId, {
 
-      // Preserve an existing name if a later row has no name.
+      userId,
+
+      // Retain the organisation's employee identifier.
+      employeeId: normaliseIdentifier(row.employeeId),
+
+      // Retrieve the employee's full name.
       name: String(
-        row.name ??
         row.fullName ??
+        row.name ??
         existing?.name ??
         ""
       ).trim(),
+
     });
   }
 
@@ -366,23 +575,30 @@ export function mapStaffSheetValues(values = []) {
 }
 
 
+// ============================================================
+// 12. PREPARE EVENTS SHEET DATA
+// ============================================================
+
 /**
- * ============================================================
- * 8. PREPARE CLOCK EVENT RECORDS
- * ============================================================
+ * Convert Events tab records into clock event objects.
  *
- * Extracts clock event information from the spreadsheet.
+ * EXPECTED STRUCTURE:
  *
- * Each record is checked later for:
- * - Employee ID.
- * - Clock event type.
- * - Timestamp.
+ * Event ID
+ * Timestamp
+ * User ID
+ * Event Type (Clock In/Clock Out)
+ * Location
+ * Comment
  *
  * WHY:
- * Preparing the records in a consistent format allows
- * the timestamp processing function to validate them.
+ * This function extracts the Firebase UID, event type
+ * and timestamp needed to process employee clock actions.
  *
- * @param {Array} values - Raw spreadsheet rows.
+ * Location and Comment are not needed for this timestamp
+ * requirement and are therefore not processed.
+ *
+ * @param {Array} values - Events spreadsheet rows.
  * @returns {Array<Object>} Prepared clock event records.
  */
 export function mapClockEventSheetValues(values = []) {
@@ -391,18 +607,20 @@ export function mapClockEventSheetValues(values = []) {
 
   return rows.map((row) => ({
 
-    // Identify the employee associated with the event.
-    employeeId: row.employeeId ?? row.staffId ?? "",
+    // Retrieve the unique clock event identifier.
+    eventId: row.eventId ?? "",
 
-    // Retrieve the clock action type.
-    event:
-      row.event ??
+    // Retrieve the recorded Firebase UID.
+    userId: row.userId ?? row.userIdFirebaseUid ?? "",
+
+    // Retrieve the recorded clock action.
+    eventType:
+      row.eventTypeClockInClockOut ??
       row.eventType ??
-      row.clockEvent ??
-      row.action ??
+      row.event ??
       "",
 
-    // Retrieve the original recorded timestamp.
+    // Retrieve the original event timestamp.
     timestamp:
       row.timestamp ??
       row.eventTimestamp ??
@@ -413,41 +631,18 @@ export function mapClockEventSheetValues(values = []) {
 }
 
 
-/**
- * ============================================================
- * 9. NORMALISE EMPLOYEE IDS
- * ============================================================
- *
- * Converts employee identifiers into consistent strings.
- *
- * WHY:
- * Identifiers returned by different data sources may have
- * different data types. Standardising them ensures that
- * clock events are matched to the correct employee.
- */
-function normaliseEmployeeId(value) {
-
-  if (value === null || value === undefined) {
-    return "";
-  }
-
-  return String(value).trim();
-}
-
+// ============================================================
+// 13. NORMALISE CLOCK EVENT TYPES
+// ============================================================
 
 /**
- * ============================================================
- * 10. NORMALISE CLOCK EVENT TYPES
- * ============================================================
- *
- * Converts recognised clock event descriptions into
- * consistent IN or OUT values.
- *
- * Unrecognised event types are rejected.
+ * Convert clock event descriptions into consistent values.
  *
  * WHY:
  * The service must distinguish check-in events from
- * check-out events before processing their timestamps.
+ * check-out events before updating employee timestamps.
+ *
+ * Unrecognised event types are rejected.
  */
 function normaliseEventType(value) {
 
@@ -456,11 +651,13 @@ function normaliseEventType(value) {
     .toUpperCase()
     .replace(/[^A-Z]/g, "");
 
-  if (["IN", "CHECKIN", "CLOCKIN"].includes(event)) {
+  // Recognise clock-in events.
+  if (["CLOCKIN", "CHECKIN", "IN"].includes(event)) {
     return "IN";
   }
 
-  if (["OUT", "CHECKOUT", "CLOCKOUT"].includes(event)) {
+  // Recognise clock-out events.
+  if (["CLOCKOUT", "CHECKOUT", "OUT"].includes(event)) {
     return "OUT";
   }
 
@@ -468,28 +665,33 @@ function normaliseEventType(value) {
 }
 
 
+// ============================================================
+// 14. VALIDATE AND NORMALISE TIMESTAMPS
+// ============================================================
+
 /**
- * ============================================================
- * 11. VALIDATE AND NORMALISE TIMESTAMPS
- * ============================================================
+ * Validate incoming clock timestamps.
  *
- * Checks incoming timestamps and converts valid values
- * into a standard UTC format.
- *
- * Requires timestamps to include explicit timezone information.
+ * Requires an ISO 8601 timestamp containing explicit
+ * timezone information.
  *
  * WHY:
- * Consistent timezone handling prevents the backend and
- * dashboard from interpreting the same clock event differently.
+ * Standardising timestamps prevents differences between
+ * Google Sheets, the backend and dashboard.
  *
  * Invalid timestamps are rejected.
  *
+ * IMPORTANT:
+ * The Events Timestamp column should be stored as plain text
+ * containing ISO timestamps with timezone information.
+ * Google Sheets date serial values are not accepted here
+ * because their timezone cannot safely be inferred.
+ *
  * @param {string|Date} value - Incoming timestamp.
- * @returns {string|null} Valid UTC timestamp or null.
+ * @returns {string|null} Standardised UTC timestamp.
  */
 function normaliseTimestamp(value) {
 
-  // Reject missing timestamp values.
   if (!value) {
     return null;
   }
@@ -504,14 +706,14 @@ function normaliseTimestamp(value) {
     return value.toISOString();
   }
 
-  // Only process string timestamps from the spreadsheet.
+  // Only accept string timestamps.
   if (typeof value !== "string") {
     return null;
   }
 
   const timestamp = value.trim();
 
-  // Require ISO 8601 format with an explicit timezone.
+  // Require an explicit timezone in ISO 8601 format.
   const validISOFormat =
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/i;
 
@@ -519,46 +721,51 @@ function normaliseTimestamp(value) {
     return null;
   }
 
-  // Convert the timestamp into a Date object.
+  // Convert the timestamp to a JavaScript Date object.
   const date = new Date(timestamp);
 
-  // Reject invalid date values.
   if (!Number.isFinite(date.getTime())) {
     return null;
   }
 
-  // Return the standardised UTC timestamp.
+  // Store and return the timestamp in UTC.
   return date.toISOString();
 }
 
 
+// ============================================================
+// 15. IDENTIFY LATEST EMPLOYEE TIMESTAMPS
+// ============================================================
+
 /**
- * ============================================================
- * 12. PROCESS EMPLOYEE CLOCK TIMESTAMPS
- * ============================================================
- *
  * MAIN PROCESSING FUNCTION
  *
  * Receives employee records and clock event records.
  *
- * Identifies the latest valid check-in and check-out
- * timestamp for each employee.
+ * Identifies:
+ * - Latest valid clock-in timestamp.
+ * - Latest valid clock-out timestamp.
  *
  * WHY:
- * The dashboard needs the correct timestamps for employee
- * clock actions. This function prepares that information.
+ * The dashboard requires accurate timestamps for each
+ * employee's clock actions.
  *
- * It does not calculate employee attendance status or totals.
+ * The Firebase UID is used to match Users records to Events.
+ *
+ * This function does not calculate attendance status
+ * or workforce totals.
  *
  * @param {Object} data
  * @param {Array} data.staff - Employee records.
  * @param {Array} data.clockEvents - Clock event records.
- *
- * @returns {Array<Object>} Employee timestamp information.
+ * @returns {Array<Object>} Employee timestamp records.
  */
 export function getAttendanceTimestamps({
+
   staff = [],
+
   clockEvents = [],
+
 } = {}) {
 
   // Protect the function against unexpected input types.
@@ -568,44 +775,44 @@ export function getAttendanceTimestamps({
     ? clockEvents
     : [];
 
-  // Store timestamp information using employee IDs.
+  // Store employee timestamps using Firebase UIDs.
   const employeeTimestamps = new Map();
 
 
   /**
    * STEP 1: INITIALISE EMPLOYEE RECORDS
    *
-   * Create a timestamp record for each employee.
+   * Create one timestamp record for each user.
    *
    * WHY:
-   * Employees must be identifiable even when they have
-   * no recorded clock events.
+   * This ensures employees remain identifiable even when
+   * they have no recorded clock events.
    */
   for (const employee of safeStaff) {
 
-    // Standardise the employee identifier.
-    const employeeId = normaliseEmployeeId(
-      employee.employeeId ?? employee.staffId ?? employee.id
+    const userId = normaliseIdentifier(
+      employee.userId ??
+      employee.firebaseUid
     );
 
-    // Ignore employee records without identifiers.
-    if (!employeeId) {
+    // Ignore employee records without Firebase UIDs.
+    if (!userId) {
       continue;
     }
 
-    employeeTimestamps.set(employeeId, {
+    // Create the employee's timestamp record.
+    employeeTimestamps.set(userId, {
 
-      employeeId,
+      userId,
 
-      // Store the employee name for dashboard identification.
-      name: String(
-        employee.name ?? employee.fullName ?? ""
-      ).trim(),
+      employeeId: employee.employeeId ?? "",
 
-      // Initialise the latest check-in timestamp.
+      name: employee.name ?? "",
+
+      // Latest clock-in timestamp.
       lastCheckInAt: null,
 
-      // Initialise the latest check-out timestamp.
+      // Latest clock-out timestamp.
       lastCheckOutAt: null,
 
     });
@@ -615,24 +822,23 @@ export function getAttendanceTimestamps({
   /**
    * STEP 2: VALIDATE CLOCK EVENTS
    *
-   * Validate the employee ID, event type and timestamp
-   * before processing a clock event.
+   * Validate user IDs, event types and timestamps.
    *
    * WHY:
-   * Invalid records must not update dashboard timestamps.
+   * Incomplete or invalid records must not update
+   * dashboard timestamp information.
    */
   const validEvents = safeClockEvents
 
     .map((event) => ({
 
-      employeeId: normaliseEmployeeId(
-        event.employeeId ?? event.staffId
+      userId: normaliseIdentifier(
+        event.userId ?? event.firebaseUid
       ),
 
-      event: normaliseEventType(
-        event.event ??
+      eventType: normaliseEventType(
         event.eventType ??
-        event.clockEvent ??
+        event.event ??
         event.action
       ),
 
@@ -642,32 +848,32 @@ export function getAttendanceTimestamps({
 
     }))
 
-    // Reject incomplete or invalid clock event records.
+    // Keep only records with valid event information.
     .filter(
       (event) =>
-        event.employeeId &&
-        event.event &&
+        event.userId &&
+        event.eventType &&
         event.timestamp
     );
 
 
   /**
-   * STEP 3: IDENTIFY THE LATEST TIMESTAMPS
+   * STEP 3: MATCH EVENTS TO EMPLOYEES AND FIND LATEST TIMES
    *
-   * Compare incoming timestamps with the previously stored
-   * timestamp for the same employee and event type.
+   * Compare each valid event with the previously recorded
+   * timestamp for the same employee.
    *
    * WHY:
    * Spreadsheet rows may not be arranged chronologically.
-   * Comparing timestamps ensures that older events do not
-   * replace more recent clock actions.
+   * Comparing timestamp values ensures that older events
+   * cannot replace more recent clock actions.
    */
   for (const event of validEvents) {
 
-    // Locate the employee connected to the clock event.
-    const employee = employeeTimestamps.get(event.employeeId);
+    // Find the employee using the Firebase UID.
+    const employee = employeeTimestamps.get(event.userId);
 
-    // Ignore events that cannot be matched to an employee.
+    // Ignore events that do not match a user record.
     if (!employee) {
       continue;
     }
@@ -676,30 +882,28 @@ export function getAttendanceTimestamps({
     const eventTime = Date.parse(event.timestamp);
 
 
-    // Process the latest check-in timestamp.
-    if (event.event === "IN") {
+    // PROCESS CHECK-IN TIMESTAMPS.
+    if (event.eventType === "IN") {
 
       const previousCheckIn = employee.lastCheckInAt
         ? Date.parse(employee.lastCheckInAt)
         : -Infinity;
 
-      // Only update the timestamp when the incoming event
-      // is more recent than the previously stored event.
+      // Keep the latest recorded check-in timestamp.
       if (eventTime > previousCheckIn) {
         employee.lastCheckInAt = event.timestamp;
       }
     }
 
 
-    // Process the latest check-out timestamp.
-    else if (event.event === "OUT") {
+    // PROCESS CHECK-OUT TIMESTAMPS.
+    else if (event.eventType === "OUT") {
 
       const previousCheckOut = employee.lastCheckOutAt
         ? Date.parse(employee.lastCheckOutAt)
         : -Infinity;
 
-      // Only update the timestamp when the incoming event
-      // is more recent than the previously stored event.
+      // Keep the latest recorded check-out timestamp.
       if (eventTime > previousCheckOut) {
         employee.lastCheckOutAt = event.timestamp;
       }
@@ -708,37 +912,39 @@ export function getAttendanceTimestamps({
 
 
   /**
-   * STEP 4: RETURN THE PROCESSED DATA
+   * STEP 4: RETURN DASHBOARD TIMESTAMP INFORMATION
    *
-   * Convert the employee Map into an array.
+   * Convert the Map into an array of employee records.
    *
    * WHY:
-   * The frontend can iterate through an array of employee
-   * timestamp records and display the required information.
+   * The frontend can iterate through the returned employee
+   * records and display their latest timestamps.
    */
   return Array.from(employeeTimestamps.values());
 }
 
 
+// ============================================================
+// 16. MAIN GOOGLE SHEETS ATTENDANCE FUNCTION
+// ============================================================
+
 /**
- * ============================================================
- * 13. MAIN GOOGLE SHEETS ATTENDANCE FUNCTION
- * ============================================================
- *
  * This is the main function called by the backend controller.
  *
  * It performs the complete process:
  *
  * - Authenticates with Google Sheets.
- * - Retrieves the configured spreadsheet range.
- * - Converts spreadsheet rows into JavaScript objects.
- * - Prepares employee and clock event records.
- * - Validates and processes timestamps.
+ * - Retrieves all available spreadsheet tabs.
+ * - Identifies the Users tab from its column headings.
+ * - Identifies the Events tab from its column headings.
+ * - Converts both tables into JavaScript objects.
+ * - Matches Firebase UIDs between the two tables.
+ * - Processes and validates clock timestamps.
  * - Returns the latest timestamps for dashboard display.
  *
  * WHY:
- * This keeps spreadsheet retrieval and timestamp processing
- * together inside the attendance service.
+ * This keeps the entire Google Sheets retrieval and
+ * timestamp processing operation inside this service.
  *
  * @returns {Promise<Array<Object>>} Dashboard timestamp records.
  */
@@ -746,19 +952,72 @@ export async function getAttendanceTimestampsFromSheets() {
 
   try {
 
-    // Retrieve the actual spreadsheet records from Google.
-    const sheetValues = await getAttendanceSheetValues();
+    // STEP 1: Retrieve every spreadsheet tab.
+    const sheetTables = await getAttendanceSheetTables();
 
-    // Convert the employee information into unique records.
-    const staff = mapStaffSheetValues(sheetValues);
 
-    // Convert the clock event information into records.
-    const clockEvents = mapClockEventSheetValues(sheetValues);
+    /**
+     * STEP 2: Identify the Users tab.
+     *
+     * The service checks the actual column headings rather
+     * than relying on a particular tab name.
+     */
+    const usersSheet = findSheetByHeaders(
 
-    // Process and return the latest employee timestamps.
+      sheetTables,
+
+      [
+        "userIdFirebaseUid",
+        "employeeId",
+        "fullName",
+      ],
+
+      "Users"
+
+    );
+
+
+    /**
+     * STEP 3: Identify the Events tab.
+     *
+     * The service finds the event history using its
+     * required event ID, timestamp, user ID and event type.
+     */
+    const eventsSheet = findSheetByHeaders(
+
+      sheetTables,
+
+      [
+        "eventId",
+        "timestamp",
+        "userId",
+        "eventTypeClockInClockOut",
+      ],
+
+      "Events"
+
+    );
+
+
+    // STEP 4: Prepare employee records from the Users tab.
+    const staff = mapStaffSheetValues(
+      usersSheet.values
+    );
+
+
+    // STEP 5: Prepare clock events from the Events tab.
+    const clockEvents = mapClockEventSheetValues(
+      eventsSheet.values
+    );
+
+
+    // STEP 6: Process and return employee timestamps.
     return getAttendanceTimestamps({
+
       staff,
+
       clockEvents,
+
     });
 
   } catch (error) {
@@ -769,7 +1028,7 @@ export async function getAttendanceTimestampsFromSheets() {
       error.message
     );
 
-    // Pass the failure to the calling controller.
+    // Pass the failure to the backend controller.
     throw new Error(
       `Unable to retrieve attendance timestamps: ${error.message}`,
       { cause: error }
@@ -778,17 +1037,17 @@ export async function getAttendanceTimestampsFromSheets() {
 }
 
 
+// ============================================================
+// 17. FORMAT TIMESTAMPS FOR DASHBOARD DISPLAY
+// ============================================================
+
 /**
- * ============================================================
- * 14. FORMAT TIMESTAMPS FOR DASHBOARD DISPLAY
- * ============================================================
- *
- * Converts UTC timestamps into South African local time
- * for dashboard presentation.
+ * Format validated UTC timestamps for South African display.
  *
  * WHY:
- * Users should see clock actions in the appropriate local
- * timezone while the original stored timestamps remain UTC.
+ * The dashboard should display the clock action in
+ * South African local time while the original stored
+ * timestamp remains in UTC.
  *
  * @param {string} timestamp - Validated ISO timestamp.
  * @returns {string} Formatted dashboard timestamp.
@@ -800,18 +1059,21 @@ export function formatAttendanceTimestamp(timestamp) {
     return "Not recorded";
   }
 
-  // Convert the timestamp into a Date object.
-  const date = new Date(timestamp);
+  // Validate and standardise the incoming timestamp.
+  const validTimestamp = normaliseTimestamp(timestamp);
 
-  // Reject invalid timestamp values.
-  if (!Number.isFinite(date.getTime())) {
+  if (!validTimestamp) {
     return "Invalid timestamp";
   }
 
-  // Format the timestamp using South African local time.
+  // Format using the South African timezone.
   return new Intl.DateTimeFormat("en-ZA", {
+
     dateStyle: "medium",
+
     timeStyle: "medium",
+
     timeZone: "Africa/Johannesburg",
-  }).format(date);
+
+  }).format(new Date(validTimestamp));
 }

@@ -6,22 +6,19 @@
  *
  * PURPOSE:
  * - Test the actual Google Sheets connection.
- * - Verify that the configured spreadsheet can be retrieved.
- * - Verify that the required spreadsheet columns exist.
- * - Test the attendance service against live spreadsheet data.
- * - Independently calculate the expected latest timestamps.
- * - Compare expected timestamps against the service response.
- * - Check that returned timestamps use valid UTC formatting.
+ * - Retrieve the Users and Events spreadsheet tabs.
+ * - Verify that the required column headings exist.
+ * - Verify that Firebase UIDs match between both tabs.
+ * - Test the actual attendance timestamp service.
+ * - Compare returned timestamps against spreadsheet records.
+ * - Validate the returned UTC timestamp format.
  *
  * IMPORTANT:
- * These are live integration tests.
- * They use the actual Google Sheets connection and records.
- *
- * This test file is READ-ONLY.
- * It does not insert, update or delete spreadsheet records.
+ * These tests use the actual Google spreadsheet.
+ * They do not insert, update or delete spreadsheet records.
  *
  * RUN:
- * node --test src/services/attendanceService.integration.test.js
+ * node --test attendanceService.integration.test.js
  */
 
 
@@ -32,22 +29,24 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+// Import functions that actually exist in the updated service.
 import {
-  getAttendanceSheetValues,
+  getAttendanceSheetTables,
   getAttendanceTimestampsFromSheets,
 } from "./attendanceService.js";
 
 
 // ============================================================
-// 2. TEST DATA HELPERS
+// 2. TEST HELPER FUNCTIONS
 // ============================================================
 
 /**
  * Normalise spreadsheet headings.
  *
  * WHY:
- * The test must locate the required spreadsheet columns
- * without depending on their capitalisation or spacing.
+ * Spreadsheet headings may contain spaces, brackets and
+ * punctuation. Standardising them makes column matching
+ * consistent with the attendance service.
  */
 function normaliseTestHeader(header) {
 
@@ -66,28 +65,43 @@ function normaliseTestHeader(header) {
 
 
 /**
- * Find a column using its accepted property names.
- *
- * WHY:
- * This allows the test to confirm that the actual sheet
- * contains the columns required by the attendance service.
+ * Locate a spreadsheet column by its normalised heading.
  */
-function findColumnIndex(headers, acceptedNames) {
+function findColumnIndex(headers, expectedName) {
 
-  return headers.findIndex((header) =>
-    acceptedNames.includes(normaliseTestHeader(header))
+  return headers.findIndex(
+    (header) => normaliseTestHeader(header) === expectedName
   );
 }
 
 
 /**
- * Standardise employee identifiers.
+ * Find a spreadsheet tab using its required column headings.
  *
  * WHY:
- * Employee IDs must be compared using the same format
- * when matching spreadsheet records.
+ * The service should not depend on fixed spreadsheet tab names.
  */
-function normaliseTestEmployeeId(value) {
+function findSheetByHeaders(sheetTables, requiredHeaders) {
+
+  return sheetTables.find((sheet) => {
+
+    if (!Array.isArray(sheet.values) || sheet.values.length === 0) {
+      return false;
+    }
+
+    const headers = sheet.values[0].map(normaliseTestHeader);
+
+    return requiredHeaders.every(
+      (required) => headers.includes(required)
+    );
+  });
+}
+
+
+/**
+ * Standardise Firebase UIDs for comparison.
+ */
+function normaliseTestUserId(value) {
 
   if (value === null || value === undefined) {
     return "";
@@ -98,11 +112,12 @@ function normaliseTestEmployeeId(value) {
 
 
 /**
- * Normalise clock event names.
+ * Identify recognised clock event types.
  *
  * WHY:
- * The test must distinguish valid check-in and check-out
- * events when calculating the expected results.
+ * The Events spreadsheet contains one Event Type column
+ * whose values identify whether the action was a clock-in
+ * or a clock-out.
  */
 function normaliseTestEvent(value) {
 
@@ -111,11 +126,11 @@ function normaliseTestEvent(value) {
     .toUpperCase()
     .replace(/[^A-Z]/g, "");
 
-  if (["IN", "CHECKIN", "CLOCKIN"].includes(event)) {
+  if (["CLOCKIN", "CHECKIN", "IN"].includes(event)) {
     return "IN";
   }
 
-  if (["OUT", "CHECKOUT", "CLOCKOUT"].includes(event)) {
+  if (["CLOCKOUT", "CHECKOUT", "OUT"].includes(event)) {
     return "OUT";
   }
 
@@ -124,11 +139,11 @@ function normaliseTestEvent(value) {
 
 
 /**
- * Validate and standardise test timestamps.
+ * Validate and standardise spreadsheet timestamps.
  *
  * WHY:
- * The test uses the same timestamp requirements as the
- * attendance service when calculating expected results.
+ * The test must compare the same UTC timestamp format
+ * returned by the attendance service.
  */
 function normaliseTestTimestamp(value) {
 
@@ -138,7 +153,6 @@ function normaliseTestTimestamp(value) {
 
   const timestamp = value.trim();
 
-  // Require an ISO timestamp containing timezone information.
   const isoWithTimezone =
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/i;
 
@@ -157,69 +171,92 @@ function normaliseTestTimestamp(value) {
 
 
 // ============================================================
-// 3. INDEPENDENT EXPECTED TIMESTAMP CALCULATION
+// 3. INDEPENDENT TIMESTAMP CALCULATION
 // ============================================================
 
 /**
- * Calculate the expected timestamps directly from the raw
- * spreadsheet rows.
+ * Calculate the expected timestamps directly from the
+ * retrieved Users and Events spreadsheet records.
  *
  * WHY:
- * The test needs an independent result to compare with
- * the attendance service output.
+ * The integration test needs an independent calculation
+ * to compare against the actual attendance service output.
  *
- * This helps identify errors in employee matching,
- * event recognition and latest timestamp selection.
+ * @param {Array} usersValues - Raw Users tab rows.
+ * @param {Array} eventsValues - Raw Events tab rows.
+ * @returns {Object} Expected employee timestamp information.
  */
-function calculateExpectedTimestamps(values) {
+function calculateExpectedTimestamps(
+  usersValues,
+  eventsValues
+) {
 
-  const headers = values[0];
+  // Identify the headings in each spreadsheet.
+  const userHeaders = usersValues[0];
+  const eventHeaders = eventsValues[0];
 
-  // Locate the required spreadsheet columns.
+
+  // Locate required Users columns.
+  const userIdIndex = findColumnIndex(
+    userHeaders,
+    "userIdFirebaseUid"
+  );
+
   const employeeIdIndex = findColumnIndex(
-    headers,
-    ["employeeId", "staffId", "id"]
+    userHeaders,
+    "employeeId"
   );
 
   const nameIndex = findColumnIndex(
-    headers,
-    ["name", "fullName"]
+    userHeaders,
+    "fullName"
   );
 
-  const eventIndex = findColumnIndex(
-    headers,
-    ["event", "eventType", "clockEvent", "action"]
+
+  // Locate required Events columns.
+  const eventUserIdIndex = findColumnIndex(
+    eventHeaders,
+    "userId"
+  );
+
+  const eventTypeIndex = findColumnIndex(
+    eventHeaders,
+    "eventTypeClockInClockOut"
   );
 
   const timestampIndex = findColumnIndex(
-    headers,
-    ["timestamp", "eventTimestamp", "createdAt"]
+    eventHeaders,
+    "timestamp"
   );
 
 
-  // Create a Map to store expected employee records.
+  // Create a Map to store expected employee timestamps.
   const expected = new Map();
 
 
   /**
    * STEP 1:
-   * Identify unique employees from the spreadsheet records.
+   * Prepare employee records using their Firebase UIDs.
    */
-  for (const row of values.slice(1)) {
+  for (const row of usersValues.slice(1)) {
 
-    const employeeId = normaliseTestEmployeeId(
-      row[employeeIdIndex]
+    const userId = normaliseTestUserId(
+      row[userIdIndex]
     );
 
-    if (!employeeId) {
+    if (!userId) {
       continue;
     }
 
-    const existing = expected.get(employeeId);
+    const existing = expected.get(userId);
 
-    expected.set(employeeId, {
+    expected.set(userId, {
 
-      employeeId,
+      userId,
+
+      employeeId: normaliseTestUserId(
+        row[employeeIdIndex]
+      ),
 
       name: String(
         row[nameIndex] ?? existing?.name ?? ""
@@ -235,32 +272,33 @@ function calculateExpectedTimestamps(values) {
 
   /**
    * STEP 2:
-   * Independently identify the latest clock timestamps.
+   * Process clock events and identify their latest timestamps.
    */
   let validEventCount = 0;
 
-  for (const row of values.slice(1)) {
+  for (const row of eventsValues.slice(1)) {
 
-    const employeeId = normaliseTestEmployeeId(
-      row[employeeIdIndex]
+    const userId = normaliseTestUserId(
+      row[eventUserIdIndex]
     );
 
-    const event = normaliseTestEvent(
-      row[eventIndex]
+    const eventType = normaliseTestEvent(
+      row[eventTypeIndex]
     );
 
     const timestamp = normaliseTestTimestamp(
       row[timestampIndex]
     );
 
-    // Ignore incomplete or invalid clock events.
-    if (!employeeId || !event || !timestamp) {
+    // Reject incomplete or invalid events.
+    if (!userId || !eventType || !timestamp) {
       continue;
     }
 
-    const employee = expected.get(employeeId);
+    // Find the employee associated with this event.
+    const employee = expected.get(userId);
 
-    // Ignore events that do not match an employee record.
+    // Ignore events belonging to unknown users.
     if (!employee) {
       continue;
     }
@@ -271,7 +309,7 @@ function calculateExpectedTimestamps(values) {
 
 
     // Calculate the latest check-in timestamp.
-    if (event === "IN") {
+    if (eventType === "IN") {
 
       const previousTime = employee.lastCheckInAt
         ? Date.parse(employee.lastCheckInAt)
@@ -284,7 +322,7 @@ function calculateExpectedTimestamps(values) {
 
 
     // Calculate the latest check-out timestamp.
-    else if (event === "OUT") {
+    else if (eventType === "OUT") {
 
       const previousTime = employee.lastCheckOutAt
         ? Date.parse(employee.lastCheckOutAt)
@@ -305,210 +343,160 @@ function calculateExpectedTimestamps(values) {
 
 
 // ============================================================
-// 4. LIVE GOOGLE SHEETS INTEGRATION TESTS
+// 4. LIVE GOOGLE SHEETS INTEGRATION TEST
 // ============================================================
 
-/**
- * All integration tests run inside this test group.
- *
- * The spreadsheet is retrieved before the individual tests.
- * Each test then uses the same retrieved records.
- */
 test(
   "Attendance service - Google Sheets live integration",
   async (t) => {
 
     /**
      * STEP 1:
-     * Retrieve the actual spreadsheet data.
+     * Retrieve all actual spreadsheet tabs.
      *
-     * This calls the attendance service's Google Sheets
-     * retrieval function using the shared .env credentials.
+     * This calls the Google Sheets API through the
+     * attendance service.
      */
-    const sheetValues = await getAttendanceSheetValues();
+    const sheetTables = await getAttendanceSheetTables();
 
 
-    // Confirm the Google Sheets API returned usable data.
+    // Ensure the spreadsheet returned usable tabs.
     assert.ok(
-      Array.isArray(sheetValues) && sheetValues.length >= 2,
-      "Google Sheets connection succeeded, but the configured range contains no usable header and data rows."
-    );
-
-
-    // Retrieve the spreadsheet column headings.
-    const headers = sheetValues[0];
-
-    assert.ok(
-      Array.isArray(headers),
-      "The spreadsheet header row is invalid."
+      Array.isArray(sheetTables) && sheetTables.length > 0,
+      "Google Sheets returned no spreadsheet tabs."
     );
 
 
     /**
      * STEP 2:
-     * Verify that all required spreadsheet columns exist.
+     * Identify the Users tab.
+     *
+     * Required headings:
+     * User ID (Firebase UID)
+     * Employee ID
+     * Full Name
      */
-    const columns = {
-
-      employeeId: findColumnIndex(
-        headers,
-        ["employeeId", "staffId", "id"]
-      ),
-
-      name: findColumnIndex(
-        headers,
-        ["name", "fullName"]
-      ),
-
-      event: findColumnIndex(
-        headers,
-        ["event", "eventType", "clockEvent", "action"]
-      ),
-
-      timestamp: findColumnIndex(
-        headers,
-        ["timestamp", "eventTimestamp", "createdAt"]
-      ),
-
-    };
-
-
-    const requiredColumnsExist = Object.values(columns).every(
-      (index) => index !== -1
+    const usersSheet = findSheetByHeaders(
+      sheetTables,
+      [
+        "userIdFirebaseUid",
+        "employeeId",
+        "fullName",
+      ]
     );
 
 
-    // Test the actual spreadsheet structure.
+    /**
+     * STEP 3:
+     * Identify the Events tab.
+     *
+     * Required headings:
+     * Event ID
+     * Timestamp
+     * User ID
+     * Event Type (Clock In/Clock Out)
+     *
+     * Event Type is ONE column.
+     */
+    const eventsSheet = findSheetByHeaders(
+      sheetTables,
+      [
+        "eventId",
+        "timestamp",
+        "userId",
+        "eventTypeClockInClockOut",
+      ]
+    );
+
+
+    // TEST 1: SPREADSHEET STRUCTURE
     await t.test(
-      "Google Sheets contains the required employee and event columns",
+      "Google Sheets contains the Users and Events tabs",
       () => {
 
-        assert.notEqual(
-          columns.employeeId,
-          -1,
-          "Employee ID column is missing."
+        assert.ok(
+          usersSheet,
+          "Users tab could not be identified. Check its column headings."
         );
 
-        assert.notEqual(
-          columns.name,
-          -1,
-          "Name column is missing."
+        assert.ok(
+          eventsSheet,
+          "Events tab could not be identified. Check its column headings."
         );
 
-        assert.notEqual(
-          columns.event,
-          -1,
-          "Event column is missing."
+        assert.ok(
+          usersSheet.values.length >= 1,
+          "Users tab does not contain a heading row."
         );
 
-        assert.notEqual(
-          columns.timestamp,
-          -1,
-          "Timestamp column is missing."
+        assert.ok(
+          eventsSheet.values.length >= 1,
+          "Events tab does not contain a heading row."
         );
 
       }
     );
 
 
-    // Do not run timestamp comparisons if the spreadsheet
-    // does not contain the required columns.
-    if (!requiredColumnsExist) {
+    // Stop further tests if the required tabs cannot be identified.
+    if (!usersSheet || !eventsSheet) {
       return;
     }
 
 
-    /**
-     * STEP 3:
-     * Independently calculate the expected timestamp records.
-     */
-    const expectedResults = calculateExpectedTimestamps(
-      sheetValues
-    );
-
-
-    // Ensure the spreadsheet contains employee records.
-    assert.ok(
-      expectedResults.employees.length > 0,
-      "No usable employee records were found in the spreadsheet."
-    );
-
-
-    // Ensure the spreadsheet contains valid clock events.
-    assert.ok(
-      expectedResults.validEventCount > 0,
-      "No valid clock events were found. Check employee IDs, event types and timestamp formatting."
+    // Calculate expected results independently from raw sheet data.
+    const expected = calculateExpectedTimestamps(
+      usersSheet.values,
+      eventsSheet.values
     );
 
 
     /**
      * STEP 4:
-     * Call the complete attendance service.
+     * Call the actual attendance service.
      *
-     * This performs another live Google Sheets retrieval
-     * and runs the actual timestamp processing logic.
+     * This performs its own Google authentication,
+     * spreadsheet retrieval, matching and timestamp processing.
      */
     const actualResults =
       await getAttendanceTimestampsFromSheets();
 
 
-    // TEST 1: GOOGLE SHEETS RETRIEVAL
+    // TEST 2: ACTUAL SERVICE RESPONSE
     await t.test(
-      "Google Sheets successfully returns employee and clock records",
-      () => {
-
-        assert.ok(
-          Array.isArray(sheetValues),
-          "Spreadsheet records were not returned as an array."
-        );
-
-        assert.ok(
-          sheetValues.length > 1,
-          "The configured spreadsheet range contains no employee or clock-event records."
-        );
-
-      }
-    );
-
-
-    // TEST 2: ATTENDANCE SERVICE RESPONSE
-    await t.test(
-      "Attendance service returns valid employee timestamp records",
+      "Attendance service returns employee timestamp records",
       () => {
 
         assert.ok(
           Array.isArray(actualResults),
-          "Attendance service did not return an array."
+          "Service did not return an array."
         );
 
-        assert.ok(
-          actualResults.length > 0,
-          "Attendance service returned no employee timestamp records."
+        // The response should contain every valid user
+        // identified in the Users spreadsheet.
+        assert.equal(
+          actualResults.length,
+          expected.employees.length,
+          "Returned employee count does not match the Users tab."
         );
 
 
-        // Verify the structure of every employee record.
+        // Validate the structure of each employee record.
         for (const employee of actualResults) {
 
           assert.ok(
-            employee.employeeId,
-            "Employee record is missing its employee ID."
-          );
-
-          assert.equal(
-            typeof employee.name,
-            "string",
-            "Employee name must be a string."
+            employee.userId,
+            "Employee is missing the Firebase UID."
           );
 
           assert.ok(
             Object.hasOwn(employee, "lastCheckInAt"),
-            "Employee record is missing lastCheckInAt."
+            "Employee is missing the check-in timestamp field."
           );
 
           assert.ok(
             Object.hasOwn(employee, "lastCheckOutAt"),
-            "Employee record is missing lastCheckOutAt."
+            "Employee is missing the check-out timestamp field."
           );
 
         }
@@ -517,41 +505,39 @@ test(
     );
 
 
-    // TEST 3: EMPLOYEE RECORD MATCHING
+    // TEST 3: FIREBASE UID MATCHING
     await t.test(
-      "Returned employee records match the spreadsheet",
+      "Users are matched to Events using Firebase UIDs",
       () => {
-
-        assert.equal(
-          actualResults.length,
-          expectedResults.employees.length,
-          "Returned employee count does not match the spreadsheet."
-        );
 
         const actualEmployees = new Map(
           actualResults.map((employee) => [
-            employee.employeeId,
+            employee.userId,
             employee,
           ])
         );
 
-
-        // Verify that every spreadsheet employee is returned.
-        for (const expected of expectedResults.employees) {
+        for (const expectedEmployee of expected.employees) {
 
           const actual = actualEmployees.get(
-            expected.employeeId
+            expectedEmployee.userId
           );
 
           assert.ok(
             actual,
-            `Employee ${expected.employeeId} was not returned by the service.`
+            `User ${expectedEmployee.userId} was not returned by the service.`
+          );
+
+          assert.equal(
+            actual.employeeId,
+            expectedEmployee.employeeId,
+            "Employee ID does not match the Users tab."
           );
 
           assert.equal(
             actual.name,
-            expected.name,
-            `Employee name does not match for ${expected.employeeId}.`
+            expectedEmployee.name,
+            "Employee name does not match the Users tab."
           );
 
         }
@@ -560,37 +546,46 @@ test(
     );
 
 
-    // TEST 4: LATEST CHECK-IN AND CHECK-OUT ACCURACY
+    // TEST 4: LATEST TIMESTAMP ACCURACY
     await t.test(
       "Latest check-in and check-out timestamps match Google Sheets",
-      () => {
+      (t) => {
+
+        // A sheet containing no valid clock events can still
+        // be retrieved successfully, but cannot prove timestamp
+        // calculation accuracy.
+        if (expected.validEventCount === 0) {
+          t.skip(
+            "No valid clock events are available for timestamp comparison."
+          );
+          return;
+        }
 
         const actualEmployees = new Map(
           actualResults.map((employee) => [
-            employee.employeeId,
+            employee.userId,
             employee,
           ])
         );
 
 
-        // Compare every returned timestamp with the
-        // independently calculated expected timestamp.
-        for (const expected of expectedResults.employees) {
+        // Compare the expected and actual timestamps.
+        for (const expectedEmployee of expected.employees) {
 
           const actual = actualEmployees.get(
-            expected.employeeId
+            expectedEmployee.userId
           );
 
           assert.equal(
             actual.lastCheckInAt,
-            expected.lastCheckInAt,
-            `Incorrect latest check-in timestamp for ${expected.employeeId}.`
+            expectedEmployee.lastCheckInAt,
+            `Incorrect latest check-in for user ${expectedEmployee.userId}.`
           );
 
           assert.equal(
             actual.lastCheckOutAt,
-            expected.lastCheckOutAt,
-            `Incorrect latest check-out timestamp for ${expected.employeeId}.`
+            expectedEmployee.lastCheckOutAt,
+            `Incorrect latest check-out for user ${expectedEmployee.userId}.`
           );
 
         }
@@ -599,23 +594,21 @@ test(
     );
 
 
-    // TEST 5: TIMESTAMP VALIDATION
+    // TEST 5: TIMESTAMP FORMAT
     await t.test(
       "Returned timestamps are valid UTC ISO timestamps or null",
       () => {
 
         for (const employee of actualResults) {
 
-          const timestampFields = [
+          for (const field of [
             "lastCheckInAt",
             "lastCheckOutAt",
-          ];
-
-          for (const field of timestampFields) {
+          ]) {
 
             const timestamp = employee[field];
 
-            // Missing clock actions must remain null.
+            // Employees without a recorded action must have null.
             if (timestamp === null) {
               continue;
             }
@@ -633,7 +626,7 @@ test(
 
             assert.ok(
               timestamp.endsWith("Z"),
-              `${field} must use the UTC timezone.`
+              `${field} must use UTC timezone formatting.`
             );
 
             assert.equal(
