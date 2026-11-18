@@ -2,7 +2,7 @@
 
 ## Information
 - Ticket ID: S1-10a
-- Assigned developer: Elijah
+- Assigned developers: Phumezile Sibeko, Elijah and Sibongile
 - Current QA status: Blocked pending backend availability
 
 ## Objective

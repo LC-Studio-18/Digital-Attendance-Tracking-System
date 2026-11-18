@@ -86,7 +86,7 @@ Mock-data visual observation: Pass. Live-data test: Blocked. Static fallback log
 - [BUG-S1-10a-02](bugs/BUG-S1-10a-02-attendance-fallback.md) (proposed severity: Medium).
 
 #### Evidence
-- Placeholder values were observed in the running page. No screenshot file is present in the ticket evidence directory.
+- [Actual screenshot](evidence/2026-11-18-d7fb9f8-clock-out-actual.png) shows the placeholder employee name, Clocked In status and Since 08:15. It does not establish live-data accuracy or fallback behavior.
 
 #### Notes
 - Do not treat the mock-data observation as live-data testing or as a pass for API-backed acceptance criteria.

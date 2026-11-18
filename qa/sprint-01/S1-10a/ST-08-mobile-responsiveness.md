@@ -2,7 +2,7 @@
 
 ## Information
 - Ticket ID: S1-10a
-- Assigned developer: Phumezile Sibeko
+- Assigned developers: Elijah and Zaarah
 - Current QA status: Not Run
 
 ## Test Cases

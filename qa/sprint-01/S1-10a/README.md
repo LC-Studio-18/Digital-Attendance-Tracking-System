@@ -36,11 +36,11 @@
 | ST-01 | Clock-out screen | Phumezile Sibeko | Fail | [Report](ST-01-clock-out-screen.md) |
 | ST-02 | Employee name and attendance status | Phumezile Sibeko | Blocked for live-data testing | [Report](ST-02-employee-name-and-status.md) |
 | ST-03 | Clock-out button and loading state | Elijah | Fail - component integration | [Report](ST-03-clock-out-button.md) |
-| ST-04 | API connection | Elijah | Blocked pending backend availability | [Report](ST-04-api-connection.md) |
+| ST-04 | API connection | Phumezile Sibeko, Elijah and Sibongile | Blocked pending backend availability | [Report](ST-04-api-connection.md) |
 | ST-05 | Success message | Elijah | Not Run | [Report](ST-05-success-message.md) |
 | ST-06 | Error messages | Elijah | Not Run | [Report](ST-06-error-messages.md) |
 | ST-07 | Update attendance status | Elijah | Fail for static logic; API end-to-end Blocked | [Report](ST-07-update-status.md) |
-| ST-08 | Mobile responsiveness | Phumezile Sibeko | Not Run | [Report](ST-08-mobile-responsiveness.md) |
+| ST-08 | Mobile responsiveness | Elijah and Zaarah | Not Run | [Report](ST-08-mobile-responsiveness.md) |
 
 ## Linked Bugs
 - [BUG-S1-10a-01](bugs/BUG-S1-10a-01-screen-design.md) - Clock-out screen does not match Figma wireframe (Phumezile Sibeko, Medium, Open).
@@ -52,7 +52,7 @@
 Severity levels are proposed QA classifications.
 
 ## Testing Summary
-- Test cases (12 total): 1 Pass, 5 Fail, 3 Blocked, 3 Not Run. ST-02 TC-01 is Blocked for live-data verification; the visible mock-data display was separately observed successfully and is not counted as a passed live-data test.
+- Test cases (13 total): 1 Pass, 5 Fail, 3 Blocked, 4 Not Run. ST-02 TC-01 is Blocked for live-data verification; the visible mock-data display was separately observed successfully and is not counted as a passed live-data test.
 - Visual testing: Clock-out page renders; screen was compared with the supplied Figma wireframe and failed design conformity.
 - Static code review: Identified button integration, attendance fallback, and state-update issues. These findings are distinguished from runtime results in their reports.
 - Blocked: Live employee data and API-backed end-to-end behavior await backend/API availability.
