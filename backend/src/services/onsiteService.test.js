@@ -40,30 +40,46 @@ test("Counts active employees whose latest event is Clock In", () => {
 });
 
 
+
 test("Does not count employees whose latest event is Clock Out", () => {
 
   const staff = [
     { userId: "UID001" },
   ];
 
+  // Generate timestamps relative to the current backend time.
+  // This ensures both test events are valid past timestamps.
+  const now = Date.now();
+
+  const clockInTimestamp = new Date(
+    now - 2 * 60 * 60 * 1000
+  ).toISOString();
+
+  const clockOutTimestamp = new Date(
+    now - 60 * 60 * 1000
+  ).toISOString();
+
   const clockEvents = [
     {
       userId: "UID001",
       eventType: "Clock In",
-      timestamp: "2026-11-18T06:00:00.000Z",
+      timestamp: clockInTimestamp,
     },
     {
       userId: "UID001",
       eventType: "Clock Out",
-      timestamp: "2026-11-18T15:00:00.000Z",
+      timestamp: clockOutTimestamp,
     },
   ];
 
+  // The latest valid event is Clock Out.
+  // Therefore, the employee must not be counted onsite.
   assert.equal(
     calculateCurrentOnsiteCount({ staff, clockEvents }),
     0
   );
 });
+
 
 
 test("Does not count employees without clock events", () => {
