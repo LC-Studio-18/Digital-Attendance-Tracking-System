@@ -24,7 +24,7 @@ import assert from "node:assert/strict";
 // and calculates the current onsite employee count.
 import {
   getCurrentOnsiteCountFromSheets,
-} from "./onsiteService.js";
+} from "backend/src/services/onsiteService.js";
 
 
 test(
