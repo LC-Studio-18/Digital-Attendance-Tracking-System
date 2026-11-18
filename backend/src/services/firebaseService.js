@@ -1,4 +1,5 @@
-import admin from 'firebase-admin';
+import { cert, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 let initialized = false;
 
@@ -12,8 +13,8 @@ function initFirebase() {
     return;
   }
 
-  admin.initializeApp({
-    credential: admin.credential.cert({
+  initializeApp({
+    credential: cert({
       projectId: FIREBASE_PROJECT_ID,
       clientEmail: FIREBASE_CLIENT_EMAIL,
       // .env stores newlines as \n — convert back to real line breaks
@@ -34,7 +35,7 @@ export async function verifyIdToken(token) {
   }
 
   try {
-    return await admin.auth().verifyIdToken(token);
+    return await getAuth().verifyIdToken(token);
   } catch (err) {
     const error = new Error('Invalid or expired token');
     error.status = 401;

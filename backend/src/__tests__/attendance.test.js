@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 
-process.env.EXPECTED_LOCATION_ID = 'test-location-001';
+process.env.VALID_LOCATION_IDS = 'test-location-001';
 
 jest.unstable_mockModule('../services/firebaseService.js', () => ({
   verifyIdToken: jest.fn(),

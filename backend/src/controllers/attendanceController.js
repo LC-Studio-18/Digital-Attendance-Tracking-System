@@ -4,7 +4,7 @@ export async function qrCheckin(req, res, next) {
   try {
     const { locationId } = req.body;
 
-    if (locationId !== process.env.EXPECTED_LOCATION_ID) {
+    if (locationId !== process.env.VALID_LOCATION_IDS) {
       return res.status(400).json({
         success: false,
         message: 'Invalid QR code or unknown location',
