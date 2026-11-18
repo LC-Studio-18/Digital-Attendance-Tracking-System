@@ -5,17 +5,13 @@ import {
 
 export const getAttendanceHistory = async (req, res, next) => {
   try {
+    const { uid, role } = req.user;
+
     // Pagination parameters
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 50;
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
-
-    // Temporary mock user until Firebase middleware is integrated
-    const mockUser = {
-      uid: 'user_12345',
-      role: 'admin',
-    };
 
     // Temporary mock attendance records until Google Sheets integration
     const mockAttendanceRecords = [
@@ -25,24 +21,26 @@ export const getAttendanceHistory = async (req, res, next) => {
       { id: 4, uid: 'user_88888', date: '2026-11-02', status: 'Late' },
     ];
 
-    // Role-based filtering
-    let filteredRecords = [];
+    // Admins can view all records; staff can view only their own.
+    let filteredRecords;
 
-    if (mockUser.role === 'admin') {
+    if (role === 'admin') {
       filteredRecords = mockAttendanceRecords;
-    } else {
+    } else if (role === 'staff') {
       filteredRecords = mockAttendanceRecords.filter(
-        (record) => record.uid === mockUser.uid,
+        (record) => record.uid === uid,
       );
+    } else {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: Invalid role',
+      });
     }
 
     // Sort newest first before applying pagination
     const sortedRecords = sortAttendanceRecords(filteredRecords);
-
-    // Apply pagination
     const paginatedData = sortedRecords.slice(startIndex, endIndex);
 
-    // Format response, including empty results
     const response = buildAttendanceHistoryResponse({
       records: paginatedData,
       totalRecords: sortedRecords.length,
@@ -50,7 +48,7 @@ export const getAttendanceHistory = async (req, res, next) => {
       limit,
     });
 
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (err) {
     next(err);
   }
