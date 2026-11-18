@@ -1,12 +1,19 @@
 import { jest } from '@jest/globals';
 
-// Must mock BEFORE importing anything that uses firebaseService
+process.env.EXPECTED_LOCATION_ID = 'test-location-001';
+
 jest.unstable_mockModule('../services/firebaseService.js', () => ({
   verifyIdToken: jest.fn(),
 }));
 
-// Dynamic imports, AFTER the mock is registered
+jest.unstable_mockModule('../services/googleSheetsService.js', () => ({
+  appendRow: jest.fn().mockResolvedValue(undefined),
+  findTodayCheckin: jest.fn().mockResolvedValue(false),
+}));
+
 const { verifyIdToken } = await import('../services/firebaseService.js');
+const { findTodayCheckin, appendRow } = await import('../services/googleSheetsService.js');
+
 const { default: app } = await import('../app.js');
 const request = (await import('supertest')).default;
 
@@ -23,7 +30,8 @@ describe('POST /api/attendance/qr-checkin', () => {
 
     const res = await request(app)
       .post('/api/attendance/qr-checkin')
-      .set('Authorization', 'Bearer some-valid-token');
+      .set('Authorization', 'Bearer some-valid-token')
+      .send({ locationId: 'test-location-001' });
 
     expect(res.statusCode).toBe(200);
   });
@@ -35,18 +43,57 @@ describe('POST /api/attendance/qr-checkin', () => {
 
     const res = await request(app)
       .post('/api/attendance/qr-checkin')
-      .set('Authorization', 'Bearer bad-token');
+      .set('Authorization', 'Bearer bad-token')
+      .send({ locationId: 'test-location-001' });
 
     expect(res.statusCode).toBe(401);
+  });
 
   it('returns 400 when JSON is malformed', async () => {
-  const res = await request(app)
-    .post('/api/attendance/qr-checkin')
-    .set('Content-Type', 'application/json')
-    .send('{"locationId":');
+    const res = await request(app)
+      .post('/api/attendance/qr-checkin')
+      .set('Content-Type', 'application/json')
+      .send('{"locationId":');
 
-  expect(res.statusCode).toBe(400);
-  expect(res.body.success).toBe(false);
-});
+    expect(res.statusCode).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('returns 400 when locationId is wrong', async () => {
+    verifyIdToken.mockResolvedValueOnce({ uid: 'test-user-123' });
+
+    const res = await request(app)
+      .post('/api/attendance/qr-checkin')
+      .set('Authorization', 'Bearer some-valid-token')
+      .send({ locationId: 'wrong-id' });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+    it('returns 409 when already checked in today', async () => {
+    verifyIdToken.mockResolvedValueOnce({ uid: 'test-user-123' });
+    findTodayCheckin.mockResolvedValueOnce(true);
+
+    const res = await request(app)
+      .post('/api/attendance/qr-checkin')
+      .set('Authorization', 'Bearer some-valid-token')
+      .send({ locationId: 'test-location-001' });
+
+    expect(res.statusCode).toBe(409);
+  });
+
+    it('returns 502 when Google Sheets fails', async () => {
+    verifyIdToken.mockResolvedValueOnce({ uid: 'test-user-123' });
+    findTodayCheckin.mockResolvedValueOnce(false);
+    appendRow.mockRejectedValueOnce(
+      Object.assign(new Error('Google Sheets request failed'), { status: 502 })
+    );
+
+    const res = await request(app)
+      .post('/api/attendance/qr-checkin')
+      .set('Authorization', 'Bearer some-valid-token')
+      .send({ locationId: 'test-location-001' });
+
+    expect(res.statusCode).toBe(502);
   });
 });

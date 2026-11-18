@@ -45,3 +45,33 @@ export async function appendRow(sheetName, rowValues) {
     throw error;
   }
 }
+
+export async function getRows(sheetName, range = 'A:B') {
+  const sheets = initSheets();
+
+  if (!sheets) {
+    const error = new Error('Google Sheets is not configured');
+    error.status = 503;
+    throw error;
+  }
+
+  try {
+    const result = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
+      range: `${sheetName}!${range}`,
+    });
+    return result.data.values || [];
+  } catch (err) {
+    const error = new Error('Google Sheets request failed');
+    error.status = 502;
+    throw error;
+  }
+}
+
+export async function findTodayCheckin(sheetName, userId) {
+  const rows = await getRows(sheetName);
+  const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+
+  // Column A = userId, Column B = timestamp — matches appendRow's order
+  return rows.some((row) => row[0] === userId && row[1]?.startsWith(today));
+}

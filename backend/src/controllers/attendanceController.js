@@ -1,4 +1,4 @@
-import { appendRow } from '../services/googleSheetsService.js';
+import { appendRow, findTodayCheckin } from '../services/googleSheetsService.js';
 
 export async function qrCheckin(req, res, next) {
   try {
@@ -8,6 +8,14 @@ export async function qrCheckin(req, res, next) {
       return res.status(400).json({
         success: false,
         message: 'Invalid QR code or unknown location',
+      });
+    }
+    const alreadyCheckedIn = await findTodayCheckin('Attendance', req.user.uid);
+
+    if (alreadyCheckedIn) {
+      return res.status(409).json({
+      success: false,
+      message: 'Already checked in today',
       });
     }
 
