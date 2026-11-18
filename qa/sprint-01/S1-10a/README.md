@@ -1,27 +1,44 @@
-# S1-10a - Clock-Out Frontend
+# S1-10a - Develop the clock out functionality
 
 ## Ticket Information
+- Category: Frontend development
+- Due date: 19 November 2026
+- Source: 18 November 2026 Slack project tracker export `Project_tracker(6).json`, as supplied by the QA tester; not live Slack verification.
 - Sprint: 1
 - Team: 4
+- QA tester: Adam Jattiem
+- Slack ticket: S1-10a in the [Slack project tracker](https://lifechoicesnpo.slack.com/lists/T02LW4RMXJQ/F0CG5PD0XB6); direct ticket link not recorded.
+- Figma: [Clock-out wireframe](https://www.figma.com/design/Tlkxebvj6tGK2rqH57wFXN/Digital-Attendance-Tracking-System---Wireframe?node-id=99-194).
 - Developers: Phumezile Sibeko and Elijah
 - Feature branch: `frontend4-feature/s1-10a-clock-out`
 - QA branch: `QA4`
 - QA status: Fail - changes required
 
 ## Requirements
-- Implement the approved clock-out interface.
-- Display employee name and attendance status.
-- Connect the clock-out action to the backend API.
-- Display loading, success and error states.
-- Update attendance status after successful clock-out.
+- User story: As a staff member, I want to clock out when I leave work so that my departure time is recorded.
+- Context: Develop the clock-out interface that allows authenticated staff members to record when they leave work.
 
 ## Acceptance Criteria
-- [ ] Interface matches the approved design.
-- [ ] Eligible employees can clock out.
-- [ ] Loading state works correctly.
-- [ ] Success and error messages display correctly.
-- [ ] Attendance status changes to OUT after success.
-- [ ] Interface works on mobile devices.
+- [ ] The employee can access the clock-out screen after authentication.
+- [ ] The Clock Out button is displayed when the employee?s status is IN.
+- [ ] The frontend sends the clock-out request to the backend.
+- [ ] A success message appears after the backend confirms the attendance record.
+- [ ] Error messages appear if the request fails.
+- [ ] The attendance status updates to OUT after successful clock-out.
+
+## Definition of Done
+- [ ] The clock-out interface has been developed according to the approved design.
+- [ ] The employee?s name and current attendance status are displayed correctly.
+- [ ] The Clock Out button works correctly.
+- [ ] The frontend is successfully connected to the backend clock-out API.
+- [ ] Loading, success and error messages are displayed correctly.
+- [ ] The attendance status updates to OUT after successful clock-out.
+- [ ] The interface has been tested on mobile and desktop.
+- [ ] All identified frontend bugs have been resolved.
+- [ ] Code has been reviewed and approved.
+
+## Out of Scope
+- Not specified in the exported ticket.
 
 ## Dependencies
 - S1-08 approved design.
@@ -31,16 +48,16 @@
 
 ## Subtasks
 
-| ID | Description | Assigned developer | QA Status | Report |
-|---|---|---|---|---|
-| ST-01 | Clock-out screen | Phumezile Sibeko | Fail | [Report](ST-01-clock-out-screen.md) |
-| ST-02 | Employee name and attendance status | Phumezile Sibeko | Blocked for live-data testing | [Report](ST-02-employee-name-and-status.md) |
-| ST-03 | Clock-out button and loading state | Elijah | Fail - component integration | [Report](ST-03-clock-out-button.md) |
-| ST-04 | API connection | Phumezile Sibeko, Elijah and Sibongile | Blocked pending backend availability | [Report](ST-04-api-connection.md) |
-| ST-05 | Success message | Elijah | Not Run | [Report](ST-05-success-message.md) |
-| ST-06 | Error messages | Elijah | Not Run | [Report](ST-06-error-messages.md) |
-| ST-07 | Update attendance status | Elijah | Fail for static logic; API end-to-end Blocked | [Report](ST-07-update-status.md) |
-| ST-08 | Mobile responsiveness | Elijah and Zaarah | Not Run | [Report](ST-08-mobile-responsiveness.md) |
+| ID | Description | Primary Slack assignee | Sprint Brief collaborators | QA Status | Report |
+|---|---|---|---|---|---|
+| ST-01 | Clock-out screen | Phumezile Sibeko | None recorded | Fail | [Report](ST-01-clock-out-screen.md) |
+| ST-02 | Employee name and attendance status | Phumezile Sibeko | None recorded | Fail for static fallback review; live-data verification Blocked | [Report](ST-02-employee-name-and-status.md) |
+| ST-03 | Clock-out button and loading state | Elijah | None recorded | Fail - component integration | [Report](ST-03-clock-out-button.md) |
+| ST-04 | API connection | Elijah | Phumezile Sibeko and Sibongile | Blocked pending backend availability | [Report](ST-04-api-connection.md) |
+| ST-05 | Success message | Elijah | None recorded | Not Run | [Report](ST-05-success-message.md) |
+| ST-06 | Error messages | Elijah | None recorded | Not Run | [Report](ST-06-error-messages.md) |
+| ST-07 | Update attendance status | Elijah | None recorded | Fail for static logic; API end-to-end Blocked | [Report](ST-07-update-status.md) |
+| ST-08 | Mobile responsiveness | Elijah | Zaarah | Not Run | [Report](ST-08-mobile-responsiveness.md) |
 
 ## Linked Bugs
 - [BUG-S1-10a-01](bugs/BUG-S1-10a-01-screen-design.md) - Clock-out screen does not match Figma wireframe (Phumezile Sibeko, Medium, Open).
@@ -57,14 +74,19 @@ Severity levels are proposed QA classifications.
 - Static code review: Identified button integration, attendance fallback, and state-update issues. These findings are distinguished from runtime results in their reports.
 - Blocked: Live employee data and API-backed end-to-end behavior await backend/API availability.
 - Not Run: Success feedback, error feedback, interactive loading/repeated-click behavior, and mobile viewport testing.
+- Future acceptance testing includes authenticated access and verifying the button is shown for IN status; neither is established by the existing placeholder screenshot. Verify live employee data and fallback states, API-backed clock-out and status updates, success and error feedback, loading and repeated clicks, mobile layout, and regression after fixes. These are outstanding checks, not additional recorded test cases.
 - Tested developer commit: `d7fb9f83f8f47d4f2e001097fbfa20fccc760ce0`.
 - Previous tested commit: `26f65d5d218a8ce4736151cdc7637b15568d049c` (17 November 2026).
 - Environment: Windows, detached Git worktree, React, Vite 8.3.8; local URL `http://localhost:5173/`.
 - Evidence: [Expected Result — Figma wireframe](evidence/2026-11-18-clock-out-figma-expected.png); [Actual Result — running application at commit d7fb9f8](evidence/2026-11-18-d7fb9f8-clock-out-actual.png). Screenshots show visual appearance only, not interaction or attendance state changes.
-- Developer feedback has been prepared. No Slack message is claimed as sent.
+- QA tester confirmed developer feedback was sent to Phumezile Sibeko and Elijah via Slack on 18 November 2026; no message URL or time was recorded. Developer fixes and QA retesting are outstanding.
 
 ## QA Sign-off
-Pending. Final QA sign-off remains pending changes and retesting.
+- Status: Pending
+- Tested version: `d7fb9f83f8f47d4f2e001097fbfa20fccc760ce0`
+- QA: Adam Jattiem
+- Date: Pending
+- Notes: Developer fixes and QA retesting remain outstanding.
 
 ## QA Review History
 
@@ -94,5 +116,5 @@ Pending. Final QA sign-off remains pending changes and retesting.
 - Placeholder employee name, Clocked In status, and Since 08:15 were visible as mock data. This is a successful visual observation only; live-data testing remains Blocked.
 - API-backed end-to-end testing is Blocked pending backend availability. Success/error feedback and mobile viewport testing were Not Run.
 - Evidence screenshots are linked from ST-01 and the design-related bug reports. They establish visual discrepancies only.
-- Proposed bug severities are QA classifications. Developer feedback has been prepared; no Slack message is claimed as sent.
+- Proposed bug severities are QA classifications. Developer feedback was sent to Phumezile Sibeko and Elijah via Slack on 18 November 2026, as confirmed by the QA tester; message URL and time were not recorded.
 - Overall ticket QA status: Fail - changes required. Final QA sign-off: Pending.

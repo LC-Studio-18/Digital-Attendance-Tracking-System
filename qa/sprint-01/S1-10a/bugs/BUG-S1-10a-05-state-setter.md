@@ -25,7 +25,7 @@
 2. Inspect the value passed to `StatusCard` in `ClockOutPage.jsx`.
 
 ## Expected Result
-- Successful clock-out updates state using `setClockout()` and the page displays the resulting status.
+- After successful clock-out, the page displays the updated attendance status.
 
 ## Actual Result
 - `Clockout === 'Clockin' ? 'Clockout' : 'Clockin'` calculates a value without calling `setClockout()`. The page passes hardcoded `"in"` to `StatusCard`. This is a static code-review finding; API-backed runtime verification remains pending.
@@ -38,7 +38,7 @@
 - Fix commit: Pending
 - Retest date: Pending
 - Retest result: Pending
-- Notes: Verify setter execution and displayed/API-backed status after a successful clock-out.
+- Notes: Verify displayed and API-backed status after a successful clock-out; inspect the corrected state update.
 
 ## Resolution
 Pending QA verification.

@@ -28,7 +28,7 @@
 - Integrated button matches the reference design, including icon and `Clock Out` label.
 
 ## Actual Result
-- The component label is `Clockout` rather than `Clock Out`, its icon is missing, and component styling does not fully match the reference. Visual mismatch is confirmed; interaction was not tested.
+- The rendered placeholder is labelled `Clock Out` and visually differs from the Figma button. Separately, source inspection found the unintegrated component is labelled `Clockout`, lacks the icon and does not fully match the reference styling. The screenshot does not show that unintegrated component; interaction was not tested.
 
 ## Evidence
 - Expected Result — Figma wireframe: ![Expected Result — Figma wireframe](../evidence/2026-11-18-clock-out-figma-expected.png)

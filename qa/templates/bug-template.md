@@ -34,7 +34,7 @@
 
 ## Fix and Retest History
 - Date fixed:
-- Fix commit:
+- Fix commit / Figma version:
 - Retest date:
 - Retest result:
 - Notes:

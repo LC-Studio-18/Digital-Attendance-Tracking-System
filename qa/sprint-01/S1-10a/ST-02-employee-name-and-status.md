@@ -2,8 +2,9 @@
 
 ## Information
 - Ticket ID: S1-10a
-- Assigned developer: Phumezile Sibeko
-- Current QA status: Blocked for live-data testing
+- Primary Slack assignee: Phumezile Sibeko (18 November tracker export `Project_tracker(6).json`, as supplied).
+- Additional Sprint Brief collaborators: None recorded.
+- Current QA status: Fail for static fallback review; Blocked for live-data testing
 
 ## Objective
 - Display the employee name and attendance status on the clock-out page.

@@ -1,20 +1,26 @@
 # [Ticket ID] - [Ticket Title]
 
 ## Ticket Information
+- Team:
 - Sprint:
+- QA:
 - Slack ticket:
 - Assigned developer(s):
 - Feature branch(es):
+- Figma link:
 - QA status: Not Run
 
 ## Requirements
--
+- User story and context:
 
 ## Acceptance Criteria
 - [ ]
 
 ## Definition of Done
 - [ ]
+
+## Out of Scope
+- Not specified.
 
 ## Dependencies
 -
@@ -36,4 +42,7 @@ None recorded.
 - Not Run:
 
 ## QA Sign-off
-Pending.
+- Status: Pending
+- Tested version: N/A
+- QA:
+- Date: Pending

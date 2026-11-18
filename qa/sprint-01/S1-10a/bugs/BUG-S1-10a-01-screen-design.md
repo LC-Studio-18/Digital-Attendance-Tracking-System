@@ -27,7 +27,9 @@
 - Page layout and styling conform to the supplied Figma design.
 
 ## Actual Result
-- Confirmed visual discrepancies: header styling/alignment, missing clock icon and vertical divider, greeting/employee placement, typography and spacing, absent current time, hardcoded date and greeting, status card placement/styling/indicator, absent attendance information icon, attendance message spacing, and default Vite styling.
+- Confirmed visual discrepancies: header styling/alignment, missing clock icon and vertical divider, greeting/employee placement, typography and spacing, absent displayed time, date and greeting shown as fixed values, status card placement/styling/indicator, absent attendance information icon, attendance message spacing, and default Vite styling.
+
+- Source inspection identified hardcoded date and greeting. A requirement that these values update dynamically is inferred and requires confirmation; the screenshots alone do not establish dynamic behavior.
 
 ## Evidence
 - Expected Result — Figma wireframe: ![Expected Result — Figma wireframe](../evidence/2026-11-18-clock-out-figma-expected.png)

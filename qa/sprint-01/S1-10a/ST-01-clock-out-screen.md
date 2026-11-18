@@ -2,14 +2,15 @@
 
 ## Information
 - Ticket ID: S1-10a
-- Assigned developer: Phumezile Sibeko
+- Primary Slack assignee: Phumezile Sibeko (18 November tracker export `Project_tracker(6).json`, as supplied).
+- Additional Sprint Brief collaborators: None recorded.
 - Current QA status: Fail
 
 ## Objective
 - Provide the clock-out page and connect it to the application entry point.
 
 ## Acceptance Criteria
-- [ ] Clock-out page structure is implemented.
+- [x] Basic clock-out page structure is implemented; design conformity is assessed separately.
 - [x] Page is connected to the application and renders.
 - [ ] Page conforms to the approved Figma design.
 
@@ -89,3 +90,4 @@ TC-01 Pass; TC-02 Fail.
 
 #### Notes
 - Related visual issues are grouped in one bug report. QA4 remained separate and unaffected during commit retrieval/testing.
+- The hardcoded date and greeting were identified through source review. Dynamic updates are an inferred requirement requiring confirmation; the screenshots alone do not establish that behavior.

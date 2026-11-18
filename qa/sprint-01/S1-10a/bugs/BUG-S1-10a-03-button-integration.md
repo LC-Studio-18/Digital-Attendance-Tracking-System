@@ -25,7 +25,7 @@
 2. Inspect `Clockout.jsx` for the component and its handler/state logic.
 
 ## Expected Result
-- The page imports and renders the implemented Clockout component with its action handler.
+- The page provides an actionable clock-out control that supports the required behavior.
 
 ## Actual Result
 - Static inspection found `Clockout.jsx`/`Clockout.css` exist but `Clockout` is not imported or rendered by `ClockOutPage.jsx`; visible placeholder button has no click handler. No interactive behavior test is claimed.
