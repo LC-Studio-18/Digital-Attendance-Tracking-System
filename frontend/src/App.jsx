@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { onIdTokenChanged } from 'firebase/auth';
+import {
+  browserLocalPersistence,
+  onIdTokenChanged,
+  setPersistence,
+} from 'firebase/auth';
 import { auth } from './services/firebase';
 import Login from './pages/Login';
 import { getUserRole, logoutUser } from './services/authService';
 import AdminControls from './components/AdminControls';
+import { navigateTo, usePathname } from './hooks/usePathname';
 import './App.css';
 
 
@@ -55,6 +60,7 @@ function Dashboard({ user, userRole, onLogout, loggingOut, logoutError }) {
 
 
 function App() {
+  const pathname = usePathname();
   const [authState, setAuthState] = useState({
     loading: Boolean(auth),
     user: null,
@@ -92,6 +98,8 @@ function App() {
     let isActive = true;
     let roleRequest = 0;
 
+    setPersistence(auth, browserLocalPersistence).catch(() => undefined);
+
     const unsubscribe = onIdTokenChanged(auth, (user) => {
       const currentRequest = ++roleRequest;
 
@@ -116,6 +124,19 @@ function App() {
       unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (authState.loading) return;
+
+    if (!authState.user) {
+      if (pathname !== '/login') navigateTo('/login', { replace: true });
+      return;
+    }
+
+    if (pathname === '/login' || pathname === '/') {
+      navigateTo('/dashboard', { replace: true });
+    }
+  }, [authState.loading, authState.user, pathname]);
 
   if (authState.loading) {
     return <div className="auth-loading" aria-label="Loading account" />;
