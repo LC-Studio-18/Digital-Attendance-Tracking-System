@@ -52,6 +52,7 @@ The server runs at:
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/api/health` | Checks whether the API is running |
+| GET | `/api/attendance/live` | Returns the latest staff attendance records |
 
 ## Project Structure
 
