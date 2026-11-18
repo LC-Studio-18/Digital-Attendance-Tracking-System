@@ -16,8 +16,8 @@ const CAMERA_ERROR_CODES = {
 
 const ActiveQrScanner = ({ onDecoded, onCameraError }) => {
   const hasScanned = useRef(false);
-  const [isScanning, setIsScanning] = useState(true);
   const isMounted = useRef(true);
+  const [isScanning, setIsScanning] = useState(true);
 
   useEffect(() => {
     isMounted.current = true;
@@ -30,13 +30,6 @@ const ActiveQrScanner = ({ onDecoded, onCameraError }) => {
   const handleCameraError = (error) => {
     if (!isMounted.current) return;
 
-    console.log('Camera error kind:', error?.kind);
-    console.log('Camera error message:', error?.message);
-    console.log('Underlying cause name:', error?.cause?.name);
-    console.log('Underlying cause message:', error?.cause?.message);
-    console.log('Failed constraint:', error?.cause?.constraint);
-    console.error('Full camera error:', error);
-
     const code = CAMERA_ERROR_CODES[error?.kind] || 'CAMERA_UNAVAILABLE';
 
     onCameraError?.({
@@ -47,14 +40,16 @@ const ActiveQrScanner = ({ onDecoded, onCameraError }) => {
 
   const handleScan = (codes) => {
     if (!isMounted.current || hasScanned.current) return;
-    if (hasScanned.current) return;
 
     const payload = codes[0]?.rawValue;
 
     if (payload) {
       hasScanned.current = true;
       setIsScanning(false);
-      onDecoded?.(payload);
+
+      if (isMounted.current) {
+        onDecoded?.(payload);
+      }
     }
   };
 
