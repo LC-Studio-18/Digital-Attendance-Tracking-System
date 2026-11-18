@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { isFirebaseConfigured } from '../services/firebase';
 import {
   completePasswordlessSignIn,
@@ -13,9 +13,9 @@ import '../styles/Login.css';
 
 const authErrorMessages = {
   'auth/invalid-email': 'Please enter a valid email address.',
-  'auth/user-not-found': 'Email or password is incorrect.',
-  'auth/invalid-credential': 'Email or password is incorrect.',
-  'auth/wrong-password': 'Email or password is incorrect.',
+  'auth/user-not-found': 'Incorrect email or password.',
+  'auth/invalid-credential': 'Incorrect email or password.',
+  'auth/wrong-password': 'Incorrect email or password.',
   'auth/user-disabled': 'This account has been disabled.',
   'auth/too-many-requests': 'Too many attempts. Please try again later.',
   'auth/email-already-in-use': 'An account already exists for this email.',
@@ -25,6 +25,11 @@ const authErrorMessages = {
   'auth/email-required': 'Enter the email address that received the sign-in link.',
   'auth/operation-not-allowed':
     'This sign-in method is not enabled for this Firebase project.',
+  'auth/network-request-failed':
+    'Network error. Check your connection and try again.',
+  'auth/unauthorized-domain':
+    'This domain is not authorized in Firebase Authentication.',
+  'auth/internal-error': 'Something went wrong. Please try again.',
   'auth/invalid-api-key':
     'Firebase is not configured correctly. Check the Web app values.',
   'app/firebase-config-missing':
@@ -47,6 +52,7 @@ function Login({ onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [emailLinkActive] = useState(emailLinkReady);
+  const busyRef = useRef(false);
 
   const configError = isFirebaseConfigured
     ? ''
@@ -92,6 +98,7 @@ function Login({ onLoginSuccess }) {
 
   const handleLogin = async (event) => {
     event.preventDefault();
+    if (busyRef.current) return;
     clearMessages();
 
     if (!email.trim() || !password) {
@@ -99,6 +106,7 @@ function Login({ onLoginSuccess }) {
       return;
     }
 
+    busyRef.current = true;
     setLoading(true);
     try {
       const user = await loginUser(email, password, rememberMe);
@@ -106,12 +114,14 @@ function Login({ onLoginSuccess }) {
     } catch (authError) {
       setError(resolveAuthError(authError));
     } finally {
+      busyRef.current = false;
       setLoading(false);
     }
   };
 
   const handleSignup = async (event) => {
     event.preventDefault();
+    if (busyRef.current) return;
     clearMessages();
 
     if (!name.trim() || !email.trim() || !password) {
@@ -123,6 +133,7 @@ function Login({ onLoginSuccess }) {
       return;
     }
 
+    busyRef.current = true;
     setLoading(true);
     try {
       const user = await registerUser(email, password, name);
@@ -130,12 +141,14 @@ function Login({ onLoginSuccess }) {
     } catch (authError) {
       setError(resolveAuthError(authError));
     } finally {
+      busyRef.current = false;
       setLoading(false);
     }
   };
 
   const handlePasswordReset = async (event) => {
     event.preventDefault();
+    if (busyRef.current) return;
     clearMessages();
 
     if (!email.trim()) {
@@ -143,6 +156,7 @@ function Login({ onLoginSuccess }) {
       return;
     }
 
+    busyRef.current = true;
     setLoading(true);
     try {
       await resetPassword(email);
@@ -150,12 +164,14 @@ function Login({ onLoginSuccess }) {
     } catch (authError) {
       setError(resolveAuthError(authError));
     } finally {
+      busyRef.current = false;
       setLoading(false);
     }
   };
 
   const handleEmailLink = async (event) => {
     event.preventDefault();
+    if (busyRef.current) return;
     clearMessages();
 
     if (!email.trim()) {
@@ -163,6 +179,7 @@ function Login({ onLoginSuccess }) {
       return;
     }
 
+    busyRef.current = true;
     setLoading(true);
     try {
       if (emailLinkActive) {
@@ -175,6 +192,7 @@ function Login({ onLoginSuccess }) {
     } catch (authError) {
       setError(resolveAuthError(authError));
     } finally {
+      busyRef.current = false;
       setLoading(false);
     }
   };
@@ -217,7 +235,7 @@ function Login({ onLoginSuccess }) {
         )}
 
         {isSignup ? (
-          <form onSubmit={handleSignup} autoComplete="on" noValidate>
+          <form onSubmit={handleSignup} autoComplete="on" noValidate aria-busy={loading}>
             <div className="form-group">
               <label htmlFor="signup-name">Full Name</label>
               <input
@@ -254,7 +272,7 @@ function Login({ onLoginSuccess }) {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                 />
-                <button className="password-toggle" type="button" onClick={() => setShowPassword((visible) => !visible)}>
+                <button className="password-toggle" type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} onClick={() => setShowPassword((visible) => !visible)}>
                   {showPassword ? 'Hide' : 'Show'}
                 </button>
               </div>
@@ -278,7 +296,7 @@ function Login({ onLoginSuccess }) {
             </button>
           </form>
         ) : isEmail ? (
-          <form onSubmit={handleEmailLink} autoComplete="on" noValidate>
+          <form onSubmit={handleEmailLink} autoComplete="on" noValidate aria-busy={loading}>
             <div className="form-group">
               <label htmlFor="email-link-email">Email Address</label>
               <input
@@ -301,7 +319,7 @@ function Login({ onLoginSuccess }) {
             </button>
           </form>
         ) : isReset ? (
-          <form onSubmit={handlePasswordReset} autoComplete="on" noValidate>
+          <form onSubmit={handlePasswordReset} autoComplete="on" noValidate aria-busy={loading}>
             <div className="form-group">
               <label htmlFor="reset-email">Email Address</label>
               <input
@@ -320,7 +338,7 @@ function Login({ onLoginSuccess }) {
             </button>
           </form>
         ) : (
-          <form onSubmit={handleLogin} autoComplete="on" noValidate>
+          <form onSubmit={handleLogin} autoComplete="on" noValidate aria-busy={loading}>
             <div className="form-group">
               <label htmlFor="login-email">Email Address</label>
               <input
@@ -345,7 +363,7 @@ function Login({ onLoginSuccess }) {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                 />
-                <button className="password-toggle" type="button" onClick={() => setShowPassword((visible) => !visible)}>
+                <button className="password-toggle" type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} onClick={() => setShowPassword((visible) => !visible)}>
                   {showPassword ? 'Hide' : 'Show/Hide'}
                 </button>
               </div>
@@ -356,7 +374,7 @@ function Login({ onLoginSuccess }) {
                 <input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} />
                 <span>Remember Me</span>
               </label>
-              <button className="forgot-link" type="button" onClick={() => switchMode('reset')}>
+              <button className="forgot-link" type="button" disabled={loading} onClick={() => switchMode('reset')}>
                 Forgot password?
               </button>
             </div>
@@ -368,18 +386,18 @@ function Login({ onLoginSuccess }) {
         )}
 
         {isSignup ? (
-          <button className="back-to-login" type="button" onClick={() => switchMode('login')}>
+          <button className="back-to-login" type="button" disabled={loading} onClick={() => switchMode('login')}>
             ← <span>Back to login</span>
           </button>
         ) : (
           <div className="auth-mode-switch">
             {!isEmail && (
-              <button type="button" onClick={() => switchMode(isSignup ? 'login' : 'signup')}>
+              <button type="button" disabled={loading} onClick={() => switchMode(isSignup ? 'login' : 'signup')}>
                 {isSignup ? 'Already have an account? Log in' : "Don't have an account? Sign up"}
               </button>
             )}
             {!isEmail && (
-              <button type="button" onClick={() => switchMode('email')}>
+              <button type="button" disabled={loading} onClick={() => switchMode('email')}>
                 Sign in with an email link
               </button>
             )}

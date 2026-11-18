@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { onIdTokenChanged } from 'firebase/auth';
 import { auth } from './services/firebase';
 import Login from './pages/Login';
@@ -16,7 +16,7 @@ const people = [
   { initials: 'EP', name: 'Ella Park', role: 'People & Culture', time: '—', status: 'Away', color: 'violet' },
 ];
 
-function Dashboard({ user, userRole, onLogout }) {
+function Dashboard({ user, userRole, onLogout, loggingOut, logoutError }) {
   const name = user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
   return (
     <div className="app-shell">
@@ -29,7 +29,7 @@ function Dashboard({ user, userRole, onLogout }) {
           <a className="nav-item" href="#team"><span className="nav-icon">♧</span>Team</a>
           <a className="nav-item" href="#reports"><span className="nav-icon">▤</span>Reports</a>
         </nav>
-        <div className="sidebar-bottom"><div className="help-card"><span className="help-spark">✳</span><strong>Need a hand?</strong><span>Visit our help center</span><a href="mailto:support@daymark.app">Get support <span>↗</span></a></div><AdminControls userRole={userRole}><button className="nav-item settings-link"><span className="nav-icon">{'\u2699'}</span>Settings</button></AdminControls><div className="profile-row"><span className="avatar profile-avatar">{name.slice(0, 2).toUpperCase()}</span><span className="profile-meta"><strong>{user?.displayName || name}</strong><small>{userRole === 'admin' ? 'Administrator' : 'Team member'}</small></span><button className="more-button" onClick={onLogout} aria-label="Sign out" title="Sign out">↗</button></div></div>
+        <div className="sidebar-bottom"><div className="help-card"><span className="help-spark">✳</span><strong>Need a hand?</strong><span>Visit our help center</span><a href="mailto:support@daymark.app">Get support <span>↗</span></a></div><AdminControls userRole={userRole}><button className="nav-item settings-link"><span className="nav-icon">{'\u2699'}</span>Settings</button></AdminControls><div className="profile-row"><span className="avatar profile-avatar">{name.slice(0, 2).toUpperCase()}</span><span className="profile-meta"><strong>{user?.displayName || name}</strong><small>{userRole === 'admin' ? 'Administrator' : 'Team member'}</small></span><button className="logout-button" type="button" disabled={loggingOut} onClick={onLogout}><span className="logout-label">{loggingOut ? 'Signing out...' : 'Sign out'}</span><span className="logout-icon" aria-hidden="true">↗</span></button></div>{logoutError && <div className="logout-error" role="alert">{logoutError}</div>}</div>
       </aside>
       <main className="main-content">
         <header className="topbar"><div className="breadcrumbs">Workspace <span>/</span> <strong>Overview</strong></div><div className="top-actions"><span className="date-chip"><span>◷</span> Monday, 18 November 2024</span><button className="icon-button" aria-label="Notifications">♧<i /></button><span className="avatar top-avatar">{name.slice(0, 2).toUpperCase()}</span></div></header>
@@ -61,8 +61,29 @@ function App() {
     role: null,
   });
 
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
+  const logoutBusyRef = useRef(false);
+
   const handleLoginSuccess = useCallback((user) => {
     setAuthState({ loading: false, user, role: 'user' });
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    if (logoutBusyRef.current) return;
+
+    logoutBusyRef.current = true;
+    setLoggingOut(true);
+    setLogoutError('');
+
+    try {
+      await logoutUser();
+    } catch {
+      setLogoutError('Could not sign out. Please try again.');
+    } finally {
+      logoutBusyRef.current = false;
+      setLoggingOut(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -108,7 +129,9 @@ function App() {
     <Dashboard
       user={authState.user}
       userRole={authState.role}
-      onLogout={logoutUser}
+      onLogout={handleLogout}
+      loggingOut={loggingOut}
+      logoutError={logoutError}
     />
   );
 }
