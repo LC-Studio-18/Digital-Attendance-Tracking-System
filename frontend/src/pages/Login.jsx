@@ -8,6 +8,7 @@ import {
   resetPassword,
   sendPasswordlessSignInLink,
 } from '../services/authService';
+import logo from '../assets/logo.png';
 import '../styles/Login.css';
 
 const authErrorMessages = {
@@ -192,7 +193,7 @@ function Login({ onLoginSuccess }) {
   return (
     <main className={`login-page${isReset ? ' reset-page' : ''}${isSignup ? ' signup-page' : ''}${isEmail ? ' email-page' : ''}`}>
       <section className="login-card" aria-label={isSignup ? 'Sign up' : isReset ? 'Reset password' : 'Sign in'}>
-        <div className="login-logo">LOGO</div>
+        <img className="login-logo" src={logo} alt="Daymark logo" />
         <h1 className={isReset || isSignup || isEmail ? 'form-title' : ''}>{title}</h1>
 
         {isSignup && (

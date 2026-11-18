@@ -20,9 +20,11 @@
 }
 
 .login-logo {
+  display: block;
+  width: 120px;
+  height: auto;
   margin: 0;
-  color: #111;
-  font: 500 12px/1 'DM Sans', sans-serif;
+  object-fit: contain;
 }
 
 .login-card h1 {
@@ -197,9 +199,8 @@
 
 .reset-page .login-logo {
   align-self: center;
+  width: 140px;
   margin: 38px 0 45px;
-  font-size: 15px;
-  font-weight: 700;
 }
 
 .login-card h1.reset-title {
@@ -246,9 +247,8 @@
 .signup-page .login-logo,
 .email-page .login-logo {
   align-self: center;
+  width: 140px;
   margin: 38px 0 45px;
-  font-size: 15px;
-  font-weight: 700;
 }
 
 .login-card h1.form-title {
