@@ -1,4 +1,4 @@
-import admin from 'firebase-admin';
+import { initializeApp, getApps, cert} from 'firebase-admin';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -16,9 +16,9 @@ const firebaseServiceAccount = {
   universe_domain: process.env.FIREBASE_UNIVERSE_DOMAIN
 };
 
-if(!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(firebaseServiceAccount),
+if(!getApps().length) {
+  initializeApp({
+    credential: cert(firebaseServiceAccount),
   });
 }
 
