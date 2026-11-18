@@ -14,13 +14,13 @@ const authClient = new google.auth.GoogleAuth({
 
 const sheets = google.sheets({ version: 'v4', auth: authClient });
 
-export async function appendAttendanceRow({ userID, name, status, timestamp }) {
+export async function appendAttendanceRow({ userID, status, timestamp }) {
   await sheets.spreadsheets.values.append({
     spreadsheetId: process.env.SPREADSHEET_ID,
     range: process.env.SHEET_RANGE || 'Sheet1!A1:Z',
     valueInputOption: 'USER_ENTERED',
     requestBody: {
-      values: [[userID, name, status, timestamp]],
+      values: [[userID, status, timestamp]],
     },
   });
 }
