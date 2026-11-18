@@ -5,20 +5,24 @@ import { validateAttendance } from '../services/attendanceValidator';
 import { useAutoRefresh } from './useAutoRefresh';
 
 function getErrorMessage(err) {
-  const status = err.response?.status;
+  const status = err?.response?.status;
   if (status === 401) return 'Your session has expired. Please sign in again.';
   if (status === 403) return 'You need admin access to view this dashboard.';
-  if (err.response?.data?.message) return err.response.data.message;
+  const serverMessage = err?.response?.data?.message;
+  if (typeof serverMessage === 'string' && serverMessage) return serverMessage;
   if (status) return `Server error (${status}).`;
-  if (err.request) return 'Could not reach the server.';
-  return err.message || 'Something went wrong.';
+  if (err?.code === 'ECONNABORTED')
+    return 'The server took too long to respond.';
+  if (err?.request) return 'Could not reach the server.';
+  return err?.message || 'Something went wrong.';
 }
 
 export function useAttendance({ getToken, refreshInterval = 30000 } = {}) {
   const [staff, setStaff] = useState([]);
   const [totalIn, setTotalIn] = useState(0);
   const [skipped, setSkipped] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // first load only
+  const [refreshing, setRefreshing] = useState(false); // later refreshes
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const controllerRef = useRef(null);
@@ -37,6 +41,12 @@ export function useAttendance({ getToken, refreshInterval = 30000 } = {}) {
       const token = getTokenRef.current ? await getTokenRef.current() : null;
       const raw = await fetchAttendance(controller.signal, token);
       const result = validateAttendance(raw);
+
+      // Every record was unreadable, so treat it as a failed fetch
+      if (result.staff.length === 0 && result.skipped > 0) {
+        throw new Error('Attendance data could not be read.');
+      }
+
       setStaff(result.staff);
       setTotalIn(result.totalIn);
       setSkipped(result.skipped);
@@ -44,26 +54,34 @@ export function useAttendance({ getToken, refreshInterval = 30000 } = {}) {
       setLastUpdated(new Date());
     } catch (err) {
       if (axios.isCancel(err)) return;
-      setError(getErrorMessage(err)); // this will keep the last good data on screen
+      setError(getErrorMessage(err)); // last good data stays; lastUpdated doesn't change
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
   }, []);
+
+  // Used by the timer and the retry/refresh button
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
 
   useEffect(() => {
     load();
     return () => controllerRef.current?.abort();
   }, [load]);
 
-  useAutoRefresh(load, refreshInterval);
+  useAutoRefresh(refresh, refreshInterval);
 
   return {
     staff,
     totalIn,
     skipped,
     loading,
+    refreshing,
     error,
     lastUpdated,
-    refresh: load,
+    refresh,
   };
 }

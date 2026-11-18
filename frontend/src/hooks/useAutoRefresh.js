@@ -8,12 +8,19 @@ export function useAutoRefresh(callback, intervalMs = 30000) {
   }, [callback]);
 
   useEffect(() => {
-    if (!intervalMs) return undefined;
+    if (!(intervalMs > 0)) return undefined; // 0, negative or invalid = off
 
-    const id = setInterval(() => {
-      if (!document.hidden) savedCallback.current(); // this functionn skips while tab is hidden
-    }, intervalMs);
+    const tick = () => {
+      if (!document.hidden) savedCallback.current();
+    };
 
-    return () => clearInterval(id); // cleans up on the unmount
+    const id = setInterval(tick, intervalMs);
+    // Refresh straight away when the user comes back to the tab
+    document.addEventListener('visibilitychange', tick);
+
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', tick);
+    };
   }, [intervalMs]);
 }

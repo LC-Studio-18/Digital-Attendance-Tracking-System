@@ -8,33 +8,45 @@ export function validateAttendance(data) {
   }
 
   const staff = [];
+  const seen = new Set();
   let skipped = 0;
 
   list.forEach((item, index) => {
     const name = typeof item?.name === 'string' ? item.name.trim() : '';
-    const status = String(item?.status ?? '')
-      .trim()
-      .toUpperCase();
 
-    if (!name || !VALID_STATUSES.includes(status)) {
-      skipped += 1; // this is the broke record, it doesnt rennder
+    // Can't show someone with no name, so this row is skipped
+    if (!name) {
+      skipped += 1;
       return;
     }
+
+    // A bad or missing status becomes UNKNOWN instead of hiding the person
+    const rawStatus = String(item?.status ?? '')
+      .trim()
+      .toUpperCase();
+    const status = VALID_STATUSES.includes(rawStatus) ? rawStatus : 'UNKNOWN';
+
+    // Skip repeated ids so the same person never shows twice
+    const id = item.id ?? `${name}-${index}`;
+    if (seen.has(id)) {
+      skipped += 1;
+      return;
+    }
+    seen.add(id);
 
     const rawTime = item.lastClockEvent ?? item.lastEventTime ?? null;
     const time = rawTime ? new Date(rawTime) : null;
 
     staff.push({
-      id: item.id ?? `${name}-${index}`,
+      id,
       name,
       status,
       lastClockEvent: time && !Number.isNaN(time.getTime()) ? time : null,
     });
   });
 
-  const totalIn = Number.isInteger(data?.totalIn)
-    ? data.totalIn
-    : staff.filter((s) => s.status === 'IN').length;
+  // Always count from the validated rows so the total matches the list
+  const totalIn = staff.filter((s) => s.status === 'IN').length;
 
   return { staff, totalIn, skipped };
 }
