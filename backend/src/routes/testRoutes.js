@@ -79,4 +79,31 @@ router.get(
   }
 );
 
+router.get(
+  "/lowercase-role",
+  mockUser("admin"),
+  authorizeRole("Admin"),
+  (req, res) => {
+    res.json({ message: "Welcome, Admin!" });
+  }
+);
+
+router.get(
+  "/whitespace-role",
+  mockUser("Admin "),
+  authorizeRole("Admin"),
+  (req, res) => {
+    res.json({ message: "Welcome, Admin!" });
+  }
+);
+
+router.post(
+  "/role-spoofing",
+  mockUser("Staff"),
+  authorizeRole("Admin"),
+  (req, res) => {
+    res.json({ message: "Welcome, Admin!" });
+  }
+);
+
 export default router; 
