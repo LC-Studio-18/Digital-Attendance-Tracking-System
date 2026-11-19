@@ -168,6 +168,15 @@ or
 }
 ```
 
+### 503 Service Unavailable — Firebase authentication is not configured
+
+```json
+{
+  "success": false,
+  "message": "Firebase is not configured"
+}
+```
+
 Other unexpected errors are handled by the central error handler and return its `err.status` if set, otherwise `500`, with this response shape:
 
 ```json

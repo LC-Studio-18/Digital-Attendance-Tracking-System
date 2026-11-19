@@ -1,11 +1,13 @@
-import { cert, initializeApp } from 'firebase-admin/app';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { readFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-let initialized = false;
-const serviceAccountPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../serviceAccountKey.json');
+let authInstance = null;
+const invalidTokenErrorCodes = new Set([
+  'auth/argument-error',
+  'auth/id-token-expired',
+  'auth/id-token-revoked',
+  'auth/invalid-id-token',
+]);
 
 function initFirebase() {
   if (authInstance) return authInstance;
@@ -37,19 +39,23 @@ function initFirebase() {
 }
 
 export async function verifyIdToken(token) {
-  await initFirebase();
+  const auth = initFirebase();
 
-  if (!initialized) {
+  if (!auth) {
     const error = new Error('Firebase is not configured');
     error.status = 503;
     throw error;
   }
 
   try {
-    return await getAuth().verifyIdToken(token);
+    return await auth.verifyIdToken(token);
   } catch (err) {
-    const error = new Error('Invalid or expired token');
-    error.status = 401;
-    throw error;
+    if (invalidTokenErrorCodes.has(err?.code)) {
+      const error = new Error('Invalid or expired token');
+      error.status = 401;
+      throw error;
+    }
+
+    throw err;
   }
 }

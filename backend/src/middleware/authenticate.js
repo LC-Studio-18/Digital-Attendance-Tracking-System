@@ -20,9 +20,13 @@ export async function authenticate(req, res, next) {
     req.user = decodedUser; // now available to the controller later
     next();
   } catch (err) {
-    return res.status(err.status || 401).json({
-      success: false,
-      message: err.message,
-    });
+    if (err.status === 401 || err.status === 503) {
+      return res.status(err.status).json({
+        success: false,
+        message: err.message,
+      });
+    }
+
+    return next(err);
   }
 }

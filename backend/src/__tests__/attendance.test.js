@@ -162,6 +162,18 @@ describe('GET /api/attendance/me/dashboard', () => {
     expect(res.statusCode).toBe(401);
   });
 
+  it('returns 401 when the Firebase token is invalid', async () => {
+    verifyIdToken.mockRejectedValueOnce(
+      Object.assign(new Error('Invalid or expired token'), { status: 401 })
+    );
+
+    const res = await request(app)
+      .get('/api/attendance/me/dashboard')
+      .set('Authorization', 'Bearer bad-token');
+
+    expect(res.statusCode).toBe(401);
+  });
+
   it('returns 404 when the employee record is not found', async () => {
     verifyIdToken.mockResolvedValueOnce({ uid: 'unknown-user' });
     getEmployeeByUid.mockResolvedValueOnce(null);
@@ -191,6 +203,37 @@ describe('GET /api/attendance/me/dashboard', () => {
     expect(res.statusCode).toBe(403);
   });
 
+  it('passes unexpected token verification errors to the central error handler', async () => {
+    verifyIdToken.mockRejectedValueOnce(new Error('Firebase verification failed'));
+
+    const res = await request(app)
+      .get('/api/attendance/me/dashboard')
+      .set('Authorization', 'Bearer some-valid-token');
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      success: false,
+      message: 'Firebase verification failed',
+    });
+    expect(res.body).not.toHaveProperty('stack');
+  });
+
+  it('passes unexpected employee lookup errors to the central error handler', async () => {
+    verifyIdToken.mockResolvedValueOnce({ uid: 'test-user-123' });
+    getEmployeeByUid.mockRejectedValueOnce(new Error('Employee lookup failed'));
+
+    const res = await request(app)
+      .get('/api/attendance/me/dashboard')
+      .set('Authorization', 'Bearer some-valid-token');
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      success: false,
+      message: 'Employee lookup failed',
+    });
+    expect(res.body).not.toHaveProperty('stack');
+  });
+
   it('returns 200 with the employee data when active', async () => {
     verifyIdToken.mockResolvedValueOnce({ uid: 'test-user-123' });
     getEmployeeByUid.mockResolvedValueOnce({
@@ -204,9 +247,17 @@ describe('GET /api/attendance/me/dashboard', () => {
 
     const res = await request(app)
       .get('/api/attendance/me/dashboard')
-      .set('Authorization', 'Bearer some-valid-token');
+      .set('Authorization', 'Bearer some-valid-token')
+      .query({ userId: 'other-user' });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.data.name).toBe('Test User');
+    expect(getEmployeeByUid).toHaveBeenCalledWith('test-user-123');
+    expect(res.body.data).toEqual({
+      name: 'Test User',
+      status: 'Present',
+      lastClockIn: '2026-11-19T08:00:00.000Z',
+      lastClockOut: null,
+      history: [{ timestamp: '2026-11-19T08:00:00.000Z', status: 'Present' }],
+    });
   });
 });
