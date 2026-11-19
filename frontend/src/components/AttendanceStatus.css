@@ -1,0 +1,66 @@
+.attendance-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    text-align: left;
+}
+
+.attendance-status__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    font-size:16px;
+    font-weight:700;
+    flex-shrink:0;
+}
+
+.attendance-status__title {
+    margin: 0;
+    font-size:14px;
+    font-weight: 700;
+}
+
+.attendance-status__text{
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+}
+/*IN*/
+
+.attendance-status--in{
+    background: #b5ea1b;
+    color: #111;
+}
+
+.attendance-status--in .attendance-status__icon{
+    background: #111;
+    color: #b5ea1b;
+}
+
+/* OUT*/
+
+.attendance-status--out {
+    background: #2f6b73;
+    color: #fff;
+}
+
+.attednace-status--out .attendance-status__icon{
+    background: #fff;
+    color: #2f6b73;
+}
+
+/*Loading error and empty*/
+.attedance-status--loading,
+.attendance-status--error,
+.attendacne-status--empty {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    background: #e5e5e5;
+    color: #111;
+}
