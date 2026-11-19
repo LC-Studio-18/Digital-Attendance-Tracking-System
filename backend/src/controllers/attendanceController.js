@@ -2,33 +2,35 @@ import {
   sortAttendanceRecords,
   buildAttendanceHistoryResponse,
 } from '../utils/attendanceResponse.js';
+import { fetchAttendanceRecords } from '../services/googleSheetsService.js';
+
+const getRecordUid = (record) =>
+  record.uid ?? record.user_id ?? record['user id (firebase uid)'] ?? '';
 
 export const getAttendanceHistory = async (req, res, next) => {
   try {
     const { uid, role } = req.user;
 
-    // Pagination parameters
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 50;
+    // Clamp pagination parameters to at least 1 so negative/zero values never slice backwards
+    const rawPage = parseInt(req.query.page, 10);
+    const rawLimit = parseInt(req.query.limit, 10);
+    const page = Number.isNaN(rawPage) ? 1 : Math.max(1, rawPage);
+    const limit = Number.isNaN(rawLimit) ? 50 : Math.max(1, rawLimit);
+
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    // Temporary mock attendance records until Google Sheets integration
-    const mockAttendanceRecords = [
-      { id: 1, uid: 'user_12345', date: '2026-11-01', status: 'Present' },
-      { id: 2, uid: 'user_99999', date: '2026-11-01', status: 'Absent' },
-      { id: 3, uid: 'user_12345', date: '2026-11-02', status: 'Present' },
-      { id: 4, uid: 'user_88888', date: '2026-11-02', status: 'Late' },
-    ];
+    // Fetch live records from Google Sheets
+    const attendanceRecords = await fetchAttendanceRecords();
 
     // Admins can view all records; staff can view only their own.
     let filteredRecords;
 
     if (role === 'admin') {
-      filteredRecords = mockAttendanceRecords;
+      filteredRecords = attendanceRecords;
     } else if (role === 'staff') {
-      filteredRecords = mockAttendanceRecords.filter(
-        (record) => record.uid === uid,
+      filteredRecords = attendanceRecords.filter(
+        (record) => getRecordUid(record) === uid,
       );
     } else {
       return res.status(403).json({
