@@ -35,5 +35,5 @@ Expected URL after the first successful run:
 
 ## Approval status
 
-- Review PRs: #10 (S1-05), #11 (Phase2-12), #12 (Phase2-13), #13 (Phase2-14), #14 (docs), #15 (this deployment).
+- Review PRs: #16 (S1-05), #17 (Phase2-12), #18 (Phase2-13), #19 (Phase2-14), #20 (docs), #21 (this deployment).
 - Reviewer and product-owner names will be supplied later. PO sign-off is **pending** and must be recorded only after someone verifies the running staging site on desktop and phone.
