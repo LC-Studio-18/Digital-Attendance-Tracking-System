@@ -1,19 +1,32 @@
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const serviceAccount = JSON.parse(
-  readFileSync(join(__dirname, './serviceAccountKey.json'), 'utf8')
+const requiredVariables = [
+  'FIREBASE_PROJECT_ID',
+  'FIREBASE_CLIENT_EMAIL',
+  'FIREBASE_PRIVATE_KEY',
+];
+const missingVariables = requiredVariables.filter(
+  (name) => !process.env[name]?.trim(),
 );
 
+if (missingVariables.length > 0) {
+  throw new Error(
+    `Missing Firebase environment variables: ${missingVariables.join(', ')}`
+  );
+}
+
 if (getApps().length === 0) {
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY
+    .trim()
+    .replace(/\\n/g, '\n');
+
   initializeApp({
-    credential: cert(serviceAccount),
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID.trim(),
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL.trim(),
+      privateKey,
+    }),
   });
 }
 

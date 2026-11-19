@@ -1,8 +1,9 @@
-# Digital Attendance Tracking System – Backend
+# Digital Attendance Tracking System — Backend
 
 ## Overview
 
-The backend provides the API server for the Digital Attendance Tracking System, built using Node.js and Express.
+The backend is a Node.js and Express API. It verifies Firebase ID tokens and
+reads attendance records from Google Sheets.
 
 ## Prerequisites
 
@@ -18,20 +19,35 @@ cd backend
 npm install
 ```
 
-## Environment Configuration
+## Environment configuration
 
-Create a `.env` file in the backend directory using `.env.example` as a reference.
+Create `backend/.env` using `backend/.env.example` as a template. The server
+loads this file with `dotenv` when it starts.
 
-Required variables:
+Firebase Admin authentication requires these values:
 
-```env
-PORT=5000
-FRONTEND_URL=http://localhost:5173
-```
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY`
 
-## Running the Server
+The Firebase private key can be entered on one line with `\n` between lines;
+the application converts those escaped newlines before initializing Firebase.
+The other service account fields (`FIREBASE_TYPE`, `PRIVATE_KEY_ID`, and the
+certificate URLs) may remain in `.env`, but Firebase Admin only needs the three
+values listed above for this configuration.
 
-Development mode (automatically restarts when files change):
+Attendance history also requires Google Sheets credentials and a spreadsheet
+ID: `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, and `SPREADSHEET_ID`. Share the
+spreadsheet with the Google service account. `SHEET_RANGE` is optional; when
+omitted, the API reads columns A through Z from the first sheet tab. Private
+keys for both services can use `\n` escaped newlines.
+
+Keep real credentials in the ignored `backend/.env` file or a deployment
+secret manager. Never commit credentials.
+
+## Running the server
+
+Development mode (restarts when files change):
 
 ```bash
 npm run dev
@@ -43,28 +59,27 @@ Production mode:
 npm start
 ```
 
-The server runs at:
+By default, the server listens on `http://localhost:5000`. Set `PORT` to use a
+different port and `FRONTEND_URL` to the frontend origin allowed by CORS.
 
-`http://localhost:5000`
-
-## Available Endpoints
+## API endpoints
 
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/api/health` | Checks whether the API is running |
+| GET | `/api/v1/attendance/history` | Returns authenticated attendance history; supports `page` and `limit` query parameters |
 
-## Project Structure
+## Project structure
 
 ```text
 backend/
 ├── src/
 │   ├── config/
 │   ├── controllers/
-│   │   └── healthController.js
 │   ├── middleware/
-│   │   └── errorHandler.js
 │   ├── routes/
-│   │   └── healthRoutes.js
+│   ├── services/
+│   ├── utils/
 │   ├── app.js
 │   └── server.js
 ├── .env.example
@@ -74,10 +89,7 @@ backend/
 
 ## Technologies
 
-- Node.js
-- Express
-- CORS
-- dotenv
-- Nodemon
-
-**Note:** Never commit `.env` files or private credentials to the repository.
+- Node.js and Express
+- Firebase Admin SDK
+- Google Sheets API (`googleapis`)
+- CORS, dotenv, and Nodemon
