@@ -1,66 +1,68 @@
+/* Base card shared by every state: icon and text side by side */
 .attendance-status {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  text-align: left;
 }
 
+/* Round icon circle (tick or X) */
 .attendance-status__icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width:32px;
-    height:32px;
-    border-radius:50%;
-    font-size:16px;
-    font-weight:700;
-    flex-shrink:0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0; /* stops the circle squashing on small screens */
 }
 
+/* Bold status heading, e.g. "Clocked In" */
 .attendance-status__title {
-    margin: 0;
-    font-size:14px;
-    font-weight: 700;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
 }
 
-.attendance-status__text{
-    margin: 0;
-    font-size: 14px;
-    font-weight: 700;
-}
-/*IN*/
-
-.attendance-status--in{
-    background: #b5ea1b;
-    color: #111;
+/* Small line under the heading */
+.attendance-status__text {
+  margin: 0;
+  font-size: 11px;
 }
 
-.attendance-status--in .attendance-status__icon{
-    background: #111;
-    color: #b5ea1b;
+/* IN: lime green card with a dark icon */
+.attendance-status--in {
+  background: #b5ea1b;
+  color: #111;
 }
 
-/* OUT*/
+.attendance-status--in .attendance-status__icon {
+  background: #111;
+  color: #b5ea1b;
+}
 
+/* OUT: teal card with a white icon */
 .attendance-status--out {
-    background: #2f6b73;
-    color: #fff;
+  background: #2f6b73;
+  color: #fff;
 }
 
-.attednace-status--out .attendance-status__icon{
-    background: #fff;
-    color: #2f6b73;
+.attendance-status--out .attendance-status__icon {
+  background: #fff;
+  color: #2f6b73;
 }
 
-/*Loading error and empty*/
-.attedance-status--loading,
+/* Loading, error and empty: grey card with centred, stacked content */
+.attendance-status--loading,
 .attendance-status--error,
-.attendacne-status--empty {
-    flex-direction: column;
-    justify-content: center;
-    text-align: center;
-    background: #e5e5e5;
-    color: #111;
+.attendance-status--empty {
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  background: #e5e5e5;
+  color: #111;
 }
