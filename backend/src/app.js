@@ -3,6 +3,7 @@ import cors from 'cors';
 import healthRoutes from './routes/healthRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import attendanceRoutes from './routes/attendance.js';
+import clockInRoutes from './routes/clockIn.js';
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use('/api', healthRoutes);
 
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/clock-in', clockInRoutes);
 
 app.use(errorHandler);
 
