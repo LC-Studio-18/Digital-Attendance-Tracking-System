@@ -32,17 +32,17 @@ None recorded.
 - Branch: `backend4-feature/s1-10b-clock-out`.
 - Commit SHA: `0926cf753e474531480342f049ee92689a97b1b9` (Implement clock-out feature with tests).
 - Environment: Windows, Git Bash UCRT64, VS Code, Postman, cURL, Node.js, Express, detached Git testing worktree, localhost:5000.
-- Preconditions: Detached worktree at the tested commit; local demo service and relevant demo employee state or service-test fixtures. For blocked checks, the required integration is unavailable.
+- Preconditions: Detached worktree at the tested commit; local demo service and relevant demo employee state or service-test fixtures. The required integration is unavailable for blocked checks.
 
 #### Steps to Reproduce
 1. Send first clock-out requests for demo UIDs 001 and 002 and inspect the returned status.
-2. Compare the observed result with the expected result and review the linked evidence.
+2. Check the result against the expected outcome and review the linked evidence.
 
 #### Expected Result
 - Successful demo clock-outs return OUT.
 
 #### Actual Result
-- Both responses returned OUT; durable integrated status was not verified.
+- Both responses returned OUT; whether the integrated status remains saved was not verified.
 
 #### Result
 Pass - Pass at demo level; persistence and integration pending.
@@ -52,7 +52,7 @@ None.
 
 #### Evidence
 - [Manual API results transcription](evidence/2026-11-19-0926cf7-manual-api-results.txt); [EMP001 Postman screenshot](evidence/2026-11-19-0926cf7-clock-out-emp001-pass.png).
-- The manual results file is a transcription of reported results, not an original terminal capture.
+- The manual results file contains a written record of the reported test results, not the original terminal output.
 
 #### Notes
-- This record covers the stated preliminary scope; integrated acceptance and final sign-off remain pending.
+- This record covers preliminary testing only. Integrated acceptance and final sign-off are still pending.

@@ -22,7 +22,7 @@
 | TC-02 | Compare page with supplied Figma clock-out wireframe | Page structure and visual styling conform to the design | Fail |
 
 ## Linked Bugs
-- [BUG-S1-10a-01](bugs/BUG-S1-10a-01-screen-design.md) - Clock-out screen does not match Figma wireframe.
+- [BUG-S1-10a-01](bugs/BUG-S1-10a-01-screen-design.md) - Clock-out screen does not match the Figma wireframe.
 
 ## Testing History
 

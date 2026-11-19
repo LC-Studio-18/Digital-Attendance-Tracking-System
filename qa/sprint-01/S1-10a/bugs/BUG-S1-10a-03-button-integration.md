@@ -28,7 +28,7 @@
 - The page provides an actionable clock-out control that supports the required behavior.
 
 ## Actual Result
-- Static inspection found `Clockout.jsx`/`Clockout.css` exist but `Clockout` is not imported or rendered by `ClockOutPage.jsx`; visible placeholder button has no click handler. No interactive behavior test is claimed.
+- Code review found `Clockout.jsx`/`Clockout.css` exist but `Clockout` is not imported or rendered by `ClockOutPage.jsx`; visible placeholder button has no click handler. Interactive behavior was not tested.
 
 ## Evidence
 - Source inspection documented in [ST-03](../ST-03-clock-out-button.md). The actual screenshot shows appearance only and does not demonstrate button interaction.
@@ -41,4 +41,4 @@
 - Notes: Verify integration and click behavior at runtime after fix; separately test loading/disabled/repeat-click states.
 
 ## Resolution
-Pending QA verification.
+Awaiting QA verification.

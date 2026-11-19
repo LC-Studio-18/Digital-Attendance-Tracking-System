@@ -28,7 +28,7 @@
 - Clocked-out and unexpected values receive accurate, distinguishable messaging.
 
 ## Actual Result
-- Static review indicates clocked-out employees may be told they have not clocked in, and unexpected status values use the same fallback. This is a code-review finding requiring runtime verification, not a confirmed runtime observation.
+- Code review indicates clocked-out employees may be told they have not clocked in, and unexpected status values use the same fallback. This is a code-review finding and needs testing while the application is running; it has not been confirmed at runtime.
 
 ## Evidence
 - Static code-review finding recorded in [ST-02](../ST-02-employee-name-and-status.md). No screenshot is applicable to this logic finding; available screenshots show visual appearance only.
@@ -41,4 +41,4 @@
 - Notes: Verify clocked-out and unexpected values at runtime with appropriate API/test data.
 
 ## Resolution
-Pending QA verification.
+Awaiting QA verification.

@@ -11,9 +11,9 @@ Digital Attendance Tracking System
 
 ## Responsibilities
 - Test assigned tickets and subtasks.
-- Verify acceptance criteria and Definition of Done.
+- Check that work meets the acceptance criteria and Definition of Done.
 - Record test results and defects.
-- Perform retesting and regression testing.
+- Retest fixes and check that related features still work.
 - Maintain QA Markdown records on QA4; Google Sheets is optional.
 
 ## Documentation Structure
@@ -23,8 +23,8 @@ Digital Attendance Tracking System
 
 ## Testing Workflow
 1. Review the assigned Slack ticket.
-2. Identify the exact version to test.
-3. Test the exact developer commit in a separate detached Git worktree, keeping QA4 separate.
+2. Record the exact version under test.
+3. Test the developer commit in a separate detached Git worktree. Keep QA4 separate.
 4. Record results in Markdown on QA4. Google Sheets is optional.
 5. Report defects to the responsible developer.
 6. Retest fixes and perform regression testing.
@@ -43,8 +43,8 @@ Digital Attendance Tracking System
 
 ## Test Statuses
 - Pass: Expected result achieved.
-- Fail: An evaluated result did not meet expectations.
-- Blocked: A dependency prevents completion.
+- Fail: The result did not meet expectations.
+- Blocked: A dependency prevents the check from being completed.
 - Not Run: The check has not been executed.
 
 ## Templates

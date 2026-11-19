@@ -40,4 +40,4 @@
 - Notes:
 
 ## Resolution
-Pending QA verification.
+Awaiting QA verification.

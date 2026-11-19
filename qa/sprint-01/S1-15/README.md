@@ -32,7 +32,7 @@
 - Shared attendance status API.
 
 ## Subtasks
-Pending verification against Slack.
+The Slack assignments have not yet been verified.
 
 ## Linked Bugs
 None recorded.

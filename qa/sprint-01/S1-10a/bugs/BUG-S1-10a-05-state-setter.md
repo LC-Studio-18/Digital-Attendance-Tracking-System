@@ -41,4 +41,4 @@
 - Notes: Verify displayed and API-backed status after a successful clock-out; inspect the corrected state update.
 
 ## Resolution
-Pending QA verification.
+Awaiting QA verification.

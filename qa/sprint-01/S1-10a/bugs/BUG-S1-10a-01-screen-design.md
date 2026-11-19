@@ -1,4 +1,4 @@
-# S1-10a / BUG-S1-10a-01 - Clock-out screen does not match Figma wireframe
+# S1-10a / BUG-S1-10a-01 - Clock-out screen does not match the Figma wireframe
 
 ## Bug Information
 - Ticket ID: S1-10a
@@ -27,14 +27,14 @@
 - Page layout and styling conform to the supplied Figma design.
 
 ## Actual Result
-- Confirmed visual discrepancies: header styling/alignment, missing clock icon and vertical divider, greeting/employee placement, typography and spacing, absent displayed time, date and greeting shown as fixed values, status card placement/styling/indicator, absent attendance information icon, attendance message spacing, and default Vite styling.
+- The page has these confirmed visual differences: header styling/alignment, missing clock icon and vertical divider, greeting/employee placement, typography and spacing, absent displayed time, date and greeting shown as fixed values, status card placement/styling/indicator, absent attendance information icon, attendance message spacing, and default Vite styling.
 
-- Source inspection identified hardcoded date and greeting. A requirement that these values update dynamically is inferred and requires confirmation; the screenshots alone do not establish dynamic behavior.
+- Source review found a hardcoded date and greeting. A requirement that these values update dynamically is inferred and needs confirmation; the screenshots do not show whether these values change dynamically.
 
 ## Evidence
 - Expected Result — Figma wireframe: ![Expected Result — Figma wireframe](../evidence/2026-11-18-clock-out-figma-expected.png)
 - Actual Result — running application at commit d7fb9f8: ![Actual Result — running application at commit d7fb9f8](../evidence/2026-11-18-d7fb9f8-clock-out-actual.png)
-- Screenshots establish visual discrepancies only.
+- The screenshots show visual differences only.
 
 ## Fix and Retest History
 - Date fixed: Pending
@@ -44,4 +44,4 @@
 - Notes: Retest the page against the same Figma reference.
 
 ## Resolution
-Pending QA verification.
+Awaiting QA verification.

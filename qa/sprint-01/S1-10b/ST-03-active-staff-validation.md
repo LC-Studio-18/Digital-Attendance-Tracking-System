@@ -32,11 +32,11 @@ None recorded.
 - Branch: `backend4-feature/s1-10b-clock-out`.
 - Commit SHA: `0926cf753e474531480342f049ee92689a97b1b9` (Implement clock-out feature with tests).
 - Environment: Windows, Git Bash UCRT64, VS Code, Postman, cURL, Node.js, Express, detached Git testing worktree, localhost:5000.
-- Preconditions: Detached worktree at the tested commit; local demo service and relevant demo employee state or service-test fixtures. For blocked checks, the required integration is unavailable.
+- Preconditions: Detached worktree at the tested commit; local demo service and relevant demo employee state or service-test fixtures. The required integration is unavailable for blocked checks.
 
 #### Steps to Reproduce
 1. Run `node --test src/tests/attendanceService.test.js` with the inactive employee fixture; expect service error status 403.
-2. Compare the observed result with the expected result and review the linked evidence.
+2. Check the result against the expected outcome and review the linked evidence.
 
 #### Expected Result
 - The service rejects an inactive employee with error status 403.
@@ -52,7 +52,7 @@ None.
 
 #### Evidence
 - [Service test screenshot](evidence/2026-11-19-0926cf7-service-tests-pass.png).
-- The manual results file is a transcription of reported results, not an original terminal capture.
+- The manual results file contains a written record of the reported test results, not the original terminal output.
 
 #### Notes
-- This record covers the stated preliminary scope; integrated acceptance and final sign-off remain pending.
+- This record covers preliminary testing only. Integrated acceptance and final sign-off are still pending.
