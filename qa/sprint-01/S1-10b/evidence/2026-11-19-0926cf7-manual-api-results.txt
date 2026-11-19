@@ -1,0 +1,39 @@
+S1-10b | 19 November 2026 | commit 0926cf753e474531480342f049ee92689a97b1b9
+Tester: Adam Jattiem
+Environment: Windows, Git Bash UCRT64, detached testing worktree, local Express backend on port 5000.
+This is a transcription/summary of the cURL results reported during the QA conversation, not an original terminal capture. HTTP response bodies and status codes are recorded below, with UTC times where available.
+
+All requests: POST http://localhost:5000/api/attendance/clock-out
+
+Manual 1 (Postman screenshot; not cURL)
+Header: x-demo-firebase-uid: demo-firebase-uid-001
+HTTP 200
+{"success":true,"message":"Clocked out successfully.","data":{"employeeId":"EMP001","firebaseUid":"demo-firebase-uid-001","name":"Demo Employee","status":"OUT","timestamp":"2026-11-19T07:30:38.228Z"}}
+See 2026-11-19-0926cf7-clock-out-emp001-pass.png.
+
+Manual 2 (cURL; duplicate EMP001)
+curl -i -X POST http://localhost:5000/api/attendance/clock-out -H "x-demo-firebase-uid: demo-firebase-uid-001"
+HTTP 409 | 07:34:46 UTC
+{"status":"error","message":"You are not currently clocked in."}
+
+Manual 3 (cURL; first EMP002 request)
+curl -i -X POST http://localhost:5000/api/attendance/clock-out -H "x-demo-firebase-uid: demo-firebase-uid-002"
+HTTP 200 | 07:39:17 UTC
+{"success":true,"message":"Clocked out successfully.","data":{"employeeId":"EMP002","firebaseUid":"demo-firebase-uid-002","name":"Test Employee 2","status":"OUT","timestamp":"2026-11-19T07:39:17.776Z"}}
+
+Manual 4 (cURL; repeat EMP002 request)
+curl -i -X POST http://localhost:5000/api/attendance/clock-out -H "x-demo-firebase-uid: demo-firebase-uid-002"
+HTTP 409 | 07:40:08 UTC
+{"status":"error","message":"You are not currently clocked in."}
+
+Manual 5 (cURL; unknown employee)
+curl -i -X POST http://localhost:5000/api/attendance/clock-out -H "x-demo-firebase-uid: invalid-uid"
+HTTP 404 | 07:40:56 UTC
+{"status":"error","message":"Employee not found."}
+
+Manual 6 (cURL; missing demo UID)
+curl -i -X POST http://localhost:5000/api/attendance/clock-out
+HTTP 401 | 07:41:38 UTC
+{"success":false,"message":"Authentication required."}
+
+Diagnostic: the Postman extension displayed HTTP 409 with the previous 200 response body. cURL confirmed the expected 409 error body; the cause of the inconsistent display was not established. Do not treat this as a confirmed backend defect.
