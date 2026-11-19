@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "dev": "npm --prefix frontend run dev"
+    "dev": "node scripts/dev.js"
   },
   "dependencies": {
     "firebase": "^13.4.0"
