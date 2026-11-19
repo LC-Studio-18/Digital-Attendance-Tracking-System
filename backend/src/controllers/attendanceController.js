@@ -15,21 +15,24 @@ export const getAttendanceRecords = async (req, res, next) => {
       return res.status(200).json({ success: true, count: 0, data: [] });
     }
 
-    // Map rows from the Employees sheet
-    const employees = rows.slice(1).map((row, index) => ({
-      id: row[0] || `emp-${index}`,
-      employeeId: row[1] || '',
-      fullName: row[2] || '',
-      email: row[3] || '',
-      department: row[4] || '',
-      role: row[5] || 'Staff',
-      status: row[6] || 'Active',
-    }));
+    // Map rows from the Employees sheet and exclude deactivated (Inactive) employees
+    const activeEmployees = rows
+      .slice(1)
+      .map((row, index) => ({
+        id: row[0] || `emp-${index}`,
+        employeeId: row[1] || '',
+        fullName: row[2] || '',
+        email: row[3] || '',
+        department: row[4] || '',
+        role: row[5] || 'Staff',
+        status: row[6] || 'Active',
+      }))
+      .filter((emp) => emp.status.trim().toLowerCase() !== 'inactive');
 
     return res.status(200).json({
       success: true,
-      count: employees.length,
-      data: employees,
+      count: activeEmployees.length,
+      data: activeEmployees,
     });
   } catch (err) {
     const error = new Error(`Failed to retrieve data from Google Sheets: ${err.message}`);
@@ -60,7 +63,7 @@ export const handleCheckIn = async (req, res, next) => {
     }
 
     const status = employeeRow[6] || 'Active';
-    if (status.toLowerCase() === 'inactive') {
+    if (status.trim().toLowerCase() === 'inactive') {
       return res.status(403).json({ error: 'Forbidden: Staff account is inactive' });
     }
 
