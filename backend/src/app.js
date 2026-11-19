@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import authTestRoutes from './routes/authTestRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import testRoutes from "./routes/testRoutes.js";
@@ -17,6 +18,8 @@ app.use(express.json());
 app.use("/api/test", testRoutes);
 
 app.use('/api', healthRoutes);
+
+app.use('/api', authTestRoutes);
 
 app.use(errorHandler);
 
