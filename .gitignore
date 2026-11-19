@@ -17,3 +17,8 @@ dist-ssr/
 .DS_Store
 .vscode/
 .idea/
+
+/credentials
+
+# Firebase service account credentials
+/backend/credentials/
