@@ -34,18 +34,19 @@ export async function getAttendance() {
   }
 }
 
-// Staff tab: A uid, B name, C active (TRUE/FALSE), D status (IN/OUT)
+// Staff tab: A employeeId, B uid, C name, D active, E status
 export async function getStaffMember(uid) {
   try {
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.SPREADSHEET_ID,
-      range: 'Staff!A2:D',
+      range: 'Staff!A2:E',
     });
     const rows = res.data.values || [];
-    const i = rows.findIndex((r) => r[0] === uid);
+    const i = rows.findIndex((r) => r[1] === uid);
     if (i === -1) return null;
-    const [, name, active, status] = rows[i];
+    const [employeeId, , name, active, status] = rows[i];
     return {
+      employeeId,
       name,
       active: String(active).toUpperCase() === 'TRUE',
       status: String(status || '').toUpperCase(),
@@ -55,19 +56,18 @@ export async function getStaffMember(uid) {
     throw toHttpError(err);
   }
 }
-
-// Attendance tab: A timestamp, B uid, C name, D locationId
-export async function recordClockIn({ uid, name, locationId, timestamp, rowNumber }) {
+// Attendance tab: A timestamp, B employeeId, C uid, D name, E locationId
+export async function recordClockIn({ employeeId, uid, name, locationId, timestamp, rowNumber }) {
   try {
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.SPREADSHEET_ID,
-      range: 'Attendance!A:D',
+      range: 'Attendance!A:E',
       valueInputOption: 'RAW',
-      requestBody: { values: [[timestamp, uid, name, locationId]] },
+      requestBody: { values: [[timestamp, employeeId, uid, name, locationId]]},
     });
     await sheets.spreadsheets.values.update({
       spreadsheetId: process.env.SPREADSHEET_ID,
-      range: `Staff!D${rowNumber}`,
+      range: `Staff!E${rowNumber}`,
       valueInputOption: 'RAW',
       requestBody: { values: [['IN']] },
     });
