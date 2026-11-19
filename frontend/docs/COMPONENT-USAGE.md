@@ -3,7 +3,12 @@
 Import the shared components from `src/components`:
 
 ```jsx
-import { ErrorMessage, Loader, SuccessMessage } from './components';
+import {
+  ErrorMessage,
+  ExportCsvControl,
+  Loader,
+  SuccessMessage,
+} from './components';
 ```
 
 ## Loader
@@ -40,6 +45,19 @@ Render success only after the server confirms the action. `message` defaults to 
   saved && <SuccessMessage message="Your clock-in was recorded." />;
 }
 ```
+
+## ExportCsvControl
+
+Ready to drop into the Admin Dashboard when its owner wires it in. It renders the start/end date filters next to an **Export CSV** button, disables both while exporting, and shows an inline `Loader` inside the button. The CSV is built in the browser from the `records` you pass, filtered by the inclusive date range. Styling follows the `L.C Admin/dashboard.html` design (dark `#0f172a` button, 6px radius, compact gray-bordered date inputs); no dashboard page files were added or changed.
+
+```jsx
+// Inside the Admin Dashboard, with the records already loaded:
+<ExportCsvControl records={attendanceRecords} />
+```
+
+Default columns match the attendance history table (date, staff, email, department, clock in, clock out, hours, status). Override them with `columns={[{ key, label, getValue }]}`, change `filename`, `label`, `loadingLabel` or `minLoadingMs`, or pass `onExport(filteredRecords, range)` to replace the built-in download with your own request. The component never mutates the records array.
+
+Reversed date ranges and failed exports show safe, inline feedback instead of raw errors. Shared CSV helpers live in `src/utils/csv.js`.
 
 ## Error copy reference
 

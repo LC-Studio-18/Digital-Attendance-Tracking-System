@@ -257,8 +257,10 @@
         <p>
           Page, route, role-aware rendering, API wiring and UI states are in
           place. Firebase Auth is now configured and supplies the ID token and
-          custom-claim role. Work is recorded on the active branch only; nothing
-          has been committed, merged or pushed.
+          custom-claim role. A reusable Admin Dashboard Export CSV control with
+          a date filter and loading state is also ready to drop in. Work is
+          recorded on the active branch only; nothing has been committed, merged
+          or pushed.
         </p>
         <div class="tags">
           <span>Branch: frontend6-components</span>
@@ -266,6 +268,7 @@
           <span>React Router</span>
           <span>Axios</span>
           <span>Firebase SDK wired</span>
+          <span>Admin dashboard CSV export control</span>
         </div>
       </header>
 
@@ -274,6 +277,7 @@
         <a href="#files">Files</a>
         <a href="#integration">Integration notes</a>
         <a href="#states">UI states</a>
+        <a href="#export">CSV export control</a>
         <a href="#verify">Verification</a>
         <a href="#next">Pending</a>
         <a href="#view">View locally</a>
@@ -328,6 +332,19 @@
                 friendly error with retry, and a responsive records table.
               </td>
               <td><span class="badge badge--done">Done</span></td>
+            </tr>
+            <tr>
+              <td><strong>Phase2-11</strong><br />CSV export control</td>
+              <td>
+                Built <code>ExportCsvControl</code> with start/end date inputs,
+                an <strong>Export CSV</strong> button, a disabled + spinner
+                loading state, inclusive date filtering, and a client-side CSV
+                download. Ready for the Admin Dashboard page being built by the
+                team.
+              </td>
+              <td>
+                <span class="badge badge--wait">Ready for dashboard</span>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -399,6 +416,38 @@
             <tr>
               <td><code>src/App.jsx</code>, <code>src/main.jsx</code></td>
               <td>Route registration and browser router wrapper.</td>
+            </tr>
+            <tr>
+              <td><code>src/components/ExportCsvControl.jsx</code></td>
+              <td>
+                Date filter, Export CSV button, loading state and inline
+                feedback; exports the records passed to it.
+              </td>
+            </tr>
+            <tr>
+              <td><code>src/components/ExportCsvControl.test.jsx</code></td>
+              <td>
+                Five tests for rendering, loading, filtering, validation and
+                failure.
+              </td>
+            </tr>
+            <tr>
+              <td><code>src/styles/export-csv.css</code></td>
+              <td>Responsive control styles using the shared design tokens.</td>
+            </tr>
+            <tr>
+              <td>
+                <code>src/utils/csv.js</code>,
+                <code>src/utils/csv.test.js</code>
+              </td>
+              <td>
+                CSV escaping, inclusive date filtering, browser download and
+                seven unit tests.
+              </td>
+            </tr>
+            <tr>
+              <td><code>docs/COMPONENT-USAGE.md</code></td>
+              <td>Usage and integration notes for the new export control.</td>
             </tr>
             <tr>
               <td><code>docs/ATTENDANCE-HISTORY.md</code></td>
@@ -494,15 +543,90 @@
                 columns when applicable.
               </td>
             </tr>
+            <tr>
+              <td>Exporting</td>
+              <td>
+                The <strong>Export CSV</strong> button and both date inputs are
+                disabled, and the button shows a labelled inline
+                <code>Loader</code>.
+              </td>
+            </tr>
+            <tr>
+              <td>Export feedback</td>
+              <td>
+                Inline record count on success or safe error copy; a reversed
+                date range is rejected before the export starts.
+              </td>
+            </tr>
           </tbody>
         </table>
+      </section>
+
+      <section id="export">
+        <h2>Admin dashboard — CSV export control</h2>
+        <p>
+          The Dashboard page itself is being built by teammates, so no route or
+          page was changed. <code>ExportCsvControl</code> is self-contained and
+          exports client-side from the records the dashboard already has; no
+          backend endpoint is required.
+        </p>
+        <pre><code>import { ExportCsvControl } from './components';
+
+&lt;ExportCsvControl records={attendanceRecords} /&gt;</code></pre>
+        <div class="grid">
+          <div class="card">
+            <h3>Date filter</h3>
+            <p>
+              Start and end date inputs sit next to the button. The range is
+              inclusive; a reversed range shows an inline error and blocks the
+              export.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Loading state</h3>
+            <p>
+              On click the button and both inputs are disabled, and the button
+              shows a labelled inline <code>Loader</code>. Double submits are
+              blocked until the export finishes.
+            </p>
+          </div>
+          <div class="card">
+            <h3>CSV output</h3>
+            <p>
+              Date, Staff, Email, Department, Clock in, Clock out, Hours and
+              Status by default. Values with commas, quotes or newlines are
+              escaped correctly and the file downloads as
+              <code>.csv</code> with a UTF-8 BOM.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Customising</h3>
+            <p>
+              Optional props: <code>columns</code>, <code>filename</code>,
+              <code>label</code>, <code>loadingLabel</code>,
+              <code>minLoadingMs</code> and <code>onExport</code> to replace the
+              built-in download.
+            </p>
+          </div>
+        </div>
+        <div class="callout">
+          <strong>Design source:</strong> styled from
+          <code>L.C Admin/dashboard.html</code> on the desktop (dark
+          <code>#0f172a</code> button, 6px radius, 12px label and gray-bordered
+          date inputs). The private Slack/Figma link was not accessible. The
+          dashboard page itself was not created or changed here — it remains its
+          owner's work.
+        </div>
       </section>
 
       <section id="verify">
         <h2>Verification</h2>
         <ul>
           <li><code>npm run lint</code> — passed with no errors.</li>
-          <li><code>npm test</code> — 7 test files, 34 tests passed.</li>
+          <li>
+            <code>npm test</code> — 9 test files, 46 tests passed (including 5
+            export-control and 7 CSV utility tests).
+          </li>
           <li><code>npm run build</code> — production build succeeded.</li>
           <li>
             <code>npm run format:check</code> — clean after Prettier was applied
@@ -530,6 +654,14 @@
           <li>
             Confirmation of the history API response fields and query parameters
             (e.g. date range, pagination).
+          </li>
+          <li>
+            Drop <code>ExportCsvControl</code> into the Admin Dashboard once
+            that page is available, passing its loaded attendance records.
+          </li>
+          <li>
+            Confirm the export button's placement, labels and styling against
+            the Figma design when it is shared.
           </li>
           <li>
             End-to-end test with a real Firebase token backed by the backend
@@ -598,6 +730,16 @@ npm run dev</code></pre>
                 Received the Firebase web config, installed the SDK, added env
                 values, and switched the page to live ID tokens and custom
                 claims. Added auth tests and refreshed these notes.
+              </td>
+            </tr>
+            <tr>
+              <td>19 Nov 2026</td>
+              <td>
+                Built the reusable Admin Dashboard CSV export control: date
+                filter, Export CSV button, disabled + spinner loading state,
+                client-side CSV generation and tests. Documented it in the
+                component usage guide and both progress records; the dashboard
+                page itself remains with the team.
               </td>
             </tr>
           </tbody>
