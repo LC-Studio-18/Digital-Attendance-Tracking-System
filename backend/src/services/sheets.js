@@ -34,42 +34,46 @@ export async function getAttendance() {
   }
 }
 
-// Staff tab: A employeeId, B uid, C name, D active, E status
+// Employees tab: A uid, B employeeId, C name, D email, E department, F role, G status (Active/Inactive)
+// Attendance tab: A eventId, B timestamp, C uid, D eventType (Clock In/Clock Out), E location, F comment
+// Attendance status is not stored: it is the uid's latest Attendance event.
 export async function getStaffMember(uid) {
   try {
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.SPREADSHEET_ID,
-      range: 'Staff!A2:E',
-    });
-    const rows = res.data.values || [];
-    const i = rows.findIndex((r) => r[1] === uid);
-    if (i === -1) return null;
-    const [employeeId, , name, active, status] = rows[i];
+    const read = (range) =>
+      sheets.spreadsheets.values.get({ spreadsheetId: process.env.SPREADSHEET_ID, range });
+    const [employees, attendance] = await Promise.all([
+      read('Employees!A2:G'),
+      read('Attendance!A2:F'),
+    ]);
+
+    const row = (employees.data.values || []).find((r) => r[0] === uid);
+    if (!row) return null;
+
+    const events = (attendance.data.values || []).filter((r) => r[2] === uid);
+    const last = String(events.at(-1)?.[3] || '').trim().toUpperCase();
+
     return {
-      employeeId,
-      name,
-      active: String(active).toUpperCase() === 'TRUE',
-      status: String(status || '').toUpperCase(),
-      rowNumber: i + 2, // +1 for the header row, +1 because sheet rows start at 1
+      employeeId: row[1],
+      name: row[2],
+      active: String(row[6]).trim().toUpperCase() === 'ACTIVE',
+      status: last === 'CLOCK IN' ? 'IN' : 'OUT',
     };
   } catch (err) {
     throw toHttpError(err);
   }
 }
-// Attendance tab: A timestamp, B employeeId, C uid, D name, E locationId
-export async function recordClockIn({ employeeId, uid, name, locationId, timestamp, rowNumber }) {
+
+// The new row is also what marks the employee as IN.
+export async function recordClockIn({ employeeId, uid, locationId, timestamp }) {
   try {
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.SPREADSHEET_ID,
-      range: 'Attendance!A:E',
+      range: 'Attendance!A:F',
       valueInputOption: 'RAW',
-      requestBody: { values: [[timestamp, employeeId, uid, name, locationId]]},
-    });
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: process.env.SPREADSHEET_ID,
-      range: `Staff!E${rowNumber}`,
-      valueInputOption: 'RAW',
-      requestBody: { values: [['IN']] },
+      requestBody: {
+        // employee ID goes in the Comment column because the tab has no Employee ID column
+        values: [[`att-${Date.now()}`, timestamp, uid, 'Clock In', locationId, employeeId]],
+      },
     });
   } catch (err) {
     throw toHttpError(err);
