@@ -28,6 +28,23 @@ describe('getAttendanceHistory', () => {
     );
   });
 
+  it('forwards filter parameters to the history endpoint', async () => {
+    axios.get.mockResolvedValue({ data: [] });
+    const params = {
+      startDate: '2026-11-01',
+      endDate: '2026-11-19',
+      status: 'IN',
+      search: 'alice',
+    };
+
+    await getAttendanceHistory({ token: 'firebase-token', params });
+
+    expect(axios.get).toHaveBeenCalledWith(
+      `${API_BASE_URL}${ATTENDANCE_HISTORY_PATH}`,
+      expect.objectContaining({ params })
+    );
+  });
+
   it('maps network failures to safe error codes', async () => {
     axios.get.mockRejectedValue({ code: 'ERR_NETWORK' });
 

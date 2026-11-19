@@ -1,7 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ErrorMessage, Loader } from '../components/index.js';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ErrorMessage, HistoryFilters, Loader } from '../components/index.js';
 import { getAttendanceHistory } from '../services/attendanceApi.js';
 import { getAuthSession } from '../services/authService.js';
+import {
+  EMPTY_ATTENDANCE_FILTERS,
+  filterAttendanceRecords,
+  getRecordStatus,
+  hasActiveFilters,
+  toApiParams,
+} from '../utils/attendanceFilters.js';
 import '../styles/attendance-history.css';
 
 const BASE_COLUMNS = [
@@ -156,14 +163,20 @@ export default function AttendanceHistoryPage({
   const [records, setRecords] = useState([]);
   const [status, setStatus] = useState('loading');
   const [errorCode, setErrorCode] = useState(null);
+  const [filters, setFilters] = useState({ ...EMPTY_ATTENDANCE_FILTERS });
 
   const token = session?.token ?? null;
   const isAdmin = (session?.role ?? 'staff') === 'admin';
   const columns = isAdmin ? [...ADMIN_COLUMNS, ...BASE_COLUMNS] : BASE_COLUMNS;
+  const isFiltered = hasActiveFilters(filters);
+  const visibleRecords = useMemo(
+    () => filterAttendanceRecords(records, filters),
+    [records, filters]
+  );
 
   const request = useCallback(
-    (signal) => fetchHistory({ token, signal }),
-    [fetchHistory, token]
+    (signal) => fetchHistory({ token, signal, params: toApiParams(filters) }),
+    [fetchHistory, token, filters]
   );
 
   const refresh = useCallback(async () => {
@@ -248,12 +261,25 @@ export default function AttendanceHistoryPage({
         </div>
       </header>
 
+      <section
+        className="history-filters-card"
+        aria-label="Filter attendance history"
+      >
+        <h2 className="history-filters-card__title">Filters</h2>
+        <HistoryFilters
+          onApply={applyFilters}
+          onClear={clearFilters}
+          disabled={status === 'loading'}
+        />
+      </section>
+
       <section className="history-card" aria-label="Attendance history">
         <div className="history-card__head">
           <h2>Records</h2>
-          {status === 'ready' && records.length > 0 ? (
+          {status === 'ready' && visibleRecords.length > 0 ? (
             <span className="history-card__count">
-              {records.length} {records.length === 1 ? 'record' : 'records'}
+              {visibleRecords.length}{' '}
+              {visibleRecords.length === 1 ? 'record' : 'records'}
             </span>
           ) : null}
         </div>

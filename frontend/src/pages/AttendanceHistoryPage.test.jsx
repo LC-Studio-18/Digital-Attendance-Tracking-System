@@ -103,6 +103,113 @@ describe('AttendanceHistoryPage', () => {
     });
   });
 
+  it('sends applied filters to the API and shows the returned records', async () => {
+    window.localStorage.setItem('firebaseIdToken', tokenFor('admin'));
+    getAttendanceHistory.mockImplementation(({ params }) =>
+      Promise.resolve(params?.status === 'IN' ? [inRecord] : [record, inRecord])
+    );
+
+    render(<AttendanceHistoryPage />);
+    expect(await screen.findByText('Alice Brown')).toBeInTheDocument();
+    expect(screen.getByText('Bob Carter')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Status'), {
+      target: { value: 'IN' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply filters' }));
+
+    await waitFor(() => {
+      expect(getAttendanceHistory).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: expect.objectContaining({ status: 'IN' }),
+        })
+      );
+    });
+    expect(await screen.findByText('Bob Carter')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText('Alice Brown')).not.toBeInTheDocument();
+    });
+  });
+
+  it('sends the date range as query parameters', async () => {
+    window.localStorage.setItem('firebaseIdToken', tokenFor('admin'));
+    getAttendanceHistory.mockImplementation(({ params }) =>
+      Promise.resolve(params?.startDate ? [inRecord] : [record, inRecord])
+    );
+
+    render(<AttendanceHistoryPage />);
+    expect(await screen.findByText('Alice Brown')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('From'), {
+      target: { value: '2026-11-19' },
+    });
+    fireEvent.change(screen.getByLabelText('To'), {
+      target: { value: '2026-11-19' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply filters' }));
+
+    await waitFor(() => {
+      expect(getAttendanceHistory).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: expect.objectContaining({
+            startDate: '2026-11-19',
+            endDate: '2026-11-19',
+          }),
+        })
+      );
+    });
+    expect(await screen.findByText('Bob Carter')).toBeInTheDocument();
+    expect(screen.queryByText('Alice Brown')).not.toBeInTheDocument();
+  });
+
+  it('clears filters, refetches without parameters and restores all records', async () => {
+    window.localStorage.setItem('firebaseIdToken', tokenFor('admin'));
+    getAttendanceHistory.mockImplementation(({ params }) =>
+      Promise.resolve(params?.status === 'IN' ? [inRecord] : [record, inRecord])
+    );
+
+    render(<AttendanceHistoryPage />);
+    expect(await screen.findByText('Alice Brown')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Status'), {
+      target: { value: 'IN' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply filters' }));
+    expect(await screen.findByText('Bob Carter')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+
+    await waitFor(() => {
+      expect(getAttendanceHistory).toHaveBeenLastCalledWith(
+        expect.objectContaining({ params: undefined })
+      );
+    });
+    expect(await screen.findByText('Alice Brown')).toBeInTheDocument();
+    expect(screen.getByLabelText('Status')).toHaveValue('');
+  });
+
+  it('shows a safe error and skips the request for an invalid date range', async () => {
+    window.localStorage.setItem('firebaseIdToken', tokenFor('admin'));
+    getAttendanceHistory.mockResolvedValue([record]);
+    render(<AttendanceHistoryPage />);
+    expect(await screen.findByText('Alice Brown')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('From'), {
+      target: { value: '2026-11-20' },
+    });
+    fireEvent.change(screen.getByLabelText('To'), {
+      target: { value: '2026-11-18' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply filters' }));
+
+    expect(
+      await screen.findByText(
+        'The start date must be on or before the end date.'
+      )
+    ).toBeInTheDocument();
+    expect(getAttendanceHistory).toHaveBeenCalledTimes(1);
+  });
+
   it('registers the /attendance-history route', async () => {
     getAttendanceHistory.mockResolvedValue([]);
 
