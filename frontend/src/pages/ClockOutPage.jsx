@@ -108,10 +108,10 @@ export default function ClockoutPage() {
                 {greeting}
               </p>
 
-              <h1>Welcome, {'{Employee}'}</h1>
+              <h1>Welcome, <span clockout-h1>{'{Employee}'}</span></h1>
 
               <p className="welcome-copy__datetime">
-                {dateLabel} • {timeLabel}
+                {dateLabel} • {timeLabel} 
               </p>
             </div>
           </div>
