@@ -300,8 +300,7 @@ function Login({ onLoginSuccess }) {
           <p className="card-eyebrow">{cardCopy.eyebrow}</p>
           <h2 className="card-title">{cardCopy.title}</h2>
           <p className="card-description">{cardCopy.description}</p>
-
-          {isSignup ? (
+ ? (
             <form
               onSubmit={handleSignup}
               autoComplete="on"

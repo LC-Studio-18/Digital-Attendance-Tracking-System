@@ -92,8 +92,6 @@ export const registerUser = async (email, password, displayName = '') => {
     );
   }
 
-  await checkRegisteredEmail(normalizedEmail);
-
   const credential = await createUserWithEmailAndPassword(
     auth,
     normalizedEmail,
@@ -120,8 +118,6 @@ export const loginUser = async (email, password, rememberMe = false) => {
     throw createAuthError('auth/missing-password', 'A password is required.');
   }
 
-  await checkRegisteredEmail(normalizedEmail);
-
   await setPersistence(
     auth,
     rememberMe ? browserLocalPersistence : browserSessionPersistence,
@@ -143,8 +139,6 @@ export const sendPasswordlessSignInLink = async (email) => {
   if (!normalizedEmail) {
     throw createAuthError('auth/invalid-email', 'A valid email address is required.');
   }
-
-  await checkRegisteredEmail(normalizedEmail);
 
   const url = import.meta.env.VITE_EMAIL_LINK_URL || window.location.origin;
 
@@ -174,8 +168,6 @@ export const completePasswordlessSignIn = async (email) => {
     );
   }
 
-  await checkRegisteredEmail(signInEmail);
-
   const credential = await signInWithEmailLink(
     auth,
     signInEmail,
@@ -197,8 +189,6 @@ export const resetPassword = async (email) => {
   if (!normalizedEmail) {
     throw createAuthError('auth/invalid-email', 'A valid email address is required.');
   }
-
-  await checkRegisteredEmail(normalizedEmail);
 
   return sendPasswordResetEmail(auth, normalizedEmail);
 };
