@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import '../App.css';
+import { postClockIn } from '../services/clockInService.js';
 
 function ClockIcon() {
   return (
@@ -32,7 +33,8 @@ function AttendanceStatus({ clockedIn, clockInTime }) {
   );
 }
 
-export default function ClockIn() {
+export default function ClockIn({ user }) {
+  const employeeName = user?.displayName || 'Employee';
   const [now, setNow] = useState(() => new Date());
   const [clockedIn, setClockedIn] = useState(false);
   const [clockInTime, setClockInTime] = useState('');
@@ -119,10 +121,8 @@ export default function ClockIn() {
     setClockInError('');
 
     try {
-      await new Promise((resolve) => window.setTimeout(resolve, 2200));
-      if (!navigator.onLine) {
-        throw new Error('You appear to be offline. Check your connection and try again.');
-      }
+      const token = await user.getIdToken();
+      const { timestamp } = await postClockIn(token);
 
       setClockInTime(
         new Intl.DateTimeFormat('en-ZA', {
@@ -130,7 +130,7 @@ export default function ClockIn() {
           minute: '2-digit',
           hour12: true,
         })
-          .format(new Date())
+          .format(new Date(timestamp))
           .toUpperCase(),
       );
       setClockedIn(true);
@@ -138,9 +138,10 @@ export default function ClockIn() {
       setConfirmationOpen(false);
     } catch (error) {
       setClockInError(
-        error instanceof Error
-          ? error.message
-          : 'Clock-in could not be completed. Please try again.',
+        error.response?.data?.message ||
+          (error.request
+            ? 'Could not reach the server. Check your connection and try again.'
+            : 'Clock-in could not be completed. Please try again.'),
       );
       setRequestState('error');
     }
