@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import '../App.css';
 
 function ClockIcon() {
   return (
     <span className="clock-icon" aria-hidden="true">
-      <span className="clock-icon__face">
-        <span className="clock-icon__hand" />
-      </span>
+      <svg viewBox="0 0 112 112" focusable="false">
+        <circle cx="56" cy="56" r="48" />
+        <path d="M56 20v37l21 12" />
+      </svg>
     </span>
   );
 }
@@ -14,17 +15,19 @@ function ClockIcon() {
 function AttendanceStatus({ clockedIn, clockInTime }) {
   return (
     <aside className="attendance-status" aria-live="polite">
-      <span className="attendance-status__badge">
-        {clockedIn ? 'Clocked In' : 'Clocked Out'}
-      </span>
-      <p className="attendance-status__headline">
-        {clockedIn ? `You clocked in at ${clockInTime}` : "You haven't clocked in yet"}
-      </p>
-      <p className="attendance-status__description">
-        {clockedIn
-          ? 'Your attendance has been recorded for today'
-          : "Your attendance hasn't been recorded for today"}
-      </p>
+      <div className="attendance-status__card">
+        <span className="attendance-status__badge">
+          {clockedIn ? 'Clocked In' : 'Clocked Out'}
+        </span>
+        <p className="attendance-status__headline">
+          {clockedIn ? `You clocked in at ${clockInTime}` : "You haven't clocked in yet"}
+        </p>
+        <p className="attendance-status__description">
+          {clockedIn
+            ? 'Your attendance has been recorded for today'
+            : "Your attendance hasn't been recorded for today"}
+        </p>
+      </div>
     </aside>
   );
 }
@@ -35,11 +38,59 @@ export default function ClockIn() {
   const [clockInTime, setClockInTime] = useState('');
   const [requestState, setRequestState] = useState('idle');
   const [clockInError, setClockInError] = useState('');
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const confirmationRef = useRef(null);
+  const cancelButtonRef = useRef(null);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 30_000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!confirmationOpen) return undefined;
+
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    if (requestState === 'loading') {
+      confirmationRef.current?.focus();
+    } else {
+      cancelButtonRef.current?.focus();
+    }
+
+    function handleDialogKeyDown(event) {
+      if (event.key === 'Escape' && requestState !== 'loading') {
+        setConfirmationOpen(false);
+      }
+
+      if (event.key === 'Tab') {
+        const controls = confirmationRef.current?.querySelectorAll('button:not(:disabled)');
+        if (!controls?.length) {
+          event.preventDefault();
+          confirmationRef.current?.focus();
+          return;
+        }
+
+        const firstControl = controls[0];
+        const lastControl = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === firstControl) {
+          event.preventDefault();
+          lastControl.focus();
+        } else if (!event.shiftKey && document.activeElement === lastControl) {
+          event.preventDefault();
+          firstControl.focus();
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleDialogKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleDialogKeyDown);
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus instanceof HTMLElement) previousFocus.focus();
+    };
+  }, [confirmationOpen, requestState]);
 
   const dateLabel = new Intl.DateTimeFormat('en-ZA', {
     weekday: 'long',
@@ -61,14 +112,14 @@ export default function ClockIn() {
         ? 'Good Afternoon!'
         : 'Good Evening!';
 
-  async function handleClockIn() {
+  async function confirmClockIn() {
     if (clockedIn || requestState === 'loading') return;
 
     setRequestState('loading');
     setClockInError('');
 
     try {
-      await new Promise((resolve) => window.setTimeout(resolve, 1500));
+      await new Promise((resolve) => window.setTimeout(resolve, 2200));
       if (!navigator.onLine) {
         throw new Error('You appear to be offline. Check your connection and try again.');
       }
@@ -84,6 +135,7 @@ export default function ClockIn() {
       );
       setClockedIn(true);
       setRequestState('success');
+      setConfirmationOpen(false);
     } catch (error) {
       setClockInError(
         error instanceof Error
@@ -95,30 +147,56 @@ export default function ClockIn() {
   }
 
   const requestMessage =
-    requestState === 'loading'
-      ? 'Clocking you in...'
-      : requestState === 'success'
-        ? 'Clock-in confirmed successfully.'
-        : requestState === 'error'
-          ? clockInError
-          : '';
+    requestState === 'success' ? 'Clock-in confirmed successfully.' : '';
 
   return (
+    <>
     <main className="clock-in-page">
-      <header className="topbar">
-        <a className="topbar__brand" href="#home" aria-label="LC Studio home">
-          LC Studio
+      <header className={`topbar${clockedIn ? ' topbar--success' : ''}`}>
+        <a className="topbar__brand" href="#home" aria-label="Life Choices home">
+          <svg className="topbar__mark" viewBox="0 0 50 34" aria-hidden="true">
+            <path d="M4 29V14l8-8 8 8v15M20 29V11l8-7 8 7v18M34 29V16l7-7 7 7v13" />
+            <path d="M1 16 12 4l9 9L30 2l10 10 7-7" />
+          </svg>
+          <span className="topbar__life">life</span><span className="topbar__choices">choices</span>
         </a>
-        <span className="topbar__subtitle">Digital Attendance</span>
       </header>
 
+      {clockedIn ? (
+        <section className="clock-success" aria-labelledby="success-greeting">
+          <div className="clock-success__layout">
+            <div className="clock-success__copy">
+              <h1 id="success-greeting">{greeting.replace(' ', '\n')}</h1>
+              <p className="clock-success__welcome">
+                Welcome, <span>{'{Employee}'}</span>
+              </p>
+              <div className="clock-success__brand-copy">
+                <p>WELCOME TO</p>
+                <strong>LC <em>ATTENDS.</em></strong>
+              </div>
+            </div>
+            <div className="clock-success__divider" aria-hidden="true" />
+            <aside className="clock-success__card" aria-live="polite">
+              <span className="clock-success__check" aria-hidden="true">
+                <svg viewBox="0 0 100 100" fill="none">
+                  <path d="m20 51 22 23 40-51" stroke="currentColor" strokeWidth="8" />
+                </svg>
+              </span>
+              <h2>Clocked In!</h2>
+              <p>Your arrival has been recorded. Live tracking has been enabled</p>
+              <time>{clockInTime}</time>
+            </aside>
+          </div>
+          <button className="clock-success__dashboard" type="button">View Dashboard</button>
+        </section>
+      ) : (
       <section className="clock-in-content" aria-labelledby="welcome-heading">
         <div className="welcome-panel">
           <div className="welcome-panel__identity">
             <ClockIcon />
             <div className="welcome-copy">
               <p className="welcome-copy__greeting">{greeting}</p>
-              <h1 id="welcome-heading">Welcome, {'{Employee}'}</h1>
+              <h1 id="welcome-heading">Welcome, <span>{'{Employee}'}</span></h1>
               <p className="welcome-copy__datetime">
                 {dateLabel} <span aria-hidden="true">•</span> {timeLabel}
               </p>
@@ -131,28 +209,28 @@ export default function ClockIn() {
           <button
             className="clock-action__button"
             type="button"
-            onClick={handleClockIn}
+            onClick={() => {
+              setClockInError('');
+              setRequestState('idle');
+              setConfirmationOpen(true);
+            }}
             disabled={clockedIn || requestState === 'loading'}
-            aria-busy={requestState === 'loading'}
+            aria-haspopup="dialog"
           >
             {requestState === 'loading' ? (
               <span className="clock-action__spinner" aria-hidden="true" />
             ) : (
               <span className="clock-action__play" aria-hidden="true" />
             )}
-            {requestState === 'loading'
-              ? 'Clocking In...'
-              : clockedIn
-                ? 'Clocked In'
-                : 'Clock In'}
+            {clockedIn ? 'Clocked In' : 'Clock In'}
           </button>
           {requestMessage && (
             <p
               className={`clock-action__message${
                 requestState === 'error' ? ' clock-action__message--error' : ''
               }`}
-              role={requestState === 'error' ? 'alert' : 'status'}
-              aria-live={requestState === 'error' ? 'assertive' : 'polite'}
+              role="status"
+              aria-live="polite"
             >
               {requestMessage}
             </p>
@@ -179,6 +257,81 @@ export default function ClockIn() {
           </p>
         </div>
       </section>
+      )}
     </main>
+    {confirmationOpen && (
+      <div
+        className="clock-confirmation-backdrop"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget && requestState !== 'loading') {
+            setConfirmationOpen(false);
+          }
+        }}
+      >
+        <section
+          className="clock-confirmation"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="clock-confirmation-title"
+          aria-describedby="clock-confirmation-description"
+          ref={confirmationRef}
+          tabIndex={-1}
+          aria-busy={requestState === 'loading'}
+        >
+          {requestState === 'loading' ? (
+            <div className="clock-confirmation__processing" role="status" aria-live="polite">
+              <svg className="clock-confirmation__spinner" viewBox="0 0 80 80" aria-hidden="true">
+                <g stroke="currentColor" strokeWidth="5" strokeLinecap="butt">
+                  <path d="M40 5v11" />
+                  <path d="M40 5v11" transform="rotate(45 40 40)" />
+                  <path d="M40 5v11" transform="rotate(90 40 40)" />
+                  <path d="M40 5v11" transform="rotate(135 40 40)" />
+                  <path d="M40 5v11" transform="rotate(180 40 40)" />
+                  <path d="M40 5v11" transform="rotate(225 40 40)" />
+                  <path d="M40 5v11" transform="rotate(270 40 40)" />
+                  <path d="M40 5v11" transform="rotate(315 40 40)" />
+                </g>
+              </svg>
+              <h2 id="clock-confirmation-title">Processing</h2>
+              <p id="clock-confirmation-description">
+                Please wait here while we record your attendance
+              </p>
+            </div>
+          ) : (
+            <>
+              <svg className="clock-confirmation__icon" viewBox="0 0 80 80" fill="none" aria-hidden="true">
+                <rect x="7" y="13" width="66" height="59" rx="5" stroke="currentColor" strokeWidth="4" />
+                <path d="M8 30h64M25 5v16M55 5v16" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+              </svg>
+              <h2 id="clock-confirmation-title">Are you sure you<br />want to Clock In?</h2>
+              <p id="clock-confirmation-description">
+                This will record your attendance<br className="clock-confirmation__desktop-break" /> for the day
+              </p>
+              {requestState === 'error' && (
+                <p className="clock-confirmation__error" role="alert">{clockInError}</p>
+              )}
+              <div className="clock-confirmation__actions">
+                <button
+                  className="clock-confirmation__cancel"
+                  type="button"
+                  ref={cancelButtonRef}
+                  onClick={() => setConfirmationOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="clock-confirmation__confirm"
+                  type="button"
+                  onClick={confirmClockIn}
+                >
+                  Yes
+                </button>
+              </div>
+            </>
+          )}
+        </section>
+      </div>
+    )}
+    </>
   );
 }
