@@ -72,14 +72,6 @@ function getDuration(record) {
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
 
-function getStatus(record) {
-  const value = String(field(record, 'status', 'state')).toLowerCase();
-
-  if (value.includes('in') && !value.includes('out')) return 'IN';
-  if (value.includes('out')) return 'OUT';
-  return String(field(record, 'status', 'state')).toUpperCase();
-}
-
 function renderCell(record, key) {
   switch (key) {
     case 'date':
@@ -91,7 +83,7 @@ function renderCell(record, key) {
     case 'duration':
       return getDuration(record);
     case 'status': {
-      const status = getStatus(record);
+      const status = getRecordStatus(record);
       return (
         <span
           className={`history-status history-status--${
@@ -113,7 +105,7 @@ function renderCell(record, key) {
   }
 }
 
-function EmptyState({ isAdmin, onRefresh }) {
+function EmptyState({ isAdmin, onRefresh, isFiltered, onClear }) {
   return (
     <div className="history-empty">
       <span className="history-empty__icon" aria-hidden="true">
@@ -287,7 +279,7 @@ export default function AttendanceHistoryPage({
                 </tr>
               </thead>
               <tbody>
-                {records.map((record, index) => (
+                {visibleRecords.map((record, index) => (
                   <tr key={record.id ?? `${record.date ?? index}-${index}`}>
                     {columns.map((column) => (
                       <td key={column.key}>{renderCell(record, column.key)}</td>

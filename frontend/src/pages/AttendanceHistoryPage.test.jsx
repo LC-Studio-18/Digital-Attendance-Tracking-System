@@ -35,6 +35,17 @@ const record = {
   department: 'Facilities',
 };
 
+const inRecord = {
+  id: '2',
+  date: '2026-11-19T08:15:00Z',
+  clockIn: '2026-11-19T08:15:00Z',
+  clockOut: 'ÔÇö',
+  status: 'IN',
+  staffName: 'Bob Carter',
+  email: 'bob@example.com',
+  department: 'Security',
+};
+
 beforeEach(() => {
   window.localStorage.clear();
   vi.clearAllMocks();
