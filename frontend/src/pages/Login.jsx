@@ -15,6 +15,9 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const authErrorMessages = {
   'auth/invalid-email': 'Please enter a valid email address.',
+  'auth/email-not-registered':
+    'This email is not registered for this attendance portal.',
+  'auth/email-check-failed': 'We could not verify this email. Please try again.',
   'auth/user-not-found': 'Incorrect email or password.',
   'auth/invalid-credential': 'Incorrect email or password.',
   'auth/wrong-password': 'Incorrect email or password.',

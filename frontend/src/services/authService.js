@@ -19,6 +19,7 @@ import {
   updatePassword,
   updateProfile,
 } from 'firebase/auth';
+import apiClient from './apiClient';
 import { auth, isFirebaseConfigured } from './firebase';
 
 const createAuthError = (code, message) =>
@@ -43,6 +44,40 @@ const requireUser = (user) => {
 const normalizeEmail = (email) =>
   typeof email === 'string' ? email.trim() : '';
 
+export const checkRegisteredEmail = async (email) => {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) {
+    throw createAuthError('auth/invalid-email', 'A valid email address is required.');
+  }
+
+  try {
+    const { data } = await apiClient.post('/auth/check-email', {
+      email: normalizedEmail,
+    });
+
+    if (!data?.exists) {
+      throw createAuthError(
+        'auth/email-not-registered',
+        'This email is not registered for this attendance portal.',
+      );
+    }
+
+    return true;
+  } catch (error) {
+    if (
+      error.code === 'auth/email-not-registered' ||
+      error.code === 'auth/invalid-email'
+    ) {
+      throw error;
+    }
+
+    throw createAuthError(
+      'auth/email-check-failed',
+      'We could not verify this email. Please try again.',
+    );
+  }
+};
+
 export const registerUser = async (email, password, displayName = '') => {
   requireFirebaseConfiguration();
 
@@ -56,6 +91,8 @@ export const registerUser = async (email, password, displayName = '') => {
       'Password must be at least 6 characters.',
     );
   }
+
+  await checkRegisteredEmail(normalizedEmail);
 
   const credential = await createUserWithEmailAndPassword(
     auth,
@@ -83,6 +120,8 @@ export const loginUser = async (email, password, rememberMe = false) => {
     throw createAuthError('auth/missing-password', 'A password is required.');
   }
 
+  await checkRegisteredEmail(normalizedEmail);
+
   await setPersistence(
     auth,
     rememberMe ? browserLocalPersistence : browserSessionPersistence,
@@ -104,6 +143,8 @@ export const sendPasswordlessSignInLink = async (email) => {
   if (!normalizedEmail) {
     throw createAuthError('auth/invalid-email', 'A valid email address is required.');
   }
+
+  await checkRegisteredEmail(normalizedEmail);
 
   const url = import.meta.env.VITE_EMAIL_LINK_URL || window.location.origin;
 
@@ -133,6 +174,8 @@ export const completePasswordlessSignIn = async (email) => {
     );
   }
 
+  await checkRegisteredEmail(signInEmail);
+
   const credential = await signInWithEmailLink(
     auth,
     signInEmail,
@@ -154,6 +197,8 @@ export const resetPassword = async (email) => {
   if (!normalizedEmail) {
     throw createAuthError('auth/invalid-email', 'A valid email address is required.');
   }
+
+  await checkRegisteredEmail(normalizedEmail);
 
   return sendPasswordResetEmail(auth, normalizedEmail);
 };
