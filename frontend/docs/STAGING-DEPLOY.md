@@ -4,7 +4,7 @@ This branch adds a GitHub Actions workflow that publishes the frontend staging b
 
 ## Branch and PR
 
-- Deployment branch: `deploy/staging-preview-pages`
+- Deployment branch: `rasool's-deploy-staging-preview-pages`
 - Target branch for review: `frontend6-components`
 - `main` is not touched by this work.
 
@@ -12,7 +12,7 @@ This branch adds a GitHub Actions workflow that publishes the frontend staging b
 
 The workflow `.github/workflows/staging-pages.yml` runs when:
 
-- changes are pushed to `deploy/staging-preview-pages`, or
+- changes are pushed to `rasool's-deploy-staging-preview-pages`, or
 - it is started manually with `workflow_dispatch`.
 
 It installs the frontend dependencies with `npm ci`, builds with `npm run build:staging`, sets the Vite base path to `/Digital-Attendance-Tracking-System/`, and publishes `frontend/dist` through the official GitHub Pages actions.
@@ -21,7 +21,7 @@ It installs the frontend dependencies with `npm ci`, builds with `npm run build:
 
 A repository administrator must enable GitHub Pages with **GitHub Actions** as the source (Settings → Pages → Build and deployment). The token used for this setup has push access but not admin access, so that switch could not be enabled here. Once enabled, the workflow deploys automatically on the next push to the branch.
 
-First workflow run on `deploy/staging-preview-pages`: [run #44531304968](https://github.com/LC-Studio-18/Digital-Attendance-Tracking-System/actions/runs/44531304968) — **failed** at the `Configure Pages` step because Pages is not enabled. Build and dependency steps succeeded. This is the only outstanding deployment blocker.
+First workflow run on `rasool's-deploy-staging-preview-pages`: [run #44531304968](https://github.com/LC-Studio-18/Digital-Attendance-Tracking-System/actions/runs/44531304968) — **failed** at the `Configure Pages` step because Pages is not enabled. Build and dependency steps succeeded. This is the only outstanding deployment blocker.
 
 Expected URL after the first successful run:
 
