@@ -31,9 +31,9 @@ VALID_LOCATION_IDS=your-location-id-here
 FIREBASE_PROJECT_ID=your-firebase-project-id
 FIREBASE_CLIENT_EMAIL=your-firebase-service-account-email
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-GOOGLE_SHEETS_CLIENT_EMAIL=your-google-service-account-email
-GOOGLE_SHEETS_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-GOOGLE_SHEETS_SPREADSHEET_ID=your-spreadsheet-id
+GOOGLE_CLIENT_EMAIL=your-google-service-account-email
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+SPREADSHEET_ID=your-spreadsheet-id
 ```
 
 Firebase credentials verify attendance tokens. Google Sheets credentials read and write attendance rows; share the target spreadsheet with that service account. Store real credentials only in the ignored `backend/.env` file.

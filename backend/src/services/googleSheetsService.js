@@ -5,17 +5,17 @@ let sheetsClient = null;
 function initSheets() {
   if (sheetsClient) return sheetsClient;
 
-  const { GOOGLE_SHEETS_CLIENT_EMAIL, GOOGLE_SHEETS_PRIVATE_KEY, GOOGLE_SHEETS_SPREADSHEET_ID } = process.env;
+  const { GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, SPREADSHEET_ID } = process.env;
 
-  if (!GOOGLE_SHEETS_CLIENT_EMAIL || !GOOGLE_SHEETS_PRIVATE_KEY || !GOOGLE_SHEETS_SPREADSHEET_ID) {
+  if (!GOOGLE_CLIENT_EMAIL || !GOOGLE_PRIVATE_KEY || !SPREADSHEET_ID) {
     console.warn('Google Sheets credentials not set — write will fail till added');
     return null;
   }
 
   const auth = new google.auth.JWT(
-    GOOGLE_SHEETS_CLIENT_EMAIL,
+    GOOGLE_CLIENT_EMAIL,
     null,
-    GOOGLE_SHEETS_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
     ['https://www.googleapis.com/auth/spreadsheets']
   );
 
@@ -34,7 +34,7 @@ export async function appendRow(sheetName, rowValues) {
 
   try {
     await sheets.spreadsheets.values.append({
-      spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
+      spreadsheetId: process.env.SPREADSHEET_ID,
       range: `${sheetName}!A:Z`,
       valueInputOption: 'RAW',
       requestBody: { values: [rowValues] },
@@ -57,7 +57,7 @@ export async function getRows(sheetName, range = 'A:B') {
 
   try {
     const result = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
+      spreadsheetId: process.env.SPREADSHEET_ID,
       range: `${sheetName}!${range}`,
     });
     return result.data.values || [];
