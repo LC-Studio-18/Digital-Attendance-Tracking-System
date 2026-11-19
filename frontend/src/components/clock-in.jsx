@@ -281,16 +281,16 @@ export default function ClockIn() {
           {requestState === 'loading' ? (
             <div className="clock-confirmation__processing" role="status" aria-live="polite">
               <svg className="clock-confirmation__spinner" viewBox="0 0 80 80" aria-hidden="true">
-                <g stroke="currentColor" strokeWidth="5" strokeLinecap="butt">
-                  <path d="M40 5v11" />
-                  <path d="M40 5v11" transform="rotate(45 40 40)" />
-                  <path d="M40 5v11" transform="rotate(90 40 40)" />
-                  <path d="M40 5v11" transform="rotate(135 40 40)" />
-                  <path d="M40 5v11" transform="rotate(180 40 40)" />
-                  <path d="M40 5v11" transform="rotate(225 40 40)" />
-                  <path d="M40 5v11" transform="rotate(270 40 40)" />
-                  <path d="M40 5v11" transform="rotate(315 40 40)" />
-                </g>
+                <circle
+                  cx="40"
+                  cy="40"
+                  r="33"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  strokeDasharray="8.64 8.64"
+                />
               </svg>
               <h2 id="clock-confirmation-title">Processing</h2>
               <p id="clock-confirmation-description">

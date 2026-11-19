@@ -453,7 +453,7 @@
   height: 80px;
   flex: 0 0 auto;
   color: #05090b;
-  animation: clock-action-spin 1.2s steps(8) infinite;
+  animation: clock-action-spin 1.2s linear infinite;
 }
 
 .clock-confirmation__processing h2 {
