@@ -21,6 +21,8 @@ It installs the frontend dependencies with `npm ci`, builds with `npm run build:
 
 A repository administrator must enable GitHub Pages with **GitHub Actions** as the source (Settings → Pages → Build and deployment). The token used for this setup has push access but not admin access, so that switch could not be enabled here. Once enabled, the workflow deploys automatically on the next push to the branch.
 
+First workflow run on `deploy/staging-preview-pages`: [run #44531304968](https://github.com/LC-Studio-18/Digital-Attendance-Tracking-System/actions/runs/44531304968) — **failed** at the `Configure Pages` step because Pages is not enabled. Build and dependency steps succeeded. This is the only outstanding deployment blocker.
+
 Expected URL after the first successful run:
 
 `https://lc-studio-18.github.io/Digital-Attendance-Tracking-System/`
