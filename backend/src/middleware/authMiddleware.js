@@ -1,15 +1,15 @@
-import { auth } from '../config/firebase.js';
+import { auth } from "../config/firebase.js";
 
 const getBearerToken = (req) => {
-  const [scheme, token] = (req.headers.authorization || '').split(' ');
-  return scheme === 'Bearer' && token ? token : null;
+  const [scheme, token] = (req.headers.authorization || "").split(" ");
+  return scheme === "Bearer" && token ? token : null;
 };
 
 const UNAUTHORIZED_CODES = [
-  'auth/id-token-expired',
-  'auth/id-token-revoked',
-  'auth/invalid-id-token',
-  'auth/argument-error',
+  "auth/id-token-expired",
+  "auth/id-token-revoked",
+  "auth/invalid-id-token",
+  "auth/argument-error",
 ];
 
 export const verifyToken =
@@ -19,28 +19,30 @@ export const verifyToken =
 
     if (!token) {
       return res.status(401).json({
-        status: 'error',
-        message: 'Authentication required: missing or malformed Authorization header',
+        status: "error",
+        message:
+          "Authentication required: missing or malformed Authorization header",
       });
     }
 
     try {
       const decoded = await auth.verifyIdToken(token, checkRevoked);
-      req.user = decoded;      // full decoded token (email, custom claims, etc.)
-      req.uid = decoded.uid;   // the Firebase UID
+      req.user = decoded; // full decoded token (email, custom claims, etc.)
+      req.uid = decoded.uid; // the Firebase UID
       next();
     } catch (err) {
-      if (err.code === 'auth/id-token-expired') {
+      console.error("[auth]", err.code, err.message); // server log only, never sent to the client
+      if (err.code === "auth/id-token-expired") {
         return res.status(401).json({
-          status: 'error',
-          message: 'Token expired. Please sign in again.',
+          status: "error",
+          message: "Token expired. Please sign in again.",
           code: err.code,
         });
       }
       if (UNAUTHORIZED_CODES.includes(err.code)) {
         return res.status(401).json({
-          status: 'error',
-          message: 'Invalid authentication token',
+          status: "error",
+          message: "Invalid authentication token",
           code: err.code,
         });
       }
