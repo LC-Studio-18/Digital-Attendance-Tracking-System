@@ -18,5 +18,8 @@ dist-ssr/
 .vscode/
 .idea/
 
+# Firebase service account credentials
+backend/src/config/serviceAccountKey.json
+
 serviceAccountKey.json
 **/serviceAccountKey.json
