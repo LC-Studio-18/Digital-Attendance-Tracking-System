@@ -18,6 +18,7 @@ export const verifyToken = async (req, res, next) => {
       uid: decodedToken.uid,
       email: decodedToken.email,
       role: decodedToken.role || 'staff',
+      admin: decodedToken.admin === true,
     };
     next();
   } catch (error) {
