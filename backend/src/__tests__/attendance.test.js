@@ -9,10 +9,16 @@ jest.unstable_mockModule('../services/firebaseService.js', () => ({
 jest.unstable_mockModule('../services/googleSheetsService.js', () => ({
   appendRow: jest.fn().mockResolvedValue(undefined),
   findTodayCheckin: jest.fn().mockResolvedValue(false),
+  getRows: jest.fn().mockResolvedValue([]),
+}));
+
+jest.unstable_mockModule('../services/employeeService.js', () => ({
+  getEmployeeByUid: jest.fn(),
 }));
 
 const { verifyIdToken } = await import('../services/firebaseService.js');
 const { findTodayCheckin, appendRow } = await import('../services/googleSheetsService.js');
+const { getEmployeeByUid } = await import('../services/employeeService.js');
 
 const { default: app } = await import('../app.js');
 const request = (await import('supertest')).default;
@@ -121,7 +127,7 @@ describe('POST /api/attendance/qr-checkin', () => {
     expect(res.body).toHaveProperty('message');
   });
 
-    it('returns 409 when already checked in today', async () => {
+  it('returns 409 when already checked in today', async () => {
     verifyIdToken.mockResolvedValueOnce({ uid: 'test-user-123' });
     findTodayCheckin.mockResolvedValueOnce(true);
 
@@ -133,7 +139,7 @@ describe('POST /api/attendance/qr-checkin', () => {
     expect(res.statusCode).toBe(409);
   });
 
-    it('returns 502 when Google Sheets fails', async () => {
+  it('returns 502 when Google Sheets fails', async () => {
     verifyIdToken.mockResolvedValueOnce({ uid: 'test-user-123' });
     findTodayCheckin.mockResolvedValueOnce(false);
     appendRow.mockRejectedValueOnce(
@@ -146,5 +152,61 @@ describe('POST /api/attendance/qr-checkin', () => {
       .send({ locationId: 'test-location-001' });
 
     expect(res.statusCode).toBe(502);
+  });
+});
+
+describe('GET /api/attendance/me/dashboard', () => {
+  it('returns 401 with no Authorization header', async () => {
+    const res = await request(app).get('/api/attendance/me/dashboard');
+
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('returns 404 when the employee record is not found', async () => {
+    verifyIdToken.mockResolvedValueOnce({ uid: 'unknown-user' });
+    getEmployeeByUid.mockResolvedValueOnce(null);
+
+    const res = await request(app)
+      .get('/api/attendance/me/dashboard')
+      .set('Authorization', 'Bearer some-valid-token');
+
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('returns 403 when the employee is inactive', async () => {
+    verifyIdToken.mockResolvedValueOnce({ uid: 'test-user-123' });
+    getEmployeeByUid.mockResolvedValueOnce({
+      uid: 'test-user-123',
+      name: 'Test User',
+      active: false,
+      lastClockIn: null,
+      lastClockOut: null,
+      history: [],
+    });
+
+    const res = await request(app)
+      .get('/api/attendance/me/dashboard')
+      .set('Authorization', 'Bearer some-valid-token');
+
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('returns 200 with the employee data when active', async () => {
+    verifyIdToken.mockResolvedValueOnce({ uid: 'test-user-123' });
+    getEmployeeByUid.mockResolvedValueOnce({
+      uid: 'test-user-123',
+      name: 'Test User',
+      active: true,
+      lastClockIn: '2026-11-19T08:00:00.000Z',
+      lastClockOut: null,
+      history: [{ timestamp: '2026-11-19T08:00:00.000Z', status: 'Present' }],
+    });
+
+    const res = await request(app)
+      .get('/api/attendance/me/dashboard')
+      .set('Authorization', 'Bearer some-valid-token');
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data.name).toBe('Test User');
   });
 });

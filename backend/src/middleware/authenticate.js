@@ -2,15 +2,18 @@ import { verifyIdToken } from '../services/firebaseService.js';
 
 export async function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;
+  const bearerMatch = typeof authHeader === 'string'
+    ? /^Bearer ([^\s]+)$/.exec(authHeader)
+    : null;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!bearerMatch) {
     return res.status(401).json({
       success: false,
       message: 'Missing or invalid Authorization header',
     });
   }
 
-  const token = authHeader.split(' ')[1];
+  const token = bearerMatch[1];
 
   try {
     const decodedUser = await verifyIdToken(token);

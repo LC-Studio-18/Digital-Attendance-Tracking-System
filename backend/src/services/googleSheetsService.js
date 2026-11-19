@@ -75,3 +75,25 @@ export async function findTodayCheckin(sheetName, userId) {
   // Column A = userId, Column B = timestamp — matches appendRow's order
   return rows.some((row) => row[0] === userId && row[1]?.startsWith(today));
 }
+
+export async function getUserAttendance(sheetName, userId) {
+  const rows = await getRows(sheetName, 'A:Z');
+  const userRows = rows.filter((row) => row[0] === userId);
+  const history = userRows.map((row) => ({
+    timestamp: row[1] || null,
+    status: 'Present',
+  }));
+  const lastClockIn = userRows.reduce((latest, row) => {
+    const timestamp = row[1];
+    return timestamp && (!latest || timestamp > latest) ? timestamp : latest;
+  }, null);
+  const today = new Date().toISOString().slice(0, 10);
+
+  return {
+    name: userRows.find((row) => row[2])?.[2] || userId,
+    status: userRows.some((row) => row[1]?.startsWith(today)) ? 'Present' : 'Absent',
+    lastClockIn,
+    lastClockOut: null,
+    history,
+  };
+}

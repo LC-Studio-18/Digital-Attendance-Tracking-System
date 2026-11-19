@@ -81,17 +81,98 @@ or
 }
 ```
 
-### 503 Service Unavailable — Firebase or Sheets not configured (staging/config issue)
+### 503 Service Unavailable — Google Sheets not configured
 
 ```json
 {
   "success": false,
-  "message": "Firebase is not configured"
+  "message": "Google Sheets is not configured"
 }
 ```
 
 ## Notes for frontend team
 
 - `timestamp` is always generated server-side — don't send one, it'll be ignored.
-- `locationId` must exactly match what the server expects (ask backend team for the real value once Firebase/Sheets are confirmed live on staging).
+- `locationId` must exactly match one of the comma-separated IDs in `VALID_LOCATION_IDS`.
 - A user can only check in once per calendar day — a second attempt on the same day returns 409.
+
+# API Contract — Employee Dashboard
+
+## Endpoint
+
+GET /api/attendance/me/dashboard
+
+## Headers
+
+| Header       | Required | Example                  |
+|--------------|----------|---------------------------|
+| Authorization | Yes      | `Bearer <firebase-id-token>` |
+
+The employee record is selected only by the UID from the verified Firebase token.
+
+## Responses
+
+### 200 OK — Success
+
+```json
+{
+  "success": true,
+  "data": {
+    "name": "Test User",
+    "status": "Present",
+    "lastClockIn": "2026-11-19T08:00:00.000Z",
+    "lastClockOut": null,
+    "history": [
+      {
+        "timestamp": "2026-11-19T08:00:00.000Z",
+        "status": "Present"
+      }
+    ]
+  }
+}
+```
+
+### 401 Unauthorized — Missing or invalid Firebase token
+
+```json
+{
+  "success": false,
+  "message": "Missing or invalid Authorization header"
+}
+```
+
+or
+
+```json
+{
+  "success": false,
+  "message": "Invalid or expired token"
+}
+```
+
+### 403 Forbidden — Employee is inactive
+
+```json
+{
+  "success": false,
+  "message": "Employee is not active"
+}
+```
+
+### 404 Not Found — Employee record does not exist
+
+```json
+{
+  "success": false,
+  "message": "Employee record not found"
+}
+```
+
+Other unexpected errors are handled by the central error handler and return its `err.status` if set, otherwise `500`, with this response shape:
+
+```json
+{
+  "success": false,
+  "message": "Internal Server Error"
+}
+```
