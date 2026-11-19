@@ -135,12 +135,23 @@ function EmptyState({ isAdmin, onRefresh }) {
           />
         </svg>
       </span>
-      <h3 className="history-empty__title">No attendance records yet</h3>
+      <h3 className="history-empty__title">
+        {isFiltered
+          ? 'No records match your filters'
+          : 'No attendance records yet'}
+      </h3>
       <p className="history-empty__text">
-        {isAdmin
-          ? 'When a staff member clocks in or out, their record will appear here.'
-          : 'When you clock in or out, your record will appear here.'}
+        {isFiltered
+          ? 'Try a different date range, status or search term.'
+          : isAdmin
+            ? 'When a staff member clocks in or out, their record will appear here.'
+            : 'When you clock in or out, your record will appear here.'}
       </p>
+      {isFiltered ? (
+        <button type="button" className="history-refresh" onClick={onClear}>
+          Clear filters
+        </button>
+      ) : null}
       <button type="button" className="history-refresh" onClick={onRefresh}>
         Refresh
       </button>
@@ -180,6 +191,18 @@ export default function AttendanceHistoryPage({
       setStatus('error');
     }
   }, [request]);
+
+  const applyFilters = useCallback((next) => {
+    setStatus('loading');
+    setErrorCode(null);
+    setFilters(next);
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setStatus('loading');
+    setErrorCode(null);
+    setFilters({ ...EMPTY_ATTENDANCE_FILTERS });
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -270,11 +293,16 @@ export default function AttendanceHistoryPage({
           </div>
         ) : null}
 
-        {status === 'ready' && records.length === 0 ? (
-          <EmptyState isAdmin={isAdmin} onRefresh={refresh} />
+        {status === 'ready' && visibleRecords.length === 0 ? (
+          <EmptyState
+            isAdmin={isAdmin}
+            onRefresh={refresh}
+            isFiltered={isFiltered}
+            onClear={clearFilters}
+          />
         ) : null}
 
-        {status === 'ready' && records.length > 0 ? (
+        {status === 'ready' && visibleRecords.length > 0 ? (
           <div className="history-table-wrap">
             <table className="history-table">
               <thead>
