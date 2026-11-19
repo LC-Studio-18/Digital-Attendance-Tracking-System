@@ -47,13 +47,3 @@ export const verifyToken =
       next(err); // unexpected errors go to your errorHandler
     }
   };
-
-// Use after verifyToken, e.g. requireClaim('role', 'teacher')
-export const requireClaim =
-  (claim, value = true) =>
-  (req, res, next) => {
-    if (req.user?.[claim] !== value) {
-      return res.status(403).json({ status: 'error', message: 'Forbidden' });
-    }
-    next();
-  };
