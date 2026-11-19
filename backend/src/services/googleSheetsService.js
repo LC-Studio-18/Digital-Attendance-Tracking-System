@@ -12,15 +12,20 @@ function initSheets() {
     return null;
   }
 
-  const auth = new google.auth.JWT(
-    GOOGLE_CLIENT_EMAIL,
-    null,
-    GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    ['https://www.googleapis.com/auth/spreadsheets']
-  );
+  try {
+    const auth = new google.auth.JWT(
+      GOOGLE_CLIENT_EMAIL,
+      null,
+      GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      ['https://www.googleapis.com/auth/spreadsheets']
+    );
 
-  sheetsClient = google.sheets({ version: 'v4', auth });
-  return sheetsClient;
+    sheetsClient = google.sheets({ version: 'v4', auth });
+    return sheetsClient;
+  } catch (err) {
+    console.error('Failed to initialize Google Sheets client:', err.message);
+    return null;
+  }
 }
 
 export async function appendRow(sheetName, rowValues) {
@@ -62,9 +67,12 @@ export async function getRows(sheetName, range = 'A:B') {
     });
     return result.data.values || [];
   } catch (err) {
-    const error = new Error('Google Sheets request failed');
-    error.status = 502;
-    throw error;
+  console.error('Google Sheets read error:', err.message);
+  console.error('Google API details:', err.response?.data);
+
+  const error = new Error('Google Sheets request failed');
+  error.status = 502;
+  throw error;
   }
 }
 

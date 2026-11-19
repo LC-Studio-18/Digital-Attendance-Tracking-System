@@ -7,31 +7,33 @@ import { fileURLToPath } from 'node:url';
 let initialized = false;
 const serviceAccountPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../serviceAccountKey.json');
 
-async function initFirebase() {
-  if (initialized) return;
+function initFirebase() {
+  if (authInstance) return authInstance;
 
   const { FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY } = process.env;
-  let credentials;
 
-  if (FIREBASE_PROJECT_ID && FIREBASE_CLIENT_EMAIL && FIREBASE_PRIVATE_KEY) {
-    credentials = {
-      projectId: FIREBASE_PROJECT_ID,
-      clientEmail: FIREBASE_CLIENT_EMAIL,
-      privateKey: FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    };
-  } else {
-    try {
-      credentials = JSON.parse(await readFile(serviceAccountPath, 'utf8'));
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
-      console.warn('Firebase credentials are not set — auth will fail until they are added to .env or serviceAccountKey.json');
-      return;
-    }
+  if (!FIREBASE_PROJECT_ID || !FIREBASE_CLIENT_EMAIL || !FIREBASE_PRIVATE_KEY) {
+    console.warn('Firebase credentials not set — auth will fail till added');
+    return null;
   }
 
-  initializeApp({ credential: cert(credentials) });
+  try {
+    if (!getApps().length) {
+      initializeApp({
+        credential: cert({
+          projectId: FIREBASE_PROJECT_ID,
+          clientEmail: FIREBASE_CLIENT_EMAIL,
+          privateKey: FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        }),
+      });
+    }
 
-  initialized = true;
+    authInstance = getAuth();
+    return authInstance;
+  } catch (err) {
+    console.error('Failed to initialize Firebase:', err.message);
+    return null;
+  }
 }
 
 export async function verifyIdToken(token) {
