@@ -58,9 +58,7 @@ function AttendanceStatus({ status, since, loading, error, onRetry }) {
         <span className="attendance-status__icon">&#10005;</span>
         <div>
           <p className="attendance-status__title">Clocked Out</p>
-          <p className="attendance-status__text">
-            You haven&apos;t clocked in yet
-          </p>
+          <p className="attendance-status__text">You are not clocked in</p>
         </div>
       </div>
     );
