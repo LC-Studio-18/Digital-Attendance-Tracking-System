@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Phase 2 progress — Attendance history</title>
+    <style>
+      :root {
+        --ink: #0f172a;
+        --soft: #334155;
+        --muted: #64748b;
+        --line: #e2e8f0;
+        --canvas: #f7f9fc;
+        --surface: #ffffff;
+        --brand: #2563eb;
+        --brand-dark: #1d4ed8;
+        --brand-soft: #eff6ff;
+        --green-bg: #dcfce7;
+        --green-text: #166534;
+        --amber-bg: #fffbeb;
+        --amber-text: #92400e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--canvas);
+        color: var(--ink);
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+          Arial, sans-serif;
+        line-height: 1.6;
+      }
+
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 2.5rem 1.25rem 4rem;
+      }
+
+      .hero {
+        padding: 2rem;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--surface);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+      }
+
+      .hero h1 {
+        margin: 0.35rem 0 0.6rem;
+        font-size: clamp(1.8rem, 4vw, 2.5rem);
+        line-height: 1.2;
+      }
+
+      .hero p {
+        margin: 0;
+        color: var(--soft);
+      }
+
+      .kicker {
+        margin: 0;
+        color: var(--brand);
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1.25rem;
+      }
+
+      .tags span,
+      .badge {
+        display: inline-block;
+        padding: 0.25rem 0.65rem;
+        border-radius: 999px;
+        background: var(--brand-soft);
+        color: var(--brand-dark);
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      .badge--done {
+        background: var(--green-bg);
+        color: var(--green-text);
+      }
+
+      .badge--wait {
+        background: var(--amber-bg);
+        color: var(--amber-text);
+      }
+
+      .nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.25rem;
+        margin: 1.5rem 0;
+        padding: 0.9rem 1.1rem;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface);
+      }
+
+      .nav a {
+        color: var(--brand-dark);
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .nav a:hover {
+        text-decoration: underline;
+      }
+
+      section {
+        margin: 2rem 0;
+      }
+
+      h2 {
+        margin: 0 0 0.75rem;
+        font-size: 1.35rem;
+      }
+
+      h3 {
+        margin: 1.25rem 0 0.35rem;
+        font-size: 1rem;
+      }
+
+      p {
+        color: var(--soft);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 1rem;
+      }
+
+      .card {
+        padding: 1.15rem 1.25rem;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface);
+      }
+
+      .card h3 {
+        margin-top: 0;
+      }
+
+      .card p {
+        margin: 0;
+        font-size: 0.92rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface);
+        font-size: 0.9rem;
+      }
+
+      th,
+      td {
+        padding: 0.75rem 0.9rem;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #f8fafc;
+        color: var(--muted);
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      code,
+      pre {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.85em;
+      }
+
+      pre {
+        overflow-x: auto;
+        margin: 0.35rem 0 0;
+        padding: 0.75rem 0.9rem;
+        border-radius: 8px;
+        background: #0f172a;
+        color: #e2e8f0;
+        line-height: 1.55;
+      }
+
+      .callout {
+        margin: 1rem 0;
+        padding: 0.9rem 1.1rem;
+        border: 1px solid #fde68a;
+        border-radius: 10px;
+        background: var(--amber-bg);
+        color: var(--amber-text);
+        font-size: 0.92rem;
+      }
+
+      .callout strong {
+        color: #78350f;
+      }
+
+      ul {
+        margin: 0.4rem 0 0;
+        padding-left: 1.2rem;
+        color: var(--soft);
+      }
+
+      li {
+        margin: 0.3rem 0;
+      }
+
+      footer {
+        margin-top: 2.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.82rem;
+        text-align: center;
+      }
+
+      @media (max-width: 640px) {
+        .hero {
+          padding: 1.5rem;
+        }
+        th,
+        td {
+          padding: 0.6rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="hero">
+        <p class="kicker">Phase 2 · Progress handover</p>
+        <h1>Attendance history page</h1>
+        <p>
+          Page, route, role-aware rendering, API wiring and UI states are in
+          place. Firebase Auth is now configured and supplies the ID token and
+          custom-claim role. A reusable Admin Dashboard Export CSV control with
+          a date filter and loading state is also ready to drop in. Work is
+          recorded on the active branch only; nothing has been committed, merged
+          or pushed.
+        </p>
+        <div class="tags">
+          <span>Branch: frontend6-components</span>
+          <span>React + Vite</span>
+          <span>React Router</span>
+          <span>Axios</span>
+          <span>Firebase SDK wired</span>
+          <span>Admin dashboard CSV export control</span>
+        </div>
+      </header>
+
+      <nav class="nav" aria-label="Document sections">
+        <a href="#tickets">Completed tasks</a>
+        <a href="#files">Files</a>
+        <a href="#integration">Integration notes</a>
+        <a href="#states">UI states</a>
+        <a href="#export">CSV export control</a>
+        <a href="#verify">Verification</a>
+        <a href="#next">Pending</a>
+        <a href="#view">View locally</a>
+        <a href="#log">Activity log</a>
+      </nav>
+
+      <section id="tickets">
+        <h2>Completed tasks</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Ticket</th>
+              <th>What was done</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Phase2-07</strong><br />Page &amp; routing</td>
+              <td>
+                Added <code>AttendanceHistoryPage</code> and registered
+                <code>/attendance-history</code>. The S1-16 feedback preview
+                remains at <code>/</code>.
+              </td>
+              <td><span class="badge badge--done">Done</span></td>
+            </tr>
+            <tr>
+              <td><strong>Phase2-08</strong><br />Role-based rendering</td>
+              <td>
+                Reads the role from Firebase Auth custom claims
+                (<code>getIdTokenResult().claims</code>), with a decoded stored
+                token as fallback. Admins see Staff, Email and Department
+                columns; staff see Date, Clock in, Clock out, Hours and Status
+                only. Missing or invalid claims default to staff.
+              </td>
+              <td><span class="badge badge--done">Done</span></td>
+            </tr>
+            <tr>
+              <td><strong>Phase2-09</strong><br />API integration</td>
+              <td>
+                Axios request to
+                <code>GET /api/v1/attendance/history</code> with
+                <code>Authorization: Bearer &lt;token&gt;</code>. Base URL comes
+                from <code>VITE_API_URL</code>.
+              </td>
+              <td><span class="badge badge--done">Done</span></td>
+            </tr>
+            <tr>
+              <td><strong>Phase2-10</strong><br />UI states</td>
+              <td>
+                Labelled shared loader, empty-state card with refresh action,
+                friendly error with retry, and a responsive records table.
+              </td>
+              <td><span class="badge badge--done">Done</span></td>
+            </tr>
+            <tr>
+              <td><strong>Phase2-11</strong><br />CSV export control</td>
+              <td>
+                Built <code>ExportCsvControl</code> with start/end date inputs,
+                an <strong>Export CSV</strong> button, a disabled + spinner
+                loading state, inclusive date filtering, and a client-side CSV
+                download. Ready for the Admin Dashboard page being built by the
+                team.
+              </td>
+              <td>
+                <span class="badge badge--wait">Ready for dashboard</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="files">
+        <h2>Files added or changed</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>src/pages/AttendanceHistoryPage.jsx</code></td>
+              <td>Page, role-based columns, loading / empty / error states.</td>
+            </tr>
+            <tr>
+              <td><code>src/pages/AttendanceHistoryPage.test.jsx</code></td>
+              <td>Six tests covering route, roles, states and retry.</td>
+            </tr>
+            <tr>
+              <td><code>src/services/attendanceApi.js</code></td>
+              <td>
+                History endpoint call, token header, response and error mapping.
+              </td>
+            </tr>
+            <tr>
+              <td><code>src/services/attendanceApi.test.js</code></td>
+              <td>
+                Two tests for endpoint URL, token header and network errors.
+              </td>
+            </tr>
+            <tr>
+              <td><code>src/firebase/firebase.js</code></td>
+              <td>
+                Firebase app and Auth init from <code>VITE_FIREBASE_*</code> env
+                values.
+              </td>
+            </tr>
+            <tr>
+              <td><code>src/services/authService.js</code></td>
+              <td>
+                Supplies the live Firebase ID token and role claims; falls back
+                to a stored token.
+              </td>
+            </tr>
+            <tr>
+              <td><code>src/services/authService.test.js</code></td>
+              <td>Tests Firebase claims and the stored-token fallback.</td>
+            </tr>
+            <tr>
+              <td><code>src/utils/authToken.js</code></td>
+              <td>Stored-token read and role claim helpers.</td>
+            </tr>
+            <tr>
+              <td><code>.env</code>, <code>.env.example</code></td>
+              <td>
+                Firebase web config and API URL (the real <code>.env</code> is
+                gitignored).
+              </td>
+            </tr>
+            <tr>
+              <td><code>src/styles/attendance-history.css</code></td>
+              <td>Responsive page styles using the shared design tokens.</td>
+            </tr>
+            <tr>
+              <td><code>src/App.jsx</code>, <code>src/main.jsx</code></td>
+              <td>Route registration and browser router wrapper.</td>
+            </tr>
+            <tr>
+              <td><code>src/components/ExportCsvControl.jsx</code></td>
+              <td>
+                Date filter, Export CSV button, loading state and inline
+                feedback; exports the records passed to it.
+              </td>
+            </tr>
+            <tr>
+              <td><code>src/components/ExportCsvControl.test.jsx</code></td>
+              <td>
+                Five tests for rendering, loading, filtering, validation and
+                failure.
+              </td>
+            </tr>
+            <tr>
+              <td><code>src/styles/export-csv.css</code></td>
+              <td>Responsive control styles using the shared design tokens.</td>
+            </tr>
+            <tr>
+              <td>
+                <code>src/utils/csv.js</code>,
+                <code>src/utils/csv.test.js</code>
+              </td>
+              <td>
+                CSV escaping, inclusive date filtering, browser download and
+                seven unit tests.
+              </td>
+            </tr>
+            <tr>
+              <td><code>docs/COMPONENT-USAGE.md</code></td>
+              <td>Usage and integration notes for the new export control.</td>
+            </tr>
+            <tr>
+              <td><code>docs/ATTENDANCE-HISTORY.md</code></td>
+              <td>Short technical handover notes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="integration">
+        <h2>Integration notes</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>Endpoint</h3>
+            <p>
+              <code>GET {VITE_API_URL}/api/v1/attendance/history</code>. Default
+              base URL is <code>http://localhost:5000</code>.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Token</h3>
+            <p>
+              <code>auth.currentUser.getIdToken()</code> is preferred. If nobody
+              is signed in, a stored token is used
+              (<code>firebaseIdToken</code>, <code>idToken</code>,
+              <code>authToken</code>, <code>token</code>). Sent as a bearer
+              token.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Role rules</h3>
+            <p>
+              <code>role === 'admin'</code> shows admin columns. Staff, unknown
+              or invalid tokens hide them. The backend still verifies the token
+              and enforces RBAC.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Response shapes</h3>
+            <p>
+              Accepts a bare array or <code>history</code>,
+              <code>records</code>, <code>results</code>,
+              <code>attendance</code>, <code>data</code> wrappers.
+            </p>
+          </div>
+        </div>
+        <div class="callout">
+          <strong>Security note:</strong> decoding a JWT in the browser only
+          selects which columns to show. It is not authorisation. Firebase
+          verification and role checks must remain server-side.
+        </div>
+        <p>
+          Analytics from the supplied snippet is optional and was left out to
+          avoid tracking during tests. It can be added later if required.
+        </p>
+      </section>
+
+      <section id="states">
+        <h2>UI states</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>State</th>
+              <th>Rendering</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Loading</td>
+              <td>
+                Shared <code>Loader</code> — “Loading attendance history…” —
+                centred in the records card; refresh is disabled.
+              </td>
+            </tr>
+            <tr>
+              <td>Empty</td>
+              <td>
+                Icon, “No attendance records yet”, role-specific copy and a
+                Refresh button.
+              </td>
+            </tr>
+            <tr>
+              <td>Error</td>
+              <td>
+                Shared <code>ErrorMessage</code> using safe mapped copy plus a
+                Try again action; raw errors are never shown.
+              </td>
+            </tr>
+            <tr>
+              <td>Loaded</td>
+              <td>
+                Responsive table with record count, statuses and admin-only
+                columns when applicable.
+              </td>
+            </tr>
+            <tr>
+              <td>Exporting</td>
+              <td>
+                The <strong>Export CSV</strong> button and both date inputs are
+                disabled, and the button shows a labelled inline
+                <code>Loader</code>.
+              </td>
+            </tr>
+            <tr>
+              <td>Export feedback</td>
+              <td>
+                Inline record count on success or safe error copy; a reversed
+                date range is rejected before the export starts.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="export">
+        <h2>Admin dashboard — CSV export control</h2>
+        <p>
+          The Dashboard page itself is being built by teammates, so no route or
+          page was changed. <code>ExportCsvControl</code> is self-contained and
+          exports client-side from the records the dashboard already has; no
+          backend endpoint is required.
+        </p>
+        <pre><code>import { ExportCsvControl } from './components';
+
+&lt;ExportCsvControl records={attendanceRecords} /&gt;</code></pre>
+        <div class="grid">
+          <div class="card">
+            <h3>Date filter</h3>
+            <p>
+              Start and end date inputs sit next to the button. The range is
+              inclusive; a reversed range shows an inline error and blocks the
+              export.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Loading state</h3>
+            <p>
+              On click the button and both inputs are disabled, and the button
+              shows a labelled inline <code>Loader</code>. Double submits are
+              blocked until the export finishes.
+            </p>
+          </div>
+          <div class="card">
+            <h3>CSV output</h3>
+            <p>
+              Date, Staff, Email, Department, Clock in, Clock out, Hours and
+              Status by default. Values with commas, quotes or newlines are
+              escaped correctly and the file downloads as
+              <code>.csv</code> with a UTF-8 BOM.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Customising</h3>
+            <p>
+              Optional props: <code>columns</code>, <code>filename</code>,
+              <code>label</code>, <code>loadingLabel</code>,
+              <code>minLoadingMs</code> and <code>onExport</code> to replace the
+              built-in download.
+            </p>
+          </div>
+        </div>
+        <div class="callout">
+          <strong>Design source:</strong> styled from
+          <code>L.C Admin/dashboard.html</code> on the desktop (dark
+          <code>#0f172a</code> button, 6px radius, 12px label and gray-bordered
+          date inputs). The private Slack/Figma link was not accessible. The
+          dashboard page itself was not created or changed here — it remains its
+          owner's work.
+        </div>
+      </section>
+
+      <section id="verify">
+        <h2>Verification</h2>
+        <ul>
+          <li><code>npm run lint</code> — passed with no errors.</li>
+          <li>
+            <code>npm test</code> — 9 test files, 46 tests passed (including 5
+            export-control and 7 CSV utility tests).
+          </li>
+          <li><code>npm run build</code> — production build succeeded.</li>
+          <li>
+            <code>npm run format:check</code> — clean after Prettier was applied
+            to the new files.
+          </li>
+          <li>
+            <code>npm audit</code> reports advisories in Firestore/gRPC, which
+            this app does not import; no forced downgrade was applied.
+          </li>
+        </ul>
+      </section>
+
+      <section id="next">
+        <h2>Pending — waiting on login / backend details</h2>
+        <ul>
+          <li>
+            Login flow integration: once sign-in is wired,
+            <code>auth.currentUser</code> supplies the live token and claims.
+          </li>
+          <li>
+            Confirmation of the custom claim shape (<code>role</code> vs
+            <code>roles</code> / <code>admin</code>) and exact admin column list
+            from the final Figma design.
+          </li>
+          <li>
+            Confirmation of the history API response fields and query parameters
+            (e.g. date range, pagination).
+          </li>
+          <li>
+            Drop <code>ExportCsvControl</code> into the Admin Dashboard once
+            that page is available, passing its loaded attendance records.
+          </li>
+          <li>
+            Confirm the export button's placement, labels and styling against
+            the Figma design when it is shared.
+          </li>
+          <li>
+            End-to-end test with a real Firebase token backed by the backend
+            endpoint; no merge until instructed.
+          </li>
+        </ul>
+        <div class="callout">
+          <strong>Branch discipline:</strong> all edits are in the working tree
+          on <code>frontend6-components</code>. No commit, merge or push has
+          been made.
+        </div>
+      </section>
+
+      <section id="view">
+        <h2>View locally</h2>
+        <pre><code>cd frontend
+npm run dev</code></pre>
+        <ul>
+          <li>
+            App:
+            <a href="http://localhost:5173/attendance-history"
+              >http://localhost:5173/attendance-history</a
+            >
+          </li>
+          <li>
+            This record:
+            <a href="http://localhost:5173/docs/PHASE2-PROGRESS.html"
+              >http://localhost:5173/docs/PHASE2-PROGRESS.html</a
+            >
+          </li>
+          <li>
+            Set <code>VITE_API_URL</code> in <code>frontend/.env</code> to point
+            at the backend when it is available.
+          </li>
+        </ul>
+      </section>
+
+      <section id="log">
+        <h2>Activity log</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Entry</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>18 Nov 2026</td>
+              <td>
+                Built the attendance-history page, route, role-aware columns,
+                API call and UI states (Phase2-07 to Phase2-10); verified with
+                lint, tests and build.
+              </td>
+            </tr>
+            <tr>
+              <td>18 Nov 2026</td>
+              <td>
+                Created this progress record in Word and HTML so it can be
+                reviewed locally.
+              </td>
+            </tr>
+            <tr>
+              <td>18 Nov 2026</td>
+              <td>
+                Received the Firebase web config, installed the SDK, added env
+                values, and switched the page to live ID tokens and custom
+                claims. Added auth tests and refreshed these notes.
+              </td>
+            </tr>
+            <tr>
+              <td>19 Nov 2026</td>
+              <td>
+                Built the reusable Admin Dashboard CSV export control: date
+                filter, Export CSV button, disabled + spinner loading state,
+                client-side CSV generation and tests. Documented it in the
+                component usage guide and both progress records; the dashboard
+                page itself remains with the team.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <footer>
+        Digital Attendance Tracking System · Phase 2 progress · Prepared for
+        handover
+      </footer>
+    </div>
+  </body>
+</html>
