@@ -1,25 +1,12 @@
-import { useState } from "react";
-import './Clockout.css';
 
-function ClockOut() {
-    const[Clockout, setClockout] = useState('Clockin');
-    const[loading, setloading] = useState(false);
+function ClockOut({ onClockOut, disabled }) {  // Receives the clock-out function and disabled state from ClockoutPage.jsx
+  return (
+    <button className="clock-action__button" onClick={onClockOut} disabled={disabled} type="button">  {/*Calls the clockout function when the button is clicked*/}
+      <span className="clock-action__play" aria-hidden="true" />
+      {disabled ? 'Clocked Out' : 'Clock Out'}  {/*changes the text depending on the users status*/}
+    </button>
+  );
+}
 
-    function handleClockout() {
-        setloading(true);
+export default ClockOut;  
 
-        setTimeout(() => {
-            setloading(false)
-
-            Clockout === 'Clockin' ? 'Clockout' : 'Clockin'
-        }, 2000)
-    }
-    
-    return (
-        <>
-        <button className="ClockOut-btn" onClick={handleClockout} disabled={loading}>{loading ? 'Processing...' : 'Clockout'}</button>
-        </>
-    )
-};
-
-export default ClockOut;
