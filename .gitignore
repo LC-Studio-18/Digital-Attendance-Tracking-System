@@ -23,5 +23,3 @@ backend/src/config/serviceAccountKey.json
 
 serviceAccountKey.json
 **/serviceAccountKey.json
-
-backend/.env.example
