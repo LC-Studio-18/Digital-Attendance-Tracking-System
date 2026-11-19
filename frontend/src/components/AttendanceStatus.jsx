@@ -36,30 +36,25 @@ function AttendanceStatus({ status, since, loading, error, onRetry }) {
     );
   }
 
-  // 3. IN state: the employee is clocked in (tick icon, lime green card)
+  // 3. IN state: the employee is clocked in (dark card, lime pill)
   if (status === "IN") {
     return (
       <div className="attendance-status attendance-status--in">
-        {/* &#10003; is a tick mark */}
-        <span className="attendance-status__icon">&#10003;</span>
-        <div>
-          <p className="attendance-status__title">Clocked In</p>
-          <p className="attendance-status__text">Since {since}</p>
-        </div>
+        <span className="attendance-status__badge">Clocked In</span>
+        <p className="attendance-status__title">You are currently clocked in</p>
+        <p className="attendance-status__text">
+          Since <span className="attendance-status__time">{since}</span>
+        </p>
       </div>
     );
   }
 
-  // 4. OUT state: the employee is clocked out (X icon, teal card)
+  // 4. OUT state: the employee is clocked out (dark card, lime pill)
   if (status === "OUT") {
     return (
       <div className="attendance-status attendance-status--out">
-        {/* &#10005; is an X mark */}
-        <span className="attendance-status__icon">&#10005;</span>
-        <div>
-          <p className="attendance-status__title">Clocked Out</p>
-          <p className="attendance-status__text">You are not clocked in</p>
-        </div>
+        <span className="attendance-status__badge">Clocked Out</span>
+        <p className="attendance-status__title">You are not clocked in</p>
       </div>
     );
   }
