@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Daily work log ÔÇö 19 Nov 2026</title>
+    <style>
+      :root {
+        --ink: #0f172a;
+        --soft: #334155;
+        --muted: #64748b;
+        --line: #e2e8f0;
+        --canvas: #f7f9fc;
+        --surface: #ffffff;
+        --brand: #2563eb;
+        --brand-dark: #1d4ed8;
+        --brand-soft: #eff6ff;
+        --amber-bg: #fffbeb;
+        --amber-text: #92400e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--canvas);
+        color: var(--ink);
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+          Arial, sans-serif;
+        line-height: 1.6;
+      }
+
+      .wrap {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 2.5rem 1.25rem 4rem;
+      }
+
+      .hero {
+        padding: 2rem;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--surface);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+      }
+
+      .kicker {
+        margin: 0;
+        color: var(--brand);
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0.35rem 0 0.6rem;
+        font-size: clamp(1.8rem, 4vw, 2.4rem);
+        line-height: 1.2;
+      }
+
+      .hero p {
+        margin: 0;
+        color: var(--soft);
+      }
+
+      section {
+        margin-top: 2rem;
+      }
+
+      h2 {
+        font-size: 1.15rem;
+        margin: 0 0 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--line);
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 1.25rem;
+      }
+
+      li {
+        margin-bottom: 0.6rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 0.7rem 0.85rem;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+
+      th {
+        background: #f1f5f9;
+        font-size: 0.8rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .callout {
+        margin-top: 1rem;
+        padding: 0.9rem 1.1rem;
+        border: 1px solid #fde68a;
+        border-radius: 10px;
+        background: var(--amber-bg);
+        color: var(--amber-text);
+      }
+
+      footer {
+        margin-top: 2.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="hero">
+        <p class="kicker">Digital Attendance Tracking System</p>
+        <h1>Daily work log ÔÇö 19 Nov 2026</h1>
+        <p>
+          A short record of what was added and changed today. No credentials or
+          technical values are included.
+        </p>
+      </header>
+
+      <section id="summary">
+        <h2>Today at a glance</h2>
+        <p>
+          We set up the backend with the configuration supplied for the project,
+          made sure the credentials are not tracked by Git, added working
+          filters to the attendance history page, and wrote this handover note
+          in both HTML and Word so the work is easy to review.
+        </p>
+      </section>
+
+      <section id="context">
+        <h2>Code already in place</h2>
+        <p>
+          Most of the application was built before today. The frontend is a
+          React app with staff clock in/out screens, a QR scanner, an admin
+          dashboard, and an attendance history page with role-based columns and
+          a CSV export control. Sign-in and user roles come from Firebase Auth.
+        </p>
+        <p>
+          The backend is a small Node/Express server. It already handles cross
+          origin requests, JSON data, errors and a health check. The Google
+          Sheets and Firebase Admin features are the next pieces to connect.
+        </p>
+        <p>
+          The intended flow is: staff sign in with Firebase, the frontend sends
+          the sign-in token with each request, the backend checks that token,
+          and attendance is read from and written to the company spreadsheet.
+          Today's work added the secure configuration the backend needs for
+          those connections ÔÇö no screens or endpoints were changed.
+        </p>
+      </section>
+
+      <section id="added">
+        <h2>What we added</h2>
+        <ul>
+          <li>
+            A backend environment file containing the supplied Google Sheets and
+            Firebase configuration. It is kept locally and is ignored by Git.
+          </li>
+          <li>
+            A fuller backend example file listing every setting that needs to be
+            provided, with dummy values instead of real ones.
+          </li>
+          <li>
+            A filter form on the attendance history page: date range, status,
+            and a search box for name, email or department.
+          </li>
+          <li>
+            A reset control that clears every filter and reloads the full
+            history, plus a clear option in the "no matches" message.
+          </li>
+          <li>
+            This daily work log in two formats: an HTML file to view in the
+            browser and a Word document to edit or print.
+          </li>
+        </ul>
+      </section>
+
+      <section id="changed">
+        <h2>What we changed</h2>
+        <ul>
+          <li>
+            The backend example file was expanded from just the port and
+            frontend address to the complete list of required settings.
+          </li>
+          <li>
+            The supplied environment values were tidied up so the backend can
+            read them correctly (extra spaces, commas and line-break formatting
+            were corrected).
+          </li>
+          <li>
+            The history page now sends the chosen filters to the backend as
+            query parameters and refetches whenever they change.
+          </li>
+          <li>
+            The history table now shows only the filtered records, with a clear
+            reset button and a friendly message when nothing matches.
+          </li>
+        </ul>
+      </section>
+
+      <section id="checked">
+        <h2>What we checked</h2>
+        <ul>
+          <li>
+            Every setting in the environment file is in the expected format.
+          </li>
+          <li>The real environment file does not appear in Git.</li>
+          <li>The example file contains no secret values.</li>
+          <li>
+            The filter flow was covered with automated tests, and lint plus the
+            production build pass.
+          </li>
+          <li>Both versions of this note were created and open correctly.</li>
+        </ul>
+      </section>
+
+      <section id="next">
+        <h2>Things to follow up</h2>
+        <ul>
+          <li>
+            Confirm the expected name of the Firebase private-key ID setting
+            before the Firebase connection is written.
+          </li>
+          <li>
+            Confirm the filter query parameter names with the backend owner so
+            the API applies the same filters on the server.
+          </li>
+          <li>
+            The backend is still a basic server with a health check only; the
+            Sheets and Firebase features still need to be built.
+          </li>
+          <li>
+            The service-account keys were shared in plain text, so they should
+            be replaced before the app is used on a shared or live environment.
+          </li>
+        </ul>
+        <div class="callout">
+          <strong>Note:</strong> no passwords, keys or spreadsheet details have
+          been copied into these notes or into any tracked project file.
+        </div>
+      </section>
+
+      <footer>
+        Digital Attendance Tracking System ┬À Daily work log ┬À Prepared for
+        handover
+      </footer>
+    </div>
+  </body>
+</html>
