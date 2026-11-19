@@ -3,7 +3,7 @@ name: Deploy staging preview to GitHub Pages
 on:
   push:
     branches:
-      - rasool's-deploy-staging-preview-pages
+      - frontend6-deploy-staging-preview-pages
   workflow_dispatch:
 
 permissions:
