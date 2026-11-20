@@ -1,3 +1,4 @@
+
 // Axios sends HTTP requests to the backend (used once the real API exists)
 import axios from "axios";
 // Dummy attendance events (copied from attendance.json)
@@ -18,18 +19,35 @@ const DUMMY_USER_ID = "firebase_uid_001";
 
 // Where the dummy events are saved in the browser so they survive a refresh.
 // With the real API the backend keeps the records, so this is dummy-only.
-const STORAGE_KEY = "dummyAttendanceEvents";
+const STORAGE_KEY = "s1-15:dummyAttendanceEvents";
 
 // Loads the saved events, or starts from the original dummy data
 function loadDummyEvents() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
+
     if (saved) {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+
+      // Check that the saved data has the correct structure
+      if (
+        Array.isArray(parsed) &&
+        parsed.every(
+          (event) =>
+            event &&
+            typeof event["User ID"] === "string" &&
+            typeof event.Timestamp === "string" &&
+            !Number.isNaN(Date.parse(event.Timestamp)) &&
+            typeof event["Event Type"] === "string"
+        )
+      ) {
+        return parsed;
+      }
     }
   } catch {
     // Storage unavailable or data damaged: fall back to the original data
   }
+
   return [...DUMMY_ATTENDANCE];
 }
 
@@ -60,13 +78,20 @@ function nowTimestamp() {
   return `${date}T${time}+02:00`;
 }
 
-// Turns "2026-11-19T12:47:03+02:00" into "12:47 PM".
-// Reads the time straight from the text so the timezone does not shift it.
+// Turns a timestamp into 24-hour time, e.g. "16:54".
 function formatTime(timestamp) {
-  const [hours, minutes] = timestamp.slice(11, 16).split(":").map(Number);
-  const period = hours >= 12 ? "PM" : "AM";
-  const hour12 = hours % 12 || 12;
-  return `${String(hour12).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${period}`;
+  const time = timestamp?.slice(11, 16);
+
+  return time && /^([01]\d|2[0-3]):[0-5]\d$/.test(time)
+    ? time
+    : null;
+}
+
+// Gets the date using South African time
+function attendanceDate(value) {
+  return new Date(value).toLocaleDateString("en-ZA", {
+    timeZone: "Africa/Johannesburg",
+  });
 }
 
 // Works out an employee's current status from the dummy attendance events
@@ -85,11 +110,33 @@ function getDummyStatus(userId) {
   // The latest event decides the status
   const latest = events[0];
 
+  // Get today's date using South African time
+  const today = attendanceDate(new Date());
+  const latestEventDate = attendanceDate(latest.Timestamp);
+
+  // If the latest event is a Clock In, the employee is still clocked in.
+  // This also preserves an ongoing shift that started yesterday.
   if (latest["Event Type"] === "Clock In") {
-    return { status: "IN", since: formatTime(latest.Timestamp) };
+    return {
+      status: "IN",
+      since: formatTime(latest.Timestamp),
+    };
   }
 
-  return { status: "OUT", ClockOutTime: formatTime(latest.Timestamp)};
+  // A Clock Out from today means the employee has completed their shift.
+  if (
+    latest["Event Type"] === "Clock Out" &&
+    latestEventDate === today
+  ) {
+    return {
+      status: "OUT",
+      clockOutTime: formatTime(latest.Timestamp),
+    };
+  }
+
+  // The latest event was a Clock Out from a previous day.
+  // There is no attendance record for today yet.
+  return { status: null };
 }
 
 // Adds a new dummy event for the pretend logged-in employee and saves it
@@ -108,7 +155,7 @@ function addDummyEvent(eventType) {
 // PROPOSED contract (to be agreed with Khanya G and Team 2):
 //   GET /api/attendance/status
 //   Header:   Authorization: Bearer <Firebase token>
-//   Response: { status: "IN" | "OUT", since: "08:32 AM" }
+//   Response: { status: "IN" | "OUT", since: "08:32" }
 //   If the employee has no attendance record, status is missing or null.
 export async function getAttendanceStatus(token) {
   if (USE_DUMMY_DATA) {

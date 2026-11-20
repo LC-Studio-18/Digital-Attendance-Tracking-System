@@ -31,7 +31,6 @@
   height: 35px;
   object-fit: cover;
   transform: scale(2.5);
-  
 }
 
 
@@ -95,4 +94,24 @@
 
 .attendance-status--error .attendance-status__title {
   color: #d93025;
+}
+
+
+
+/* Responsiveness */
+
+
+@media (max-width: 480px) {
+  .attendance-status__badge {
+    font-size: 20px;
+  }
+
+  .attendance-status__title {
+    font-size: 16px;
+  }
+
+  .attendance-status--in,
+  .attendance-status--out {
+    padding: 24px 16px;
+  }
 }

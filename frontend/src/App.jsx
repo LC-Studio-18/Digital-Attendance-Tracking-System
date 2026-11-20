@@ -29,7 +29,7 @@ function App() {
   }
 
   return (
-    <>
+  <>
     <div style={{ maxWidth: 360, margin: "40px auto", padding: 16 }}>
       {/* Pass the hook's values straight into the component */}
       <AttendanceStatus
@@ -41,27 +41,6 @@ function App() {
         onRetry={refresh}
       />
     </div>
-
-    {/* Test buttons standing in for the real clock-in and clock-out screens */}
-
-    {/* <div style={{ display: "flex", gap: 8, marginTop: 24 }}> */}
-      <div style={{ display: "flex", gap: 8, marginTop: 24 ,justifyContent: "center" }}>
-        <button
-          className="btn btn-dark"
-          disabled={busy || loading || status === "IN"}
-          onClick={() => handleAction(clockIn)}
-        >
-          Clock In
-        </button>
-        <button
-          className="btn btn-outline-dark"
-          disabled={busy || loading || status !== "IN"}
-          onClick={() => handleAction(clockOut)}
-        >
-          Clock Out
-        </button>
-      </div>
-    {/* </div>  */}
   </>
   );
 }

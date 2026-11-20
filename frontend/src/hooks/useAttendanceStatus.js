@@ -1,5 +1,6 @@
-// useState holds values, useEffect runs code when the component loads,
-// useCallback keeps a function stable between renders
+
+ // useState holds values, useEffect runs code when the component loads,
+ // useCallback keeps a function stable between renders
 import { useState, useEffect, useCallback } from "react";
 // Function that gets the status (dummy data for now, real API later)
 import { getAttendanceStatus } from "../services/attendanceService";
@@ -10,11 +11,11 @@ import { getAttendanceStatus } from "../services/attendanceService";
 export function useAttendanceStatus(token = null) {
   // "IN", "OUT" or null (null means no attendance record)
   const [status, setStatus] = useState(null);
-  // Clock-in time, e.g. "08:32 AM" (only set when status is "IN")
+  // Clock-in time, e.g. "08:32" (only set when status is "IN")
   const [since, setSince] = useState(null);
+  // Clock-out-time, e.g. "16:54" (Only set when status is "OUT")
+  const [clockOutTime, setClockOutTime] = useState(null);
   // True while the status is being fetched (starts true so loading shows first)
-  const [ClockOutTime, setClockOutTime] = useState(null);
-  // Clock-out-time, e.g. "16:54 PM" (Only set when status is "OUT")
   const [loading, setLoading] = useState(true);
   // Error message if the status could not be loaded
   const [error, setError] = useState(null);
@@ -34,7 +35,7 @@ export function useAttendanceStatus(token = null) {
         if (cancelled) return;
         setStatus(data.status ?? null);
         setSince(data.since ?? null);
-        setClockOutTime(data.ClockOutTime ?? null);
+        setClockOutTime(data.clockOutTime ?? data.ClockOutTime ?? null);
         setError(null);
       } catch {
         if (cancelled) return;
@@ -60,5 +61,5 @@ export function useAttendanceStatus(token = null) {
     setRefreshKey((key) => key + 1);
   }, []);
 
-  return { status, since, loading, error, refresh, ClockOutTime };
+  return { status, since, loading, error, refresh, clockOutTime };
 }
