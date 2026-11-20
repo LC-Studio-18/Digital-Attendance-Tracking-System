@@ -1,5 +1,7 @@
 // Styles for this component (colours, spacing, layout)
 import "./AttendanceStatus.css";
+import checktick from '../assets/check-tick-icon.png';
+import greenchecktick from '../assets/green-check-tick-icon.png';
 
 // Display-only component: it shows the attendance status it is given.
 // Props:
@@ -8,7 +10,7 @@ import "./AttendanceStatus.css";
 //   loading - true while the status is being fetched
 //   error   - error message to show if the status could not be loaded
 //   onRetry - function called when the "Try Again" button is clicked
-function AttendanceStatus({ status, since, loading, error, onRetry }) {
+function AttendanceStatus({ status, since, loading, error, onRetry, ClockOutTime }) {
   // 1. Loading state: show a spinner while attendance data is being retrieved
   if (loading) {
     return (
@@ -40,10 +42,11 @@ function AttendanceStatus({ status, since, loading, error, onRetry }) {
   if (status === "IN") {
     return (
       <div className="attendance-status attendance-status--in">
-        <span className="attendance-status__badge">Clocked In</span>
-        <p className="attendance-status__title">You are currently clocked in</p>
+        <img className="attendance-status-check-tick-in"  src={checktick} alt="" />
+        <span className="attendance-status__badge">Clocked In!</span>
+        <p className="attendance-status__title">Your arrival has been recorded. Live tracking has been enabled</p>
         <p className="attendance-status__text">
-          Since <span className="attendance-status__time">{since}</span>
+        <span className="attendance-status__time">{since}</span>
         </p>
       </div>
     );
@@ -53,8 +56,12 @@ function AttendanceStatus({ status, since, loading, error, onRetry }) {
   if (status === "OUT") {
     return (
       <div className="attendance-status attendance-status--out">
-        <span className="attendance-status__badge">Clocked Out</span>
-        <p className="attendance-status__title">You are not clocked in</p>
+        <img className="attendance-status-check-tick-out" src={greenchecktick} alt="" />
+        <span className="attendance-status__badge">Clocked Out!</span>
+        <p className="attendance-status__title">Thank you for your time</p>
+        <p className="attendance-status__text">
+        <span className="attendance-status__time">{ClockOutTime}</span>
+        </p>
       </div>
     );
   }

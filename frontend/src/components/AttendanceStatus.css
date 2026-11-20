@@ -11,40 +11,71 @@
   font-family: "Inter", system-ui, sans-serif;
 }
 
+.attendance-status-check-tick-in {
+  margin-bottom: 10px;
+  border-radius: 50%;
+  background: white;
+  padding: 5px;
+  width: 35px;
+  height: 35px;
+  object-fit: cover;
+  transform: scale(2.5);
+}
+
+.attendance-status-check-tick-out {
+  margin-bottom: 10px;
+  border-radius: 50%;
+  background: white;
+  padding: 5px;
+  width: 35px;
+  height: 35px;
+  object-fit: cover;
+  transform: scale(2.5);
+  
+}
+
+
+
 /* Bold line under the pill, e.g. "You are currently clocked in" */
 .attendance-status__title {
   margin: 0;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 18px;
 }
 
 /* Small line under the title */
 .attendance-status__text {
   margin: 0;
   font-size: 13px;
-  font-weight: 400;
+  font-weight: 600;
 }
 
 /* Lime pill at the top of the IN and OUT cards ("Clocked In" / "Clocked Out") */
 .attendance-status__badge {
   padding: 4px 16px;
   border-radius: 6px;
-  background: #b2ed1d;
-  color: #0e181f;
-  font-size: 13px;
+  /* background: #b2ed1d; */
+  /* color: #0e181f; */
+  font-size: 25px;
   font-weight: 700;
 }
 
 /* IN and OUT: dark ink card with white text */
-.attendance-status--in,
 .attendance-status--out {
-  background: #0e181f;
+  background: #2F6B75;
   color: #ffffff;
+  gap: 20px;
+  padding: 50px;
+}
+
+.attendance-status--in{
+  background: #b2ed1d;
+  gap: 20px;
+  padding: 50px;
 }
 
 /* Clock-in time shown in lime */
 .attendance-status__time {
-  color: #b2ed1d;
+  font-size: 18px;
   font-weight: 700;
 }
 

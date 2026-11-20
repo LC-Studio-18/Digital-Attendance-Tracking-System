@@ -13,6 +13,8 @@ export function useAttendanceStatus(token = null) {
   // Clock-in time, e.g. "08:32 AM" (only set when status is "IN")
   const [since, setSince] = useState(null);
   // True while the status is being fetched (starts true so loading shows first)
+  const [ClockOutTime, setClockOutTime] = useState(null);
+  // Clock-out-time, e.g. "16:54 PM" (Only set when status is "OUT")
   const [loading, setLoading] = useState(true);
   // Error message if the status could not be loaded
   const [error, setError] = useState(null);
@@ -32,6 +34,7 @@ export function useAttendanceStatus(token = null) {
         if (cancelled) return;
         setStatus(data.status ?? null);
         setSince(data.since ?? null);
+        setClockOutTime(data.ClockOutTime ?? null);
         setError(null);
       } catch {
         if (cancelled) return;
@@ -57,5 +60,5 @@ export function useAttendanceStatus(token = null) {
     setRefreshKey((key) => key + 1);
   }, []);
 
-  return { status, since, loading, error, refresh };
+  return { status, since, loading, error, refresh, ClockOutTime };
 }

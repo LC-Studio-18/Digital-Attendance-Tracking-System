@@ -12,7 +12,7 @@ import { clockIn, clockOut } from "./services/attendanceService";
 // TEMPORARY test page. Do not commit this file.
 function App() {
   // Get the status, loading and error values from the hook
-  const { status, since, loading, error, refresh } = useAttendanceStatus();
+  const { status, since, loading, error, refresh, ClockOutTime } = useAttendanceStatus();
   // True while a clock-in or clock-out request is running
   const [busy, setBusy] = useState(false);
 
@@ -29,16 +29,40 @@ function App() {
   }
 
   return (
+    <>
     <div style={{ maxWidth: 360, margin: "40px auto", padding: 16 }}>
       {/* Pass the hook's values straight into the component */}
       <AttendanceStatus
         status={status}
         since={since}
+        ClockOutTime={ClockOutTime}
         loading={loading}
         error={error}
         onRetry={refresh}
       />
     </div>
+
+    {/* Test buttons standing in for the real clock-in and clock-out screens */}
+
+    {/* <div style={{ display: "flex", gap: 8, marginTop: 24 }}> */}
+      <div style={{ display: "flex", gap: 8, marginTop: 24 ,justifyContent: "center" }}>
+        <button
+          className="btn btn-dark"
+          disabled={busy || loading || status === "IN"}
+          onClick={() => handleAction(clockIn)}
+        >
+          Clock In
+        </button>
+        <button
+          className="btn btn-outline-dark"
+          disabled={busy || loading || status !== "IN"}
+          onClick={() => handleAction(clockOut)}
+        >
+          Clock Out
+        </button>
+      </div>
+    {/* </div>  */}
+  </>
   );
 }
 

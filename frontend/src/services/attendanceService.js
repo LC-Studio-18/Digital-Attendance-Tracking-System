@@ -89,7 +89,7 @@ function getDummyStatus(userId) {
     return { status: "IN", since: formatTime(latest.Timestamp) };
   }
 
-  return { status: "OUT" };
+  return { status: "OUT", ClockOutTime: formatTime(latest.Timestamp)};
 }
 
 // Adds a new dummy event for the pretend logged-in employee and saves it
