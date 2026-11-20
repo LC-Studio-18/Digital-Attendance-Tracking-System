@@ -8,13 +8,46 @@ import {
   getRecordFirebaseUid,
   parseAttendanceFilters,
 } from '../utils/attendanceFilters.js';
-import { fetchAttendanceRecords } from '../services/googleSheetsService.js';
+import * as attendanceService from '../services/googleSheetsService.js';
+
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 100;
+
+const parsePositiveInteger = (value, fallback) => {
+  if (typeof value !== 'string' || !/^\d+$/.test(value.trim())) {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+/**
+ * Prefer the current role-aware service helper. The fetchAttendanceRecords
+ * fallback preserves compatibility with the in-memory test doubles that were
+ * written before role-based fetching was added; those rows still need the
+ * legacy UID-based role scoping here.
+ */
+const fetchRoleScopedRecords = async (user, role) => {
+  if (typeof attendanceService.getRecordsByRole === 'function') {
+    return attendanceService.getRecordsByRole(user);
+  }
+
+  const records = await attendanceService.fetchAttendanceRecords();
+
+  return role === 'admin'
+    ? records
+    : records.filter(
+        (record) => getRecordFirebaseUid(record) === user.uid,
+      );
+};
 
 export const getAttendanceHistory = async (req, res, next) => {
   try {
-    const { uid, role } = req.user;
+    const { role } = req.user;
 
-    // Preserve the existing 403 behaviour for verified but unsupported roles.
+    // Validate role before reading from Google Sheets or applying filters.
     if (role !== 'admin' && role !== 'staff') {
       return res.status(403).json({
         success: false,
@@ -37,28 +70,14 @@ export const getAttendanceHistory = async (req, res, next) => {
       throw err;
     }
 
-    // Clamp pagination parameters to at least 1 so negative/zero values never slice backwards
-    const rawPage = parseInt(req.query.page, 10);
-    const rawLimit = parseInt(req.query.limit, 10);
-    const page = Number.isNaN(rawPage) ? 1 : Math.max(1, rawPage);
-    const limit = Number.isNaN(rawLimit) ? 50 : Math.max(1, rawLimit);
+    const page = parsePositiveInteger(req.query.page, DEFAULT_PAGE);
+    const requestedLimit = parsePositiveInteger(req.query.limit, DEFAULT_LIMIT);
+    const limit = Math.min(requestedLimit, MAX_LIMIT);
 
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-
-    // Fetch live records from Google Sheets
-    const attendanceRecords = await fetchAttendanceRecords();
-
-    // Admins can view all records; staff can view only their own.
-    // Staff never use a client-supplied employeeId: their authenticated UID
-    // is the only identity allowed to scope their results.
-    const roleScopedRecords =
-      role === 'admin'
-        ? attendanceRecords
-        : attendanceRecords.filter(
-            (record) => getRecordFirebaseUid(record) === uid,
-          );
-
+    // Role scoping comes from the service. Staff never honour a
+    // client-supplied employeeId: their authenticated identity is the only
+    // one allowed to scope their results.
+    const roleScopedRecords = await fetchRoleScopedRecords(req.user, role);
     const effectiveFilters =
       role === 'staff' ? { ...filters, employeeId: null } : filters;
 
@@ -71,6 +90,10 @@ export const getAttendanceHistory = async (req, res, next) => {
 
     // Sort newest first before applying pagination
     const sortedRecords = sortAttendanceRecords(filteredRecords);
+    const totalPages = Math.ceil(sortedRecords.length / limit);
+    const startIndex =
+      page > totalPages ? sortedRecords.length : (page - 1) * limit;
+    const endIndex = startIndex + limit;
     const paginatedData = sortedRecords.slice(startIndex, endIndex);
 
     const response = buildAttendanceHistoryResponse({

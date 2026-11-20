@@ -14,6 +14,8 @@ const MAX_EMPLOYEE_ID_LENGTH = 128;
 const FIREBASE_UID_KEYS = ['uid', 'user_id', 'user id (firebase uid)'];
 const EMPLOYEE_ID_KEYS = [
   ...FIREBASE_UID_KEYS,
+  'employeeId',
+  'employeeID',
   'employeeid',
   'employee_id',
   'employee id',

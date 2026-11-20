@@ -230,10 +230,11 @@ test('pagination returns the requested page and clamps invalid values', async ()
   const clamped = await requestHistory('admin-token', '?page=0&limit=-5');
   assert.equal(clamped.status, 200);
 
+  // Invalid values fall back to the documented defaults (page 1, limit 20).
   const clampedBody = await clamped.json();
   assert.equal(clampedBody.currentPage, 1);
-  assert.equal(clampedBody.count, 1);
-  assert.equal(clampedBody.totalPages, 4);
+  assert.equal(clampedBody.count, 4);
+  assert.equal(clampedBody.totalPages, 1);
 });
 
 test('records are sorted newest first before pagination', async () => {

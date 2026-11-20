@@ -21,10 +21,11 @@ Authorization: Bearer <Firebase ID token>
   `role` custom claim. **If the claim is absent, the role defaults to `staff`.**
 - `admin`: may read attendance records for the whole organisation and may use
   `employeeId` to filter across employees.
-- `staff`: may read only records whose Firebase UID matches the verified
-  token's `uid`. The UID is read from the record key `uid`, then `user_id`, then
-  `user id (firebase uid)` (first present value wins). Any `employeeId` supplied
-  by the client is ignored; date filters still apply to their own records only.
+- `staff`: may read only their own records. The Google Sheets service resolves
+  the verified `uid`/`email` through the `Employees` tab to an employee ID, then
+  returns attendance rows with a matching `employeeId` (or legacy `uid`,
+  `user_id`, `user id (firebase uid)`) value. Any `employeeId` supplied by the
+  client is ignored; date filters still apply to their own records only.
 - Any other verified role (for example `manager`) receives HTTP 403.
 - Tokens in query strings, cookies or other headers are not accepted.
 
@@ -36,8 +37,8 @@ Authorization: Bearer <Firebase ID token>
 | `startDate` | none | Inclusive start of a date range. May be used on its own. |
 | `endDate` | none | Inclusive end of a date range. May be used on its own. |
 | `employeeId` | none | Admin only. Employee Firebase UID to filter by. Ignored for `staff` requests (their authenticated UID is always used). |
-| `page` | `1` | Page number, 1-based. Parsed with `parseInt(value, 10)` and clamped to a minimum of `1`. A non-numeric value uses the default. |
-| `limit` | `50` | Records per page. Parsed with `parseInt(value, 10)` and clamped to a minimum of `1`. A non-numeric value uses the default. There is no upper limit. |
+| `page` | `1` | Page number, 1-based. Only positive integer strings are accepted; malformed, zero, negative or non-string values use the default. A page beyond the last page returns an empty `data` array. |
+| `limit` | `20` | Records per page. Only positive integer strings are accepted; malformed, zero, negative or non-string values use the default. Values above `100` are capped at `100`. |
 
 Blank values (`?date=`, `?employeeId=`, etc.) are treated as if the parameter
 was not supplied. `date` cannot be combined with `startDate` or `endDate`; use
@@ -64,8 +65,9 @@ filter is supplied.
 
 `employeeId` must be a single non-blank string of at most 128 characters
 containing letters, digits or `.`, `_`, `:`, `@` and `-` (and must start with a
-letter or digit). It is matched against the record's `uid`, `user_id`,
-`user id (firebase uid)`, `employeeid`, `employee_id` or `employee id` column.
+letter or digit). It is matched against the record's `employeeId`, `employeeID`,
+`uid`, `user_id`, `user id (firebase uid)`, `employeeid`, `employee_id` or
+`employee id` column.
 
 ### Examples
 
@@ -76,13 +78,10 @@ letter or digit). It is matched against the record's `uid`, `user_id`,
 - `/api/v1/attendance/history?employeeId=staff-uid-1&date=2026-11-18` — combined.
 - `/api/v1/attendance/history?employeeId=staff-uid-1&startDate=2026-11-01&endDate=2026-11-30&page=2&limit=25` — combined filters with pagination.
 
-Records are sorted by `date` descending (newest first) **before** pagination is
-applied. Sorting uses a string comparison
-(`String(record.date ?? '').localeCompare(...)`), not `Date` parsing, because
-the Google Sheets service returns cell values as strings. ISO-style dates such
-as `YYYY-MM-DD` therefore sort correctly in descending order; other formats are
-compared lexicographically and may not sort chronologically. Missing or empty
-dates sort last.
+Records are sorted newest first **before** pagination is applied. Sorting uses
+the normalized `timestamp` value when present, otherwise the `date` value; both
+`Date` objects and parseable date strings are supported. Missing or unparseable
+timestamps and dates sort last.
 
 ## Successful response (HTTP 200)
 
