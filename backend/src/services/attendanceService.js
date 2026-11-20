@@ -42,6 +42,10 @@ import { fileURLToPath } from "node:url";
 // Validate and prepare RSA private keys.
 import { createPrivateKey } from "node:crypto";
 
+import {
+  normaliseAttendanceTimestamp,
+} from "./timezone.js";
+
 
 // ============================================================
 // 2. LOAD SHARED ENVIRONMENT VARIABLES
@@ -305,6 +309,11 @@ export async function getAttendanceSheetTables() {
 
     // Retrieve original stored values rather than visual formatting.
     valueRenderOption: "UNFORMATTED_VALUE",
+
+    dateTimeRenderOption: "SERIAL_NUMBER",
+
+
+
 
   });
 
@@ -587,7 +596,12 @@ export function mapClockEventSheetValues(values = []) {
     eventId: row.eventId ?? "",
 
     // Identify the employee through their Firebase UID.
-    userId: row.userId ?? "",
+   userId: normaliseIdentifier(
+  row.userIdFirebaseUid ??
+  row.userId ??
+  row.firebaseUid ??
+  row.uid
+),
 
     // Retrieve the recorded clock action.
     eventType:
@@ -665,55 +679,33 @@ function normaliseEventType(value) {
  * @param {number} nowMs - Current backend time in milliseconds.
  * @returns {string|null} Valid UTC timestamp or null.
  */
+/**
+ * Uses the shared timezone service to normalise
+ * timestamps retrieved from Google Sheets.
+ */
 function normaliseTimestamp(value, nowMs = Date.now()) {
 
-  // Reject missing timestamps.
-  if (!value) {
+  // Convert the incoming Google Sheets timestamp into UTC.
+  const timestamp = normaliseAttendanceTimestamp(value);
+
+  // Reject missing or invalid timestamps.
+  if (!timestamp) {
     return null;
   }
 
-  let date;
+  // Convert the timestamp into milliseconds.
+  const timestampMs = Date.parse(timestamp);
 
-  // Support valid JavaScript Date objects.
-  if (value instanceof Date) {
-
-    date = value;
-
-  } else {
-
-    // Only accept string timestamps from Google Sheets.
-    if (typeof value !== "string") {
-      return null;
-    }
-
-    const timestamp = value.trim();
-
-    // Require ISO 8601 with explicit timezone information.
-    const validISOFormat =
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/i;
-
-    if (!validISOFormat.test(timestamp)) {
-      return null;
-    }
-
-    // Convert the incoming timestamp into a Date object.
-    date = new Date(timestamp);
-  }
-
-  // Reject invalid date values.
-  if (!Number.isFinite(date.getTime())) {
+  // Reject invalid dates and future attendance events.
+  if (
+    !Number.isFinite(timestampMs) ||
+    timestampMs > nowMs
+  ) {
     return null;
   }
 
-  // Reject timestamps later than the current backend time.
-  if (date.getTime() > nowMs) {
-    return null;
-  }
-
-  // Return the timestamp in a consistent UTC format.
-  return date.toISOString();
+  return timestamp;
 }
-
 
 // ============================================================
 // 15. PROCESS EMPLOYEE CHECK-IN AND CHECK-OUT TIMESTAMPS
@@ -967,12 +959,14 @@ export async function getAttendanceTimestampsFromSheets() {
 
       sheetTables,
 
-      [
-        "eventId",
-        "timestamp",
-        "userId",
-        "eventTypeClockInClockOut",
-      ],
+    
+[
+  "eventId",
+  "timestamp",
+  "userIdFirebaseUid",
+  "eventTypeClockInClockOut",
+],
+
 
       "Events"
 

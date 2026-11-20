@@ -7,8 +7,8 @@
  * PURPOSE:
  * - Read the Employees and Attendance tabs from Google Sheets.
  * - Retrieve both tabs using one batch read request.
- * - Match attendance events to employees using Employee ID.
- * - Retrieve Firebase UIDs from the Employees tab.
+ * - Match attendance events to employees using Firebase UID.
+ * - Retrieve employee information from the Employees tab.
  * - Convert spreadsheet timestamps into UTC ISO timestamps.
  * - Calculate the number of active employees currently onsite.
  *
@@ -16,7 +16,7 @@
  * The attendance controller should not communicate directly
  * with Google Sheets or contain spreadsheet mapping logic.
  *
- * This provider handles the data retrieval and supplies the
+ * This provider handles data retrieval and supplies the
  * controller with one structured result:
  *
  * {
@@ -24,27 +24,37 @@
  *   totalIn: number
  * }
  *
- * GOOGLE SHEETS:
+ * GOOGLE SHEETS STRUCTURE:
+ *
  * Employees tab:
- * User ID (Firebase UID)
- * Employee ID
- * Full Name
- * Email
- * Department
- * Role (Staff/Admin)
- * Status (Active/Inactive)
+ * - User ID (Firebase UID)
+ * - Employee ID
+ * - Full Name
+ * - Email
+ * - Department
+ * - Role (Staff/Admin)
+ * - Status (Active/Inactive)
  *
  * Attendance tab:
- * Event ID
- * Timestamp
- * Employee ID
- * Event Type (Clock In/Clock Out)
- * Location
- * Comment
+ * - Event ID
+ * - Timestamp
+ * - User ID (Firebase UID)
+ * - Event Type (Clock In/Clock Out)
+ * - Location
+ * - Comment
  */
+
 
 // Google Sheets API client library.
 import { google } from "googleapis";
+
+// Reuse the shared timezone service.
+// It converts South African local timestamps and Google Sheets
+// numeric date serials into consistent UTC ISO timestamps.
+import {
+  normaliseAttendanceTimestamp,
+} from "./timezone.js";
+
 
 // ============================================================
 // 1. GOOGLE SHEETS CONFIGURATION
@@ -53,11 +63,15 @@ import { google } from "googleapis";
 /**
  * Returns the configuration needed to access Google Sheets.
  *
- * The tab names can be changed through .env without editing
- * this source file.
+ * WHY:
+ * The spreadsheet ID and tab names can be configured through
+ * the backend .env file without changing this source file.
  */
+
 function getConfiguration() {
+
   return {
+
     spreadsheetId: process.env.SPREADSHEET_ID,
 
     employeesTab:
@@ -66,20 +80,23 @@ function getConfiguration() {
     attendanceTab:
       process.env.GOOGLE_SHEETS_ATTENDANCE_TAB || "Attendance",
 
-    timezoneOffset:
-      process.env.ATTENDANCE_TIME_ZONE_OFFSET || "+02:00",
   };
 }
 
+
 // Google Sheets API permission.
 // Read-only access is sufficient for this dashboard integration.
+
 const GOOGLE_SHEETS_SCOPES = [
   "https://www.googleapis.com/auth/spreadsheets.readonly",
 ];
 
+
 // Cache the API client so it does not need to be recreated
 // every time the dashboard refreshes.
+
 let sheetsClient = null;
+
 
 /**
  * Creates or returns the Google Sheets API client.
@@ -88,17 +105,22 @@ let sheetsClient = null;
  * Reusing the client avoids repeatedly creating authentication
  * objects during automatic attendance refreshes.
  */
+
 function getSheetsClient() {
+
   if (sheetsClient) {
     return sheetsClient;
   }
 
-  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+  const clientEmail = String(
+    process.env.GOOGLE_CLIENT_EMAIL ?? ""
+  ).trim();
 
   // Google private keys stored in .env commonly contain literal
   // "\n" characters. Convert them into actual line breaks.
   const privateKey = process.env.GOOGLE_PRIVATE_KEY
-    ?.replace(/\\n/g, "\n");
+    ?.replace(/\\n/g, "\n")
+    .trim();
 
   if (!clientEmail || !privateKey) {
     throw new Error(
@@ -106,12 +128,18 @@ function getSheetsClient() {
     );
   }
 
+  // Create the Google service-account authentication client.
   const auth = new google.auth.JWT({
+
     email: clientEmail,
+
     key: privateKey,
+
     scopes: GOOGLE_SHEETS_SCOPES,
+
   });
 
+  // Create and cache the Google Sheets API client.
   sheetsClient = google.sheets({
     version: "v4",
     auth,
@@ -119,6 +147,7 @@ function getSheetsClient() {
 
   return sheetsClient;
 }
+
 
 // ============================================================
 // 2. SPREADSHEET TAB HELPERS
@@ -129,25 +158,30 @@ function getSheetsClient() {
  *
  * This also supports tab names containing spaces or apostrophes.
  */
+
 function quoteTabName(tabName) {
+
   return `'${String(tabName).replace(/'/g, "''")}'`;
 }
+
 
 /**
  * Converts column headers into predictable lookup keys.
  *
  * Examples:
  *
- * "User ID (Firebase UID)" -> "useridfirebaseuid"
- * "Employee ID"            -> "employeeid"
- * "Full Name"              -> "fullname"
- * "Status (Active/Inactive)" -> "status"
+ * "User ID (Firebase UID)"       -> "userid"
+ * "Employee ID"                 -> "employeeid"
+ * "Full Name"                   -> "fullname"
+ * "Status (Active/Inactive)"    -> "status"
  * "Event Type (Clock In/Clock Out)" -> "eventtype"
  *
- * This makes the mapping less dependent on capitalisation
- * and descriptive text inside parentheses.
+ * Removing the descriptive text inside parentheses allows
+ * the backend to recognise the actual spreadsheet headings.
  */
+
 function normaliseHeader(value) {
+
   return String(value ?? "")
     .trim()
     .replace(/^attendance\s*:\s*/i, "")
@@ -156,11 +190,21 @@ function normaliseHeader(value) {
     .replace(/[^a-z0-9]/g, "");
 }
 
+
 /**
  * Converts a sheet's returned values into headers and data rows.
+ *
+ * The first row contains the column headings.
+ * All following rows contain spreadsheet records.
  */
+
 function parseSheetRows(values, tabName) {
-  if (!Array.isArray(values) || values.length === 0) {
+
+  if (
+    !Array.isArray(values) ||
+    values.length === 0 ||
+    !Array.isArray(values[0])
+  ) {
     throw new Error(
       `The "${tabName}" tab is empty or has no header row.`
     );
@@ -180,12 +224,14 @@ function parseSheetRows(values, tabName) {
   };
 }
 
+
 /**
  * Locates a required column using its possible header names.
  *
  * This allows the service to accept minor header variations
  * without depending on fixed spreadsheet column positions.
  */
+
 function findColumn(
   headers,
   possibleNames,
@@ -193,6 +239,7 @@ function findColumn(
   tabName,
   required = true
 ) {
+
   const possibleHeaders = possibleNames.map(normaliseHeader);
 
   const columnIndex = headers.findIndex(
@@ -209,10 +256,15 @@ function findColumn(
   return columnIndex;
 }
 
+
 /**
  * Reads a cell safely and returns its value as trimmed text.
+ *
+ * Used for employee IDs, Firebase UIDs, names and event types.
  */
+
 function getCell(row, index) {
+
   if (index < 0) {
     return "";
   }
@@ -220,274 +272,191 @@ function getCell(row, index) {
   return String(row[index] ?? "").trim();
 }
 
+
+/**
+ * Reads a cell without converting its original data type.
+ *
+ * WHY:
+ * Google Sheets can return timestamps as numeric date serials.
+ *
+ * Converting those numbers into strings before timestamp
+ * normalisation would prevent the timezone service from
+ * recognising them as numeric spreadsheet dates.
+ */
+
+function getRawCell(row, index) {
+
+  if (index < 0) {
+    return null;
+  }
+
+  return row[index] ?? null;
+}
+
+
 /**
  * Determines whether a spreadsheet row is completely empty.
  *
  * Empty trailing spreadsheet rows should not be processed
  * as employee or attendance records.
  */
+
 function isEmptyRow(row) {
+
+  if (!Array.isArray(row)) {
+    return true;
+  }
+
   return !row.some(
     (value) => String(value ?? "").trim() !== ""
   );
 }
 
-// ============================================================
-// 3. TIMEZONE VALIDATION
-// ============================================================
-
-/**
- * Validates the timezone offset configured in .env.
- *
- * Examples:
- * +02:00
- * +01:00
- * -05:00
- *
- * South Africa uses +02:00.
- */
-function validateTimezoneOffset(offset) {
-  const match = String(offset).match(
-    /^([+-])(\d{2}):(\d{2})$/
-  );
-
-  if (!match) {
-    throw new Error(
-      "ATTENDANCE_TIME_ZONE_OFFSET must use a format such as +02:00."
-    );
-  }
-
-  const hours = Number(match[2]);
-  const minutes = Number(match[3]);
-
-  if (
-    hours > 14 ||
-    minutes > 59 ||
-    (hours === 14 && minutes !== 0)
-  ) {
-    throw new Error(
-      "ATTENDANCE_TIME_ZONE_OFFSET is outside the supported range."
-    );
-  }
-
-  return offset;
-}
 
 // ============================================================
-// 4. TIMESTAMP NORMALISATION
+// 3. TIMESTAMP NORMALISATION
 // ============================================================
 
 /**
  * Converts a Google Sheets timestamp into a UTC ISO timestamp.
  *
  * WHY:
- * Google Sheets can return a local timestamp without a timezone.
+ * Google Sheets can return date/time values without timezone
+ * information or as numeric date serials.
  *
- * Example spreadsheet value:
+ * The shared timezone service handles:
+ *
+ * - South African local timestamps.
+ * - Google Sheets numeric date serials.
+ * - UTC timestamps ending in Z.
+ * - Timestamps containing explicit timezone offsets.
+ * - JavaScript Date objects.
+ *
+ * Example:
+ *
+ * Spreadsheet value:
  * 2026-11-17 08:00:00
  *
- * Configured office timezone:
- * +02:00
+ * South African timezone:
+ * Africa/Johannesburg (UTC+02:00)
  *
- * Result:
+ * Normalised result:
  * 2026-11-17T06:00:00.000Z
  *
- * The timestamp represents the same moment, expressed in UTC.
- *
  * IMPORTANT:
- * We only add the timezone when the original timestamp does
- * not already contain one.
+ * The timezone is only applied when the original timestamp
+ * does not already contain timezone information.
+ *
+ * Future attendance events are rejected.
+ *
+ * @param {string|number|Date} value
+ * @returns {string|null}
  */
-function normaliseSheetTimestamp(value, timezoneOffset) {
-  if (!value) {
-    return null;
-  }
 
-  // A JavaScript Date already represents a specific moment.
-  if (value instanceof Date) {
-    return Number.isNaN(value.getTime())
-      ? null
-      : value.toISOString();
-  }
+function normaliseSheetTimestamp(value) {
 
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const timestamp = value.trim();
+  // Use the shared timezone implementation.
+  const timestamp = normaliseAttendanceTimestamp(value);
 
   if (!timestamp) {
     return null;
   }
 
-  // Check whether the timestamp already specifies UTC or an offset.
-  const hasTimezone =
-    /(?:Z|[+-]\d{2}:?\d{2})$/i.test(timestamp);
+  // Convert the normalised timestamp into milliseconds.
+  const timestampMs = Date.parse(timestamp);
 
-  if (hasTimezone) {
-    // Convert a compact offset such as +0200 into +02:00.
-    const formattedTimestamp = timestamp
-      .replace(" ", "T")
-      .replace(
-        /([+-]\d{2})(\d{2})$/,
-        "$1:$2"
-      );
-
-    const parsedDate = new Date(formattedTimestamp);
-
-    if (Number.isNaN(parsedDate.getTime())) {
-      return null;
-    }
-
-    // Do not accept clock events dated in the future.
-    if (parsedDate.getTime() > Date.now()) {
-      return null;
-    }
-
-    return parsedDate.toISOString();
-  }
-
-  // A timestamp without a timezone is interpreted using the
-  // configured office timezone.
-  const validOffset = validateTimezoneOffset(
-    timezoneOffset
-  );
-
-  // Expected local spreadsheet format:
-  // YYYY-MM-DD HH:mm:ss
-  //
-  // Optional seconds and fractional seconds are also accepted.
-  const match = timestamp.match(
-    /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/
-  );
-
-  if (!match) {
+  // Reject invalid dates and future attendance events.
+  if (
+    !Number.isFinite(timestampMs) ||
+    timestampMs > Date.now()
+  ) {
     return null;
   }
 
-  const [
-    ,
-    year,
-    month,
-    day,
-    hour,
-    minute,
-    second = "00",
-    milliseconds = "",
-  ] = match;
-
-  // Validate the actual calendar date and clock time.
-  const dateParts = {
-    year: Number(year),
-    month: Number(month),
-    day: Number(day),
-    hour: Number(hour),
-    minute: Number(minute),
-    second: Number(second),
-  };
-
-  const daysInMonth =
-    dateParts.month >= 1 && dateParts.month <= 12
-      ? new Date(
-          Date.UTC(
-            dateParts.year,
-            dateParts.month,
-            0
-          )
-        ).getUTCDate()
-      : 0;
-
-  const validLocalDateTime =
-    dateParts.day >= 1 &&
-    dateParts.day <= daysInMonth &&
-    dateParts.hour >= 0 &&
-    dateParts.hour <= 23 &&
-    dateParts.minute >= 0 &&
-    dateParts.minute <= 59 &&
-    dateParts.second >= 0 &&
-    dateParts.second <= 59;
-
-  if (!validLocalDateTime) {
-    return null;
-  }
-
-  // Keep fractional seconds when present.
-  const formattedMilliseconds = milliseconds.padEnd(3, "0");
-
-  // Add the configured timezone to the local spreadsheet value.
-  const timestampWithTimezone =
-    `${year}-${month}-${day}` +
-    `T${hour}:${minute}:${second}` +
-    `.${formattedMilliseconds}` +
-    validOffset;
-
-  const parsedDate = new Date(timestampWithTimezone);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return null;
-  }
-
-  // Reject future events.
-  if (parsedDate.getTime() > Date.now()) {
-    return null;
-  }
-
-  // The controller receives a consistent UTC timestamp.
-  return parsedDate.toISOString();
+  return timestamp;
 }
 
+
 // ============================================================
-// 5. ATTENDANCE EVENT NORMALISATION
+// 4. ATTENDANCE EVENT NORMALISATION
 // ============================================================
 
 /**
  * Converts supported event labels into standard event types.
  *
- * Supported values:
- * Clock In
- * Clock Out
+ * Supported IN values:
+ * - Clock In
+ * - Check In
+ * - IN
+ *
+ * Supported OUT values:
+ * - Clock Out
+ * - Check Out
+ * - OUT
  *
  * The returned values are used internally for calculations.
  */
+
 function normaliseEventType(value) {
+
   const eventType = String(value ?? "")
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, " ");
+    .replace(/[^a-z]/g, "");
 
-  if (eventType === "clock in") {
+  if (
+    ["clockin", "checkin", "in"].includes(eventType)
+  ) {
     return "IN";
   }
 
-  if (eventType === "clock out") {
+  if (
+    ["clockout", "checkout", "out"].includes(eventType)
+  ) {
     return "OUT";
   }
 
   return null;
 }
 
+
 // ============================================================
-// 6. EMPLOYEE LOOKUP
+// 5. EMPLOYEE LOOKUP USING FIREBASE UID
 // ============================================================
 
 /**
- * Builds a lookup of employees using Employee ID as the key.
+ * Builds a lookup of employees using Firebase UID as the key.
  *
- * WHY EMPLOYEE ID:
- * The Attendance tab does not need to store Firebase UIDs.
- * It only needs the employee's unique Employee ID.
+ * WHY FIREBASE UID:
+ * Both the Employees and Attendance tabs contain Firebase UIDs.
  *
- * The Firebase UID and employee information are retrieved
- * from the Employees tab.
+ * The Attendance tab uses a dropdown to select the employee's
+ * Firebase UID when a clock-in or clock-out event is recorded.
  *
- * IMPORTANT:
- * Each Employee ID must be unique.
+ * This allows the provider to match attendance records directly
+ * to the correct employee.
+ *
+ * Employee ID remains available for identification and output.
+ *
+ * REQUIRED EMPLOYEES COLUMNS:
+ * - User ID (Firebase UID)
+ * - Employee ID
+ * - Full Name
+ * - Status
+ *
+ * @param {Array} employeeRows
+ * @param {Array} headers
+ * @param {string} tabName
+ * @returns {Map}
  */
+
 function buildEmployeeLookup(
   employeeRows,
   headers,
   tabName
 ) {
+
+  // Find the Firebase UID column.
   const uidColumn = findColumn(
     headers,
     [
@@ -497,10 +466,10 @@ function buildEmployeeLookup(
       "UID",
     ],
     "Firebase User ID",
-    tabName,
-    false
+    tabName
   );
 
+  // Find the Employee ID column.
   const employeeIdColumn = findColumn(
     headers,
     ["Employee ID", "Staff ID"],
@@ -508,6 +477,7 @@ function buildEmployeeLookup(
     tabName
   );
 
+  // Find the employee name column.
   const nameColumn = findColumn(
     headers,
     ["Full Name", "Name"],
@@ -515,6 +485,7 @@ function buildEmployeeLookup(
     tabName
   );
 
+  // Find the account status column.
   const statusColumn = findColumn(
     headers,
     [
@@ -526,16 +497,22 @@ function buildEmployeeLookup(
     tabName
   );
 
-  const employeesById = new Map();
+  // Firebase UID is now the employee lookup key.
+  const employeesByUid = new Map();
 
-  // Tracks duplicate Firebase UIDs without using them as
-  // the attendance matching key.
-  const employeeIdsByUid = new Map();
+  // Employee IDs must also remain unique.
+  const employeeIds = new Set();
 
   for (const row of employeeRows) {
+
     if (isEmptyRow(row)) {
       continue;
     }
+
+    const userId = getCell(
+      row,
+      uidColumn
+    );
 
     const employeeId = getCell(
       row,
@@ -547,64 +524,57 @@ function buildEmployeeLookup(
       nameColumn
     );
 
-    const userId = getCell(
-      row,
-      uidColumn
-    );
-
     const status = getCell(
       row,
       statusColumn
     ).toLowerCase();
 
-    // Non-empty employee rows must have an Employee ID and name.
-    if (!employeeId || !name) {
+    // Every employee must have a Firebase UID, Employee ID and name.
+    if (!userId || !employeeId || !name) {
       throw new Error(
-        "An Employees row is missing its Employee ID or Full Name."
+        "An Employees row is missing its Firebase UID, " +
+        "Employee ID or Full Name."
       );
     }
 
-    // Employee IDs must uniquely identify employees.
-    if (employeesById.has(employeeId)) {
+    // Prevent duplicate Firebase UIDs.
+    if (employeesByUid.has(userId)) {
       throw new Error(
-        `The Employees tab contains a duplicate Employee ID: ${employeeId}.`
+        "The Employees tab contains a duplicate Firebase UID."
+      );
+    }
+
+    // Prevent duplicate Employee IDs.
+    if (employeeIds.has(employeeId)) {
+      throw new Error(
+        "The Employees tab contains a duplicate Employee ID."
       );
     }
 
     const employee = {
+
       userId,
+
       employeeId,
+
       name,
+
+      // Only explicitly active employees count towards onsite totals.
       active: status === "active",
+
     };
 
-    employeesById.set(employeeId, employee);
+    employeesByUid.set(userId, employee);
 
-    // Duplicate Firebase UIDs do not merge employee records here.
-    // Employee ID remains the unique attendance matching key.
-    if (userId) {
-      const existingEmployeeId =
-        employeeIdsByUid.get(userId);
-
-      if (
-        existingEmployeeId &&
-        existingEmployeeId !== employeeId
-      ) {
-        console.warn(
-          "[ATTENDANCE DATA WARNING] Multiple Employee IDs " +
-          "are assigned to the same Firebase UID."
-        );
-      } else {
-        employeeIdsByUid.set(userId, employeeId);
-      }
-    }
+    employeeIds.add(employeeId);
   }
 
-  return employeesById;
+  return employeesByUid;
 }
 
+
 // ============================================================
-// 7. ATTENDANCE RECORD CALCULATION
+// 6. EMPLOYEE ATTENDANCE STATUS
 // ============================================================
 
 /**
@@ -618,13 +588,17 @@ function buildEmployeeLookup(
  * The latest check-out is newer than the latest check-in.
  *
  * UNKNOWN:
- * Both events have the same timestamp.
+ * Both events have the same timestamp or no valid event exists.
  */
+
 function getCurrentEmployeeStatus(record) {
+
   const checkIn = record.lastCheckInAt;
+
   const checkOut = record.lastCheckOutAt;
 
   if (checkIn && checkOut) {
+
     if (checkIn > checkOut) {
       return "IN";
     }
@@ -647,43 +621,79 @@ function getCurrentEmployeeStatus(record) {
   return "UNKNOWN";
 }
 
+
+// ============================================================
+// 7. ATTENDANCE RECORD CALCULATION
+// ============================================================
+
 /**
  * Processes Attendance rows and connects them to Employees.
  *
- * Each attendance event is matched using Employee ID.
+ * Each attendance event is matched using Firebase UID.
  *
  * The service keeps the latest check-in and latest check-out
  * timestamp for each employee.
+ *
+ * The Employee ID is used as the key for the final attendance
+ * records so duplicate Firebase UIDs cannot collapse records.
  */
+
 function processAttendanceEvents({
+
   attendanceRows,
+
   headers,
-  employeesById,
+
+  employeesByUid,
+
   attendanceTab,
-  timezoneOffset,
+
 }) {
+
+  // Find the optional event ID column.
   const eventIdColumn = findColumn(
     headers,
-    ["Event ID", "Attendance Event ID", "Log ID"],
+    [
+      "Event ID",
+      "Attendance Event ID",
+      "Log ID",
+    ],
     "Event ID",
     attendanceTab,
     false
   );
 
+  // Find the timestamp column.
   const timestampColumn = findColumn(
     headers,
-    ["Timestamp", "Event Timestamp", "Date and Time"],
+    [
+      "Timestamp",
+      "Event Timestamp",
+      "Date and Time",
+    ],
     "Timestamp",
     attendanceTab
   );
 
-  const employeeIdColumn = findColumn(
+  // Find the Firebase UID column.
+  //
+  // The actual Attendance tab uses:
+  // User ID (Firebase UID)
+  //
+  // It does not use Employee ID.
+  const uidColumn = findColumn(
     headers,
-    ["Employee ID", "Staff ID"],
-    "Employee ID",
+    [
+      "User ID (Firebase UID)",
+      "Firebase UID",
+      "User ID",
+      "UID",
+    ],
+    "Firebase User ID",
     attendanceTab
   );
 
+  // Find the clock event type column.
   const eventTypeColumn = findColumn(
     headers,
     [
@@ -695,58 +705,65 @@ function processAttendanceEvents({
     attendanceTab
   );
 
+  // Store attendance records using Employee ID.
   const recordsByEmployee = new Map();
 
   let populatedRows = 0;
+
   let validEvents = 0;
+
   let unmatchedEvents = 0;
+
   let invalidEvents = 0;
 
   for (const row of attendanceRows) {
+
     if (isEmptyRow(row)) {
       continue;
     }
 
     populatedRows++;
 
-    // Read the event columns.
-    // Event ID is retained for diagnostics but is not used
-    // to identify an employee.
+    // Read the optional event ID.
+    // It is not used to identify employees.
     const eventId = getCell(
       row,
       eventIdColumn
     );
 
-    const employeeId = getCell(
+    // Retrieve the Firebase UID selected in the dropdown.
+    const userId = getCell(
       row,
-      employeeIdColumn
+      uidColumn
     );
 
-    const rawTimestamp = getCell(
+    // Read the original timestamp.
+    // Keep its original type because it may be a number.
+    const rawTimestamp = getRawCell(
       row,
       timestampColumn
     );
 
+    // Read the clock event description.
     const rawEventType = getCell(
       row,
       eventTypeColumn
     );
 
-    // Find the employee using the shared Employee ID.
-    const employee = employeesById.get(employeeId);
+    // Find the employee using their Firebase UID.
+    const employee = employeesByUid.get(userId);
 
     if (!employee) {
       unmatchedEvents++;
       continue;
     }
 
-    // Convert the timestamp using the office timezone.
+    // Convert the timestamp using the shared timezone service.
     const timestamp = normaliseSheetTimestamp(
-      rawTimestamp,
-      timezoneOffset
+      rawTimestamp
     );
 
-    // Convert Clock In / Clock Out into a standard value.
+    // Convert Clock In / Clock Out into standard values.
     const eventType = normaliseEventType(
       rawEventType
     );
@@ -754,31 +771,45 @@ function processAttendanceEvents({
     // Events without a valid timestamp or event type cannot
     // safely influence employee attendance status.
     if (!timestamp || !eventType) {
+
       invalidEvents++;
 
-      // eventId is intentionally not logged because it may
-      // identify an individual attendance event.
+      // Do not log event IDs or employee identities.
       continue;
     }
 
     // Retrieve the employee's existing attendance summary.
-    let record = recordsByEmployee.get(employeeId);
+    let record = recordsByEmployee.get(
+      employee.employeeId
+    );
 
     if (!record) {
+
       record = {
+
         userId: employee.userId,
+
         employeeId: employee.employeeId,
+
         name: employee.name,
+
         active: employee.active,
+
         lastCheckInAt: null,
+
         lastCheckOutAt: null,
+
       };
 
-      recordsByEmployee.set(employeeId, record);
+      recordsByEmployee.set(
+        employee.employeeId,
+        record
+      );
     }
 
     // Keep the latest Clock In timestamp.
     if (eventType === "IN") {
+
       if (
         !record.lastCheckInAt ||
         timestamp > record.lastCheckInAt
@@ -789,6 +820,7 @@ function processAttendanceEvents({
 
     // Keep the latest Clock Out timestamp.
     if (eventType === "OUT") {
+
       if (
         !record.lastCheckOutAt ||
         timestamp > record.lastCheckOutAt
@@ -800,21 +832,34 @@ function processAttendanceEvents({
     validEvents++;
   }
 
+
   // A genuinely empty Attendance tab is valid.
   // It represents zero recorded attendance events.
   //
   // However, if event rows exist and none can be processed,
   // fail the refresh rather than silently reporting zero staff.
-  if (populatedRows > 0 && validEvents === 0) {
+
+  if (
+    populatedRows > 0 &&
+    validEvents === 0
+  ) {
+
     throw new Error(
       "No valid attendance events could be processed. " +
-      "Check Employee ID matching, timestamp format and event types."
+      "Check Firebase UID matching, timestamp format " +
+      "and event types."
     );
   }
 
+
   // Some invalid or unmatched rows may exist alongside valid events.
   // Log counts without exposing employee identities.
-  if (unmatchedEvents > 0 || invalidEvents > 0) {
+
+  if (
+    unmatchedEvents > 0 ||
+    invalidEvents > 0
+  ) {
+
     console.warn(
       "[ATTENDANCE DATA WARNING]",
       `${unmatchedEvents} unmatched events and ` +
@@ -822,38 +867,54 @@ function processAttendanceEvents({
     );
   }
 
-  // Convert the map into the employee record array.
+
+  // Convert the Map into the employee record array.
   const records = [...recordsByEmployee.values()]
+
     .map((record) => ({
+
       userId: record.userId,
+
       employeeId: record.employeeId,
+
       name: record.name,
+
       lastCheckInAt: record.lastCheckInAt,
+
       lastCheckOutAt: record.lastCheckOutAt,
+
     }))
+
     .sort(
       (first, second) =>
         first.name.localeCompare(second.name)
     );
+
 
   // Count unique employees who:
   // 1. Are marked Active in the Employees tab.
   // 2. Have a latest valid Clock In event.
   // 3. Do not have a newer Clock Out event.
   //
-  // Employee ID is the Map key, so duplicated Firebase UIDs
-  // will not cause two distinct employee records to collapse.
+  // Employee ID is the Map key, so duplicate Firebase UIDs
+  // cannot cause distinct employee records to collapse.
+
   const totalIn = [...recordsByEmployee.values()].filter(
     (record) =>
       record.active &&
       getCurrentEmployeeStatus(record) === "IN"
   ).length;
 
+
   return {
+
     records,
+
     totalIn,
+
   };
 }
+
 
 // ============================================================
 // 8. MAIN LIVE ATTENDANCE PROVIDER
@@ -862,22 +923,29 @@ function processAttendanceEvents({
 /**
  * Retrieves the information required by the live dashboard.
  *
- * IMPORTANT PERFORMANCE CHANGE:
+ * PERFORMANCE:
  *
  * Both tabs are retrieved using one Google Sheets batchGet call.
  *
  * Previously:
- * - attendanceService.js independently read the spreadsheet.
- * - onsiteService.js independently read the spreadsheet.
+ * - Different services could independently read the spreadsheet.
  *
  * Now:
  * - One request retrieves both tabs.
- * - Both the employee timestamps and onsite total use the same
- *   spreadsheet snapshot.
+ * - Attendance records and onsite total use the same snapshot.
  * - Fewer Google Sheets API requests are generated.
+ *
+ * RETURNS:
+ * {
+ *   records: [...],
+ *   totalIn: number
+ * }
  */
+
 export async function getLiveAttendanceData() {
+
   try {
+
     const config = getConfiguration();
 
     if (!config.spreadsheetId) {
@@ -886,13 +954,9 @@ export async function getLiveAttendanceData() {
       );
     }
 
-    // Validate the timezone before retrieving records.
-    const timezoneOffset = validateTimezoneOffset(
-      config.timezoneOffset
-    );
-
     // Get the reusable Google Sheets API client.
     const sheets = getSheetsClient();
+
 
     // Prepare both tab ranges.
     const employeesRange =
@@ -901,11 +965,19 @@ export async function getLiveAttendanceData() {
     const attendanceRange =
       `${quoteTabName(config.attendanceTab)}!A:Z`;
 
+
     // Retrieve both tabs together.
     //
-    // FORMATTED_VALUE makes the returned timestamp strings
-    // follow the format displayed in the spreadsheet.
+    // UNFORMATTED_VALUE returns actual underlying cell values.
+    //
+    // SERIAL_NUMBER returns Google Sheets date/time values
+    // as numeric date serials rather than formatted strings.
+    //
+    // timezone.js understands these numeric values and
+    // converts them into consistent UTC timestamps.
+
     const response = await sheets.spreadsheets.values.batchGet({
+
       spreadsheetId: config.spreadsheetId,
 
       ranges: [
@@ -913,9 +985,14 @@ export async function getLiveAttendanceData() {
         attendanceRange,
       ],
 
-      valueRenderOption: "FORMATTED_VALUE",
+      valueRenderOption: "UNFORMATTED_VALUE",
+
+      dateTimeRenderOption: "SERIAL_NUMBER",
+
     });
 
+
+    // Retrieve the two returned spreadsheet ranges.
     const valueRanges =
       response.data.valueRanges ?? [];
 
@@ -924,6 +1001,7 @@ export async function getLiveAttendanceData() {
         "Google Sheets did not return both required tab ranges."
       );
     }
+
 
     // Separate the Employees and Attendance tab values.
     const employeesSheet = parseSheetRows(
@@ -936,36 +1014,47 @@ export async function getLiveAttendanceData() {
       config.attendanceTab
     );
 
-    // Build the employee lookup using Employee ID.
-    const employeesById = buildEmployeeLookup(
+
+    // Build the employee lookup using Firebase UID.
+    const employeesByUid = buildEmployeeLookup(
       employeesSheet.rows,
       employeesSheet.headers,
       config.employeesTab
     );
 
-    if (employeesById.size === 0) {
+    if (employeesByUid.size === 0) {
       throw new Error(
         "No employee records were found in the Employees tab."
       );
     }
 
+
     // Calculate attendance records and onsite count from
-    // the same batch-read snapshot.
+    // the same batch-read spreadsheet snapshot.
     const result = processAttendanceEvents({
+
       attendanceRows: attendanceSheet.rows,
+
       headers: attendanceSheet.headers,
-      employeesById,
+
+      employeesByUid,
+
       attendanceTab: config.attendanceTab,
-      timezoneOffset,
+
     });
+
 
     // Give the controller the structured response it expects.
     return {
+
       records: result.records,
+
       totalIn: result.totalIn,
+
     };
 
   } catch (error) {
+
     // Log the actual provider failure for backend troubleshooting.
     console.error(
       "[ATTENDANCE DATA PROVIDER FAILED]",
@@ -977,6 +1066,11 @@ export async function getLiveAttendanceData() {
     throw error;
   }
 }
+
+
+// ============================================================
+// 9. EXPORTS
+// ============================================================
 
 // Support named and default imports.
 export default getLiveAttendanceData;
