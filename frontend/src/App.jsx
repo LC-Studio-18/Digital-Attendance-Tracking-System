@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { ErrorMessage, Loader, SuccessMessage } from './components/index.js';
+import { AttendanceDataProvider } from './context/AttendanceDataProvider.jsx';
 import AttendanceHistoryPage from './pages/AttendanceHistoryPage.jsx';
 
 function PreviewCard({ title, tag, note, children }) {
@@ -485,9 +486,11 @@ function FeedbackPreviewPage() {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<FeedbackPreviewPage />} />
-      <Route path="/attendance-history" element={<AttendanceHistoryPage />} />
-    </Routes>
+    <AttendanceDataProvider>
+      <Routes>
+        <Route path="/" element={<FeedbackPreviewPage />} />
+        <Route path="/attendance-history" element={<AttendanceHistoryPage />} />
+      </Routes>
+    </AttendanceDataProvider>
   );
 }

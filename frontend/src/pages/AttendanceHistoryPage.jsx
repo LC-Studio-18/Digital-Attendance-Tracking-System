@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ErrorMessage, HistoryFilters, Loader } from '../components/index.js';
+import { useAttendanceData } from '../context/attendanceDataStore.js';
 import { getAttendanceHistory } from '../services/attendanceApi.js';
 import { getAuthSession } from '../services/authService.js';
 import {
@@ -179,6 +180,9 @@ export default function AttendanceHistoryPage({
   const [filters, setFilters] = useState({ ...EMPTY_ATTENDANCE_FILTERS });
   const [employeeOptions, setEmployeeOptions] = useState([]);
 
+  // Publish plain arrays for other screens (e.g. S2-03 CSV export) to consume.
+  const { setAttendanceData, setVisibleAttendanceData } = useAttendanceData();
+
   const token = session?.token ?? null;
   const isAdmin = (session?.role ?? 'staff') === 'admin';
   const columns = isAdmin ? [...ADMIN_COLUMNS, ...BASE_COLUMNS] : BASE_COLUMNS;
@@ -187,6 +191,14 @@ export default function AttendanceHistoryPage({
     () => filterAttendanceRecords(records, filters),
     [records, filters]
   );
+
+  useEffect(() => {
+    setAttendanceData(records);
+  }, [records, setAttendanceData]);
+
+  useEffect(() => {
+    setVisibleAttendanceData(visibleRecords);
+  }, [visibleRecords, setVisibleAttendanceData]);
 
   const request = useCallback(
     (signal) => fetchHistory({ token, signal, params: toApiParams(filters) }),
