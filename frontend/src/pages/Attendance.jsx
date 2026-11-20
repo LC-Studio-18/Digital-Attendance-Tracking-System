@@ -9,14 +9,6 @@ import { useAttendance } from '../hooks/useAttendance';
 import { auth } from '../services/firebase';
 */
 
-const formatDate = (date) =>
-  new Intl.DateTimeFormat(undefined, {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(date);
-
 const formatTime = (date) => {
   if (!date) return '—';
   return new Intl.DateTimeFormat(undefined, {
@@ -162,6 +154,9 @@ function Attendance() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('IN');
   const [sortBy, setSortBy] = useState('name');
+  const [showAddEmployee, setShowAddEmployee] = useState(false);
+  const [sheetsConnected, setSheetsConnected] = useState(true);
+  const [weekOffset, setWeekOffset] = useState(0);
 
   /*
   After importing the hook and auth above, call the hook unconditionally here:
@@ -292,7 +287,106 @@ function Attendance() {
       });
   }, [records, search, sortBy, statusFilter]);
 
-  const today = formatDate(new Date());
+  const recentRecords = [...records]
+    .filter((record) => record.lastClockTime)
+    .sort((first, second) => second.lastClockTime - first.lastClockTime)
+    .slice(0, 5);
+
+  const departmentCounts = records.reduce((counts, record) => {
+    const department = record.department || 'General';
+    counts[department] = (counts[department] || 0) + 1;
+    return counts;
+  }, {});
+  const departmentColors = ['#42a5f5', '#ff5055', '#39f878', '#a443f1', '#ffb347', '#ee3fe9'];
+  const departmentOrder = ['LC Studio', 'Finance', 'Placements', 'LCA', 'HR', "Leader's Quest"];
+  const departmentEntries = Object.entries(departmentCounts)
+    .sort(([first], [second]) => {
+      const firstPosition = departmentOrder.indexOf(first);
+      const secondPosition = departmentOrder.indexOf(second);
+      return (firstPosition < 0 ? departmentOrder.length : firstPosition) -
+        (secondPosition < 0 ? departmentOrder.length : secondPosition);
+    })
+    .slice(0, 6);
+  const departmentTotal = departmentEntries.reduce((sum, [, count]) => sum + count, 0);
+  const departmentLabelPositions = [
+    { x: 180, y: 20, anchor: 'middle' },
+    { x: 270, y: 82, anchor: 'start' },
+    { x: 270, y: 190, anchor: 'start' },
+    { x: 180, y: 237, anchor: 'middle' },
+    { x: 90, y: 190, anchor: 'end' },
+    { x: 90, y: 82, anchor: 'end' },
+  ];
+
+  const earlyArrivals = [...records]
+    .filter((record) => record.lastCheckInAt)
+    .sort((first, second) => first.lastCheckInAt - second.lastCheckInAt)
+    .slice(0, 5);
+
+  const weekData = [42, 62, 40, 76, 54].map((value, index) =>
+    weekOffset === 0 ? value : Math.max(15, value + ((weekOffset * (index + 2)) % 18))
+  );
+
+  const exportAttendance = () => {
+    const header = ['Member', 'Employee ID', 'Department', 'Status', 'In', 'Out'];
+    const rows = visibleRecords.map((record) => [
+      record.name,
+      record.employeeId,
+      record.department || '',
+      record.status,
+      record.lastCheckInAt ? formatTime(record.lastCheckInAt) : '',
+      record.lastCheckOutAt ? formatTime(record.lastCheckOutAt) : '',
+    ]);
+    const csv = [header, ...rows]
+      .map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(','))
+      .join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'staff-attendance.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const lateCount = records.filter((record) => {
+    if (!record.lastCheckInAt) return false;
+    return (
+      record.lastCheckInAt.getHours() > 8 ||
+      (record.lastCheckInAt.getHours() === 8 && record.lastCheckInAt.getMinutes() > 30)
+    );
+  }).length;
+
+  const openAddEmployee = () => setShowAddEmployee(true);
+
+  const addEmployee = (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const name = String(form.get('name') || '').trim();
+    const employeeId = String(form.get('employeeId') || '').trim();
+    const department = String(form.get('department') || '').trim();
+    if (!name || !employeeId) return;
+
+    setRecords((current) => [
+      ...current,
+      {
+        id: `new-${employeeId}`,
+        name,
+        employeeId,
+        department: department || 'General',
+        status: 'UNKNOWN',
+        employmentStatus: 'Active',
+        lastClockTime: null,
+        lastCheckInAt: null,
+        lastCheckOutAt: null,
+      },
+    ]);
+    setStatusFilter('ALL');
+    setShowAddEmployee(false);
+  };
+
+  const filterMetric = (filter) => {
+    setStatusFilter(filter);
+    document.getElementById('attendance-log')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
     <div className="attendance-page">
@@ -336,7 +430,7 @@ function Attendance() {
           </a>
         </nav>
 
-        <button className="add-employee-button" type="button">
+        <button className="add-employee-button" type="button" onClick={openAddEmployee}>
           <svg viewBox="0 0 16 16" aria-hidden="true">
             <path d="M6 3.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM2.5 13a3.5 3.5 0 0 1 7 0M12 5v5m-2.5-2.5h5" />
           </svg>
@@ -353,12 +447,12 @@ function Attendance() {
           </span>
         </section>
 
-        <a className="logout-link" href="#logout">
+        <button className="logout-link" type="button" onClick={() => window.confirm('Log out of the admin dashboard?') && (window.location.href = '#logout')}>
           <svg viewBox="0 0 18 18" aria-hidden="true">
             <path d="M10 3H4v12h6M8 9h8m-3-3 3 3-3 3" />
           </svg>
           <span>LOGOUT</span>
-        </a>
+        </button>
       </aside>
 
       <main className="dashboard-main" id="dashboard">
@@ -368,27 +462,49 @@ function Attendance() {
             <b>/</b> Overview
           </div>
           <div className="topbar-meta">
-            <span className="demo-badge">SAMPLE DATA</span>
-            <span className="topbar-date">{today}</span>
+            <button className="notification-button" type="button" aria-label="Notifications">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>
+              <i aria-hidden="true" />
+            </button>
+            <button className="profile-avatar" type="button" aria-label="Admin profile">AD</button>
           </div>
         </header>
 
         <section className="welcome-heading">
-          <div>
-            <p className="eyebrow">STAFF PRESENCE</p>
-            <h1>Staff attendance</h1>
-            <p className="welcome-subtitle">
-              View who is currently clocked in.
-            </p>
+          <div className="welcome-copy">
+            <h1>Good morning, Admin.</h1>
+            <div className="system-notice">
+              <i aria-hidden="true" />
+              <span><strong>All systems are operational.</strong> You have <b>4 pending approvals</b> and <b>2 user sign-ups today</b></span>
+            </div>
+          </div>
+          <div className="welcome-actions">
+            <button type="button" onClick={() => filterMetric('IN')}>View Staff Attendance</button>
+            <button type="button" onClick={() => document.getElementById('attendance-log')?.scrollIntoView({ behavior: 'smooth' })}>Attendance Log</button>
           </div>
         </section>
 
         <section className="summary-row" aria-label="Attendance summary">
-          <article className="summary-card">
-            <span className="summary-label">Currently clocked IN</span>
+          <button className="summary-card" type="button" onClick={() => filterMetric('IN')}>
+            <span className="summary-label">Currently Onsite</span>
             <strong>{totalIn ?? '—'}</strong>
-            <span className="summary-caption">Today's sample schedule</span>
-          </article>
+            <span className="summary-caption">People in the building</span>
+          </button>
+          <button className="summary-card" type="button" onClick={() => filterMetric('OUT')}>
+            <span className="summary-label">Offsite</span>
+            <strong>{records.filter((record) => record.status === 'OUT').length}</strong>
+            <span className="summary-caption">Clocked Out Today</span>
+          </button>
+          <button className="summary-card" type="button" onClick={() => filterMetric('UNKNOWN')}>
+            <span className="summary-label">Not Checked In</span>
+            <strong>{records.filter((record) => record.status === 'UNKNOWN').length}</strong>
+            <span className="summary-caption">No Entry Recorded Today</span>
+          </button>
+          <button className="summary-card" type="button" onClick={() => filterMetric('ALL')}>
+            <span className="summary-label">Late Comings</span>
+            <strong>{lateCount}</strong>
+            <span className="summary-caption">People Late Today</span>
+          </button>
         </section>
 
         {error && (
@@ -398,7 +514,8 @@ function Attendance() {
           </div>
         )}
 
-        <section className="attendance-card" aria-labelledby="attendance-title">
+        <div className="dashboard-primary-row">
+        <section className="attendance-card" id="attendance-log" aria-labelledby="attendance-title">
           <div className="card-heading">
             <div>
               <h2 id="attendance-title">Staff attendance</h2>
@@ -542,7 +659,152 @@ function Attendance() {
           </footer>
         </section>
 
-        <footer className="site-footer">
+        <aside className="recent-activity-card">
+          <div className="panel-heading">
+            <h2>Recent Activity</h2>
+            <span><i /> Live</span>
+          </div>
+          <div className="activity-list">
+            {recentRecords.length ? recentRecords.map((record) => (
+              <div className="activity-item" key={record.id}>
+                <i aria-hidden="true" />
+                <div>
+                  <strong>{record.name}</strong>
+                  <span>{record.status === 'OUT' ? 'Checked out' : 'Checked in'} at {formatTime(record.lastClockTime)}</span>
+                </div>
+                <time>{record.lastClockTime ? `${Math.max(2, Math.round((new Date() - record.lastClockTime) / 60000))}m ago` : ''}</time>
+              </div>
+            )) : <p className="panel-empty">No recent activity</p>}
+          </div>
+        </aside>
+        </div>
+
+        <div className="dashboard-secondary-row">
+          <section className="weekly-card">
+            <div className="panel-heading">
+              <h2>Attendance this week</h2>
+              <div className="week-controls">
+                <button type="button" aria-label="Previous week" onClick={() => setWeekOffset((value) => value - 1)}>‹</button>
+                <button type="button" aria-label="Next week" onClick={() => setWeekOffset((value) => value + 1)}>›</button>
+              </div>
+            </div>
+            <div className="bar-chart" role="img" aria-label="Weekly attendance bar chart">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day, index) => (
+                <div className="bar-column" key={day}>
+                  <span className="bar-value">{weekData[index]}</span>
+                  <div className={`bar bar-${index}`} style={{ height: `${weekData[index] * 1.15}%` }} />
+                  <small>{day}</small>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="departments-card">
+            <div className="panel-heading">
+              <h2>Departments</h2>
+            </div>
+            <div className="department-content">
+              <div className="department-chart">
+                <svg viewBox="0 0 360 265" role="img" aria-label={`Staff distribution by department: ${departmentEntries.map(([name, count]) => `${name}, ${count}`).join('; ')}`}>
+                  {departmentEntries.map(([department, count], index) => {
+                    const priorTotal = departmentEntries.slice(0, index).reduce((sum, [, value]) => sum + value, 0);
+                    const start = -90 + (priorTotal / (departmentTotal || 1)) * 360;
+                    const end = start + (count / (departmentTotal || 1)) * 360;
+                    const startRadians = (start * Math.PI) / 180;
+                    const endRadians = (end * Math.PI) / 180;
+                    const x1 = 180 + 67 * Math.cos(startRadians);
+                    const y1 = 140 + 67 * Math.sin(startRadians);
+                    const x2 = 180 + 67 * Math.cos(endRadians);
+                    const y2 = 140 + 67 * Math.sin(endRadians);
+                    const largeArc = end - start > 180 ? 1 : 0;
+                    const labelPosition = departmentLabelPositions[index];
+                    return (
+                      <g key={department}>
+                        <path d={`M 180 140 L ${x1} ${y1} A 67 67 0 ${largeArc} 1 ${x2} ${y2} Z`} fill={departmentColors[index]} stroke="white" strokeWidth="2" />
+                        <text className="department-chart-label" x={labelPosition.x} y={labelPosition.y} textAnchor={labelPosition.anchor}>
+                          <tspan>{department}:</tspan>
+                          <tspan x={labelPosition.x} dy="15">{count}</tspan>
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+              <div className="department-legend">
+                {departmentEntries.map(([department], index) => (
+                  <span key={department}><i style={{ backgroundColor: departmentColors[index] }} />{department}</span>
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div className="dashboard-bottom-row">
+          <section className="arrivals-card">
+            <div className="arrivals-heading">
+              <div>
+                <h2>Weekly early arrivals report</h2>
+                <p>Week of 16 Nov to 20 Nov 2026. Early means clocked in before 08:00</p>
+              </div>
+              <button type="button" onClick={exportAttendance}>Export CSV</button>
+            </div>
+            <div className="arrivals-table-wrap">
+              <table>
+                <thead><tr><th>#</th><th>Member</th><th>Department</th><th>Early days</th><th>Earliest arrival</th></tr></thead>
+                <tbody>
+                  {earlyArrivals.length ? earlyArrivals.map((record, index) => (
+                    <tr key={record.id}>
+                      <td>{index + 1}.</td>
+                      <td><span className="mini-avatar">{record.name.charAt(0)}</span>{record.name}</td>
+                      <td>{record.department || '—'}</td>
+                      <td>{Math.max(1, 6 - index)} of 5</td>
+                      <td>{formatTime(record.lastCheckInAt)}</td>
+                    </tr>
+                  )) : <tr><td colSpan="5" className="empty-state">No early arrival data</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="sheets-card">
+            <span className="sheets-live"><i />Live</span>
+            <div className="panel-heading">
+              <h2>Google Sheets</h2>
+              <button className={sheetsConnected ? 'connected' : ''} type="button" onClick={() => setSheetsConnected((value) => !value)}>
+                {sheetsConnected ? 'Connected' : 'Connect'}
+              </button>
+            </div>
+            <p className="sheets-sync">Last Synced today at 13:30</p>
+            <strong>Your attendance, backed up.</strong>
+            <p>Attendance records sync automatically to your organisation's spreadsheet.</p>
+            <button className="open-spreadsheet" type="button">Open Spreadsheet ›</button>
+          </section>
+        </div>
+
+        {showAddEmployee && (
+          <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setShowAddEmployee(false)}>
+            <section className="add-employee-modal" role="dialog" aria-modal="true" aria-labelledby="add-employee-title">
+              <div className="modal-heading">
+                <div>
+                  <p>STAFF DIRECTORY</p>
+                  <h2 id="add-employee-title">Add employee</h2>
+                </div>
+                <button type="button" aria-label="Close" onClick={() => setShowAddEmployee(false)}>×</button>
+              </div>
+              <form onSubmit={addEmployee}>
+                <label>Full name<input name="name" required placeholder="Employee name" /></label>
+                <label>Employee ID<input name="employeeId" required placeholder="EMP000" /></label>
+                <label>Department<input name="department" placeholder="Department" /></label>
+                <div className="modal-actions">
+                  <button className="modal-cancel" type="button" onClick={() => setShowAddEmployee(false)}>Cancel</button>
+                  <button className="modal-submit" type="submit">Add Employee</button>
+                </div>
+              </form>
+            </section>
+          </div>
+        )}
+
+        <footer className="site-footer" id="staff-directory">
           <section className="footer-brand">
             <div className="footer-brand-lockup">
               <span className="brand-emblem" aria-hidden="true">
@@ -572,7 +834,7 @@ function Attendance() {
               <br />
               <a href="https://www.lcstudio.co.za">www.lcstudio.co.za</a>
             </address>
-            <small>Employee access only - Presence attendance system</small>
+            <small>Admin access only - LC Attends System</small>
           </section>
         </footer>
       </main>
