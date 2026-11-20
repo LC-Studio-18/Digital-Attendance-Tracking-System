@@ -69,6 +69,24 @@ different port and `FRONTEND_URL` to the frontend origin allowed by CORS.
 | GET | `/api/health` | Checks whether the API is running |
 | GET | `/api/v1/attendance/history` | Returns authenticated attendance history; supports `page` and `limit` query parameters |
 
+The full request/response contract for attendance history is documented in
+[docs/attendance-history-api.md](docs/attendance-history-api.md). Staging
+requirements and the current verification status are in
+[docs/staging-checklist.md](docs/staging-checklist.md).
+
+## Testing
+
+Run the automated tests from `backend/`:
+
+```bash
+npm test
+```
+
+Tests use in-memory fixture data and do not read or modify the production
+spreadsheet. Tests that require genuine Firebase ID tokens are skipped with an
+explicit reason unless `TEST_STAFF_ID_TOKEN`, `TEST_ADMIN_ID_TOKEN` and
+`TEST_EXPIRED_ID_TOKEN` are supplied to the test environment.
+
 ## Project structure
 
 ```text
@@ -82,6 +100,10 @@ backend/
 │   ├── utils/
 │   ├── app.js
 │   └── server.js
+├── docs/
+│   ├── attendance-history-api.md
+│   └── staging-checklist.md
+├── tests/
 ├── .env.example
 ├── package.json
 └── package-lock.json
