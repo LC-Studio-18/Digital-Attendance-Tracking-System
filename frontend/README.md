@@ -4,7 +4,7 @@ The frontend application for the Digital Attendance Tracking System, built using
 
 ## Prerequisites
 
-- Node.js (LTS version recommended)
+- Node.js 20.19+ or 22.12+ (required by Vite 8)
 - npm
 
 ## Installation
@@ -35,18 +35,47 @@ http://localhost:5173
 
 ## Available scripts
 
-| Command                | Description                          |
-| ---------------------- | ------------------------------------ |
-| `npm run dev`          | Starts the development server        |
-| `npm run build`        | Creates a production build           |
-| `npm run preview`      | Previews the production build        |
-| `npm run lint`         | Runs ESLint                          |
-| `npm run format`       | Formats project files using Prettier |
-| `npm run format:check` | Checks code formatting               |
+| Command                 | Description                                 |
+| ----------------------- | ------------------------------------------- |
+| `npm run dev`           | Starts the development server               |
+| `npm run build`         | Creates a production build                  |
+| `npm run build:staging` | Creates a staging build (`--mode staging`)  |
+| `npm run preview`       | Previews the production build               |
+| `npm run lint`          | Runs ESLint                                 |
+| `npm run format`        | Formats project files using Prettier        |
+| `npm run format:check`  | Checks code formatting                      |
+| `npm test`              | Runs the Vitest component and utility tests |
+| `npm run test:watch`    | Runs the tests in watch mode                |
+| `npm run check`         | Runs lint, tests and a production build     |
+
+## S1-16 feedback components
+
+The app entry point (`src/App.jsx`) is a reusable-state preview for the loading, error and success
+states used on the login, clock in/out and attendance dashboard screens. Requests are simulated —
+the preview does not call an API or Firebase.
+
+```jsx
+import { ErrorMessage, Loader, SuccessMessage } from './components';
+```
+
+| File                              | Purpose                                                    |
+| --------------------------------- | ---------------------------------------------------------- |
+| `src/components/`                 | Shared feedback components, barrel export and their tests  |
+| `src/utils/errorMessages.js`      | Approved safe error copy and HTTP/application code mapping |
+| `src/styles/`                     | Base, component and preview-page styles                    |
+| `src/test/setup.js`               | Vitest + Testing Library setup                             |
+| `docs/COMPONENT-USAGE.md`         | Props, examples and API integration guidance               |
+| `docs/CODE-REVIEW.md`             | Review record                                              |
+| `docs/STAGING-AND-PO-APPROVAL.md` | Staging and product-owner acceptance checklist             |
+| `wireframes/`                     | Reference wireframes                                       |
+
+Rules: never render raw errors, status codes or stack traces; show success only after the server
+confirms; keep the loading label next to the spinner; wire `onRetry` for failed data loads.
 
 ## Project structure
 
     frontend/
+    ├── docs/
     ├── public/
     ├── src/
     │   ├── assets/
@@ -54,10 +83,12 @@ http://localhost:5173
     │   ├── hooks/
     │   ├── pages/
     │   ├── services/
+    │   ├── styles/
+    │   ├── test/
+    │   ├── utils/
     │   ├── App.jsx
-    │   ├── App.css
-    │   ├── index.css
     │   └── main.jsx
+    ├── wireframes/
     ├── .env.example
     ├── .gitignore
     ├── .prettierrc
@@ -69,6 +100,7 @@ http://localhost:5173
 
 - React
 - Vite
+- Vitest + Testing Library
 - React Router
 - Axios
 - Bootstrap
@@ -76,3 +108,4 @@ http://localhost:5173
 - Prettier
 
 **Note:** Never commit `.env` files or expose private credentials in frontend environment variables.
+Vite exposes every `VITE_*` value to browser code.
