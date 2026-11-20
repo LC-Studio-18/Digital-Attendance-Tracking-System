@@ -74,9 +74,10 @@ $csv = \App\Services\CsvExporter::build($records);
 
 ## Verification status
 
-PHP and Composer are not installed in the environment where this port was
-written, so `composer install`, `php artisan test` and `php artisan serve` were
-not run here. Run them locally after installing PHP 8.2+ and Composer.
+PHP 8.4.28 and Composer 2.11.2 were installed user-locally on this device and
+`php artisan test` now passes: **12 tests, 35 assertions**. `composer.lock` is
+committed so other machines install the same versions. See
+`docs/LOCAL-PHP-SETUP.md` for install paths and verification details.
 
 ## Routes
 

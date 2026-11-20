@@ -59,7 +59,7 @@ final class CsvExporter
         $safeName = str_ends_with($filename, '.csv') ? $filename : "$filename.csv";
         $safeName = str_replace(['"', "\r", "\n"], '', $safeName);
 
-        return response("\xEF\xBB\xBF".self::build($records), 200, [
+        return new Response("\xEF\xBB\xBF".self::build($records), 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="'.$safeName.'"',
             'X-Content-Type-Options' => 'nosniff',

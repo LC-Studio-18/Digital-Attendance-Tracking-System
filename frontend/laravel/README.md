@@ -44,6 +44,8 @@ composer test
 php artisan test
 ```
 
-Note: PHP and Composer were not installed in the environment where this port
-was written, so the tests have not been executed here. Run them after
-`composer install`.
+Verified on this device with PHP 8.4.28 and Composer 2.11.2:
+`php artisan test` passes **12 tests / 35 assertions**.
+
+See `docs/LOCAL-PHP-SETUP.md` for where PHP and Composer were installed and how
+`php` / `composer` were added to the user PATH.
