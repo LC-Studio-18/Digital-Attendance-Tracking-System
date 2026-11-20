@@ -17,3 +17,6 @@ dist-ssr/
 .DS_Store
 .vscode/
 .idea/
+
+# Firebase credentials
+*firebase-adminsdk*.json
