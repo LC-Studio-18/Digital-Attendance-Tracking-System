@@ -145,7 +145,7 @@ function createAttendanceRecords(events, employees, now) {
   };
 }
 
-function Attendance() {
+function Attendance({ onLogout } = {}) {
   const [records, setRecords] = useState([]);
   const [totalIn, setTotalIn] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -447,7 +447,7 @@ function Attendance() {
           </span>
         </section>
 
-        <button className="logout-link" type="button" onClick={() => window.confirm('Log out of the admin dashboard?') && (window.location.href = '#logout')}>
+        <button className="logout-link" type="button" onClick={() => window.confirm('Log out of the admin dashboard?') && (onLogout ? onLogout() : (window.location.href = '#logout'))}>
           <svg viewBox="0 0 18 18" aria-hidden="true">
             <path d="M10 3H4v12h6M8 9h8m-3-3 3 3-3 3" />
           </svg>

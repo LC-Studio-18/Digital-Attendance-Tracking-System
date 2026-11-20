@@ -6,6 +6,7 @@ import {
 } from 'firebase/auth';
 import { auth } from './services/firebase';
 import Login from './pages/Login';
+import Attendance from './pages/Attendance.jsx';
 import { getUserRole, logoutUser } from './services/authService';
 import AdminControls from './components/AdminControls';
 import { navigateTo, usePathname } from './hooks/usePathname';
@@ -149,6 +150,10 @@ function App() {
       );
     }
     return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  if (pathname === '/dashboard') {
+    return <Attendance onLogout={handleLogout} />;
   }
 
   return (
