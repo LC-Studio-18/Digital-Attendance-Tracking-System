@@ -31,16 +31,15 @@ const verificationApp = initializeApp(
 );
 const realAuth = getAuth(verificationApp);
 
-let fixtureRecords = [];
+let fixtureRows = [];
 
 mock.module('../src/config/firebase.js', {
   exports: { auth: realAuth },
 });
 
-mock.module('../src/services/googleSheetsService.js', {
+mock.module('../src/services/sheets.js', {
   exports: {
-    fetchAttendanceRecords: async () =>
-      fixtureRecords.map((record) => ({ ...record })),
+    getAttendance: async () => fixtureRows.map((row) => [...row]),
   },
 });
 
@@ -122,25 +121,11 @@ test(
   { skip: staffToken ? false : noValidTokensReason },
   async () => {
     const decoded = await realAuth.verifyIdToken(staffToken);
-    fixtureRecords = [
-      {
-        id: 1,
-        uid: decoded.uid,
-        date: '2026-11-18',
-        status: 'Present',
-      },
-      {
-        id: 2,
-        uid: 'another-user-uid',
-        date: '2026-11-17',
-        status: 'Present',
-      },
-      {
-        id: 3,
-        uid: 'admin-user-uid',
-        date: '2026-11-16',
-        status: 'Absent',
-      },
+    fixtureRows = [
+      ['id', 'uid', 'date', 'status'],
+      [1, decoded.uid, '2026-11-18', 'Present'],
+      [2, 'another-user-uid', '2026-11-17', 'Present'],
+      [3, 'admin-user-uid', '2026-11-16', 'Absent'],
     ];
 
     const response = await requestHistory(`Bearer ${staffToken}`);
@@ -168,9 +153,10 @@ test(
       'The test Admin token must contain role=admin; without it the API defaults to staff and filters by UID',
     );
 
-    fixtureRecords = [
-      { id: 1, uid: 'staff-a', date: '2026-11-18', status: 'Present' },
-      { id: 2, uid: 'staff-b', date: '2026-11-17', status: 'Absent' },
+    fixtureRows = [
+      ['id', 'uid', 'date', 'status'],
+      [1, 'staff-a', '2026-11-18', 'Present'],
+      [2, 'staff-b', '2026-11-17', 'Absent'],
     ];
 
     const response = await requestHistory(`Bearer ${adminToken}`);

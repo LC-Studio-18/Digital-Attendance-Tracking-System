@@ -1,37 +1,25 @@
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
-const requiredVariables = [
-  'FIREBASE_PROJECT_ID',
-  'FIREBASE_CLIENT_EMAIL',
-  'FIREBASE_PRIVATE_KEY',
-];
-const missingVariables = requiredVariables.filter(
-  (name) => !process.env[name]?.trim(),
-);
+// Strips stray spaces, quotes, and trailing commas (common when copying from the service account JSON)
+const clean = (v = '') => v.trim().replace(/^["'\s]+|["',;\s]+$/g, '');
 
-if (missingVariables.length > 0) {
-  throw new Error(
-    `Missing Firebase environment variables: ${missingVariables.join(', ')}`
-  );
-}
-
-if (getApps().length === 0) {
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY
+const formatPrivateKey = (key = '') =>
+  key
     .trim()
-    // Accept private_key values copied directly from service-account JSON.
-    .replace(/^['"]/, '')
-    .replace(/,\s*$/, '')
-    .replace(/["']$/, '')
-    .replace(/\\n/g, '\n');
+    .replace(/^["']|["']$/g, '') // strip wrapping quotes if they survived parsing
+    .replace(/\\n/g, '\n')       // literal "\n" text -> real newlines
+    .replace(/\r/g, '');         // drop Windows carriage returns
 
+const app =
+  getApps()[0] ??
   initializeApp({
     credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID.trim(),
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL.trim(),
-      privateKey,
+      projectId: clean(process.env.FIREBASE_PROJECT_ID),
+      clientEmail: clean(process.env.FIREBASE_CLIENT_EMAIL),
+      privateKey: formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY),
     }),
   });
-}
 
-export const auth = getAuth();
+export const auth = getAuth(app);
+export default app;

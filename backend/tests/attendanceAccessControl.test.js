@@ -62,41 +62,17 @@ mock.module('../src/config/firebase.js', {
   },
 });
 
-const fixtureRecords = [
-  {
-    id: 1,
-    uid: 'staff-uid-1',
-    date: '2026-11-01',
-    status: 'Present',
-    name: 'Staff One',
-  },
-  {
-    id: 2,
-    uid: 'staff-uid-2',
-    date: '2026-11-03',
-    status: 'Absent',
-    name: 'Staff Two',
-  },
-  {
-    id: 3,
-    uid: 'admin-uid',
-    date: '2026-11-02',
-    status: 'Present',
-    name: 'Admin User',
-  },
-  {
-    id: 4,
-    uid: 'staff-uid-1',
-    date: '2026-11-04',
-    status: 'Present',
-    name: 'Staff One',
-  },
+const fixtureRows = [
+  ['id', 'uid', 'date', 'status', 'name'],
+  [1, 'staff-uid-1', '2026-11-01', 'Present', 'Staff One'],
+  [2, 'staff-uid-2', '2026-11-03', 'Absent', 'Staff Two'],
+  [3, 'admin-uid', '2026-11-02', 'Present', 'Admin User'],
+  [4, 'staff-uid-1', '2026-11-04', 'Present', 'Staff One'],
 ];
 
-mock.module('../src/services/googleSheetsService.js', {
+mock.module('../src/services/sheets.js', {
   exports: {
-    fetchAttendanceRecords: async () =>
-      fixtureRecords.map((record) => ({ ...record })),
+    getAttendance: async () => fixtureRows.map((row) => [...row]),
   },
 });
 

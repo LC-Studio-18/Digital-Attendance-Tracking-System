@@ -30,11 +30,14 @@ mock.module('../src/config/firebase.js', {
   },
 });
 
-mock.module('../src/services/googleSheetsService.js', {
+mock.module('../src/services/sheets.js', {
   exports: {
     getRecordsByRole: async (user) => {
       roleAwareCalls.push(user);
       return sheetRecords.map((record) => ({ ...record }));
+    },
+    getAttendance: async () => {
+      throw new Error('getAttendance fallback should not be used when getRecordsByRole is present');
     },
     fetchAttendanceRecords: async () => {
       throw new Error('legacy fallback should not be used');

@@ -1,4 +1,4 @@
-import attendanceRoutes from './routes/attendanceRoutes.js';
+import attendanceRoutes from './routes/attendance.js';
 import express from 'express';
 import cors from 'cors';
 import healthRoutes from './routes/healthRoutes.js';
@@ -14,7 +14,7 @@ app.use(
 
 app.use(express.json());
 
-app.use('/api', attendanceRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 app.use('/api', healthRoutes);
 

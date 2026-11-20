@@ -46,32 +46,24 @@ mock.module('../src/config/firebase.js', {
   },
 });
 
-// Dates are strings from Google Sheets, including an ISO timestamp and an
-// alternate UID column, to exercise the real sheet data handling.
-const fixtureRecords = [
-  { id: 1, uid: 'staff-uid-1', date: '2026-11-01', status: 'Present' },
-  { id: 2, uid: 'staff-uid-2', date: '2026-11-03', status: 'Absent' },
-  { id: 3, user_id: 'staff-uid-1', date: '2026-11-04', status: 'Present' },
-  { id: 4, uid: 'staff-uid-2', date: '2026-11-02', status: 'Present' },
-  {
-    id: 5,
-    uid: 'staff-uid-1',
-    date: '2026-11-04T08:15:00.000Z',
-    status: 'Present',
-  },
-  { id: 6, uid: 'staff-uid-2', date: '', status: 'Present' },
-  {
-    id: 7,
-    'user id (firebase uid)': 'staff-uid-3',
-    date: '2026-11-05',
-    status: 'Present',
-  },
+// Dates are strings from Google Sheets, including an ISO timestamp and
+// alternate UID columns, to exercise sheet row mapping and filtering.
+const fixtureRows = [
+  ['id', 'uid', 'user_id', 'user id (firebase uid)', 'date', 'status'],
+  [1, 'staff-uid-1', '', '', '2026-11-01', 'Present'],
+  [2, 'staff-uid-2', '', '', '2026-11-03', 'Absent'],
+  [3, '', 'staff-uid-1', '', '2026-11-04', 'Present'],
+  [4, 'staff-uid-2', '', '', '2026-11-02', 'Present'],
+  [5, 'staff-uid-1', '', '', '2026-11-04T08:15:00.000Z', 'Present'],
+  [6, 'staff-uid-2', '', '', '', 'Present'],
+  [7, '', '', 'staff-uid-3', '2026-11-05', 'Present'],
 ];
 
-mock.module('../src/services/googleSheetsService.js', {
+const expectedTotalRecords = fixtureRows.length - 1;
+
+mock.module('../src/services/sheets.js', {
   exports: {
-    fetchAttendanceRecords: async () =>
-      fixtureRecords.map((record) => ({ ...record })),
+    getAttendance: async () => fixtureRows.map((row) => [...row]),
   },
 });
 
@@ -113,8 +105,8 @@ test('no filters returns all records the admin is allowed to access', async () =
 
   const body = await response.json();
   assert.equal(body.success, true);
-  assert.equal(body.totalRecords, fixtureRecords.length);
-  assert.equal(body.count, fixtureRecords.length);
+  assert.equal(body.totalRecords, expectedTotalRecords);
+  assert.equal(body.count, expectedTotalRecords);
   assert.deepEqual(ids(body), [7, 5, 3, 2, 4, 1, 6]);
 });
 
@@ -317,7 +309,7 @@ test('blank filter values are treated as no filter', async () => {
 
   const body = await response.json();
   assert.equal(response.status, 200);
-  assert.equal(body.totalRecords, fixtureRecords.length);
+  assert.equal(body.totalRecords, expectedTotalRecords);
 });
 
 test('staff filters are restricted to their own records', async () => {
