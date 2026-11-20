@@ -40,7 +40,7 @@ function App() {
       />
 
       {/* Test buttons standing in for the real clock-in and clock-out screens */}
-      <div style={{ display: "flex", gap: 8, marginTop: 24 }}>
+      {/* <div style={{ display: "flex", gap: 8, marginTop: 24 ,justifyContent: "center" }}>
         <button
           className="btn btn-dark"
           disabled={busy || loading || status === "IN"}
@@ -55,7 +55,7 @@ function App() {
         >
           Clock Out
         </button>
-      </div>
+      </div> */}
     </div>
   );
 }
