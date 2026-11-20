@@ -1,0 +1,92 @@
+[
+  {
+    "User ID": "firebase_uid_001",
+    "Employee ID": "EMP001",
+    "Full Name": "Thando Mokoena",
+    "Email": "thando.mokoena@example.com",
+    "Department": "Human Resources",
+    "Role": "Admin",
+    "Status": "Active"
+  },
+  {
+    "User ID": "firebase_uid_002",
+    "Employee ID": "EMP002",
+    "Full Name": "Lerato Nkosi",
+    "Email": "lerato.nkosi@example.com",
+    "Department": "Finance",
+    "Role": "Staff",
+    "Status": "Active"
+  },
+  {
+    "User ID": "firebase_uid_003",
+    "Employee ID": "EMP003",
+    "Full Name": "Sipho Dlamini",
+    "Email": "sipho.dlamini@example.com",
+    "Department": "IT",
+    "Role": "Staff",
+    "Status": "Active"
+  },
+  {
+    "User ID": "firebase_uid_004",
+    "Employee ID": "EMP004",
+    "Full Name": "Ayesha Patel",
+    "Email": "ayesha.patel@example.com",
+    "Department": "Marketing",
+    "Role": "Staff",
+    "Status": "Inactive"
+  },
+  {
+    "User ID": "firebase_uid_005",
+    "Employee ID": "EMP005",
+    "Full Name": "Kabelo Ndlovu",
+    "Email": "kabelo.ndlovu@example.com",
+    "Department": "Operations",
+    "Role": "Staff",
+    "Status": "Active"
+  },
+  {
+    "User ID": "firebase_uid_006",
+    "Employee ID": "EMP006",
+    "Full Name": "Zanele Khumalo",
+    "Email": "zanele.khumalo@example.com",
+    "Department": "Human Resources",
+    "Role": "Staff",
+    "Status": "Active"
+  },
+  {
+    "User ID": "firebase_uid_007",
+    "Employee ID": "EMP007",
+    "Full Name": "Musa Jacobs",
+    "Email": "musa.jacobs@example.com",
+    "Department": "IT",
+    "Role": "Admin",
+    "Status": "Active"
+  },
+  {
+    "User ID": "firebase_uid_008",
+    "Employee ID": "EMP008",
+    "Full Name": "Nandi Cele",
+    "Email": "nandi.cele@example.com",
+    "Department": "Customer Support",
+    "Role": "Staff",
+    "Status": "Inactive"
+  },
+  {
+    "User ID": "firebase_uid_009",
+    "Employee ID": "EMP009",
+    "Full Name": "Ryan Smith",
+    "Email": "ryan.smith@example.com",
+    "Department": "Sales",
+    "Role": "Staff",
+    "Status": "Active"
+  },
+  {
+    "User ID": "firebase_uid_010",
+    "Employee ID": "EMP010",
+    "Full Name": "Palesa Molefe",
+    "Email": "palesa.molefe@example.com",
+    "Department": "Finance",
+    "Role": "Staff",
+    "Status": "Active"
+  }
+]

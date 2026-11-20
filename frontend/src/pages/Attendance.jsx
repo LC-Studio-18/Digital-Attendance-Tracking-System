@@ -1,336 +1,581 @@
-import "./Attendance.css";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import mockAttendance from "../data/mockAttendance";
+import { useEffect, useMemo, useState } from 'react';
+import lifeChoicesLogo from '../assets/life-choices-logo.png';
+import './Attendance.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-const MINIMUM_LOADING_MS = 1200;
-const DASH = "\u2014";
+/*
+Live attendance-hook integration to enable after bringing in the
+frontend5-attendance-hook branch files:
+import { useAttendance } from '../hooks/useAttendance';
+import { auth } from '../services/firebase';
+*/
 
-const formatDate = (value) =>
-  new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(`${value}T00:00:00`));
+const formatDate = (date) =>
+  new Intl.DateTimeFormat(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(date);
 
-const formatDay = (value) =>
-  new Intl.DateTimeFormat("en-GB", { weekday: "long" }).format(
-    new Date(`${value}T00:00:00`),
-  );
-
-const formatTime = (value) => {
-  if (!value || value === "--") return DASH;
-  const [hour, minute] = value.split(":").map(Number);
-  const suffix = hour >= 12 ? "PM" : "AM";
-  const displayHour = String(hour % 12 || 12).padStart(2, "0");
-  return `${displayHour}:${String(minute).padStart(2, "0")} ${suffix}`;
+const formatTime = (date) => {
+  if (!date) return '—';
+  return new Intl.DateTimeFormat(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
 };
 
-const getTotalHours = (checkIn, checkOut) => {
-  if (!checkIn || !checkOut || checkIn === "--" || checkOut === "--") {
-    return checkIn && checkIn !== "--" ? "In progress" : DASH;
+const formatTimestamp = (date) => {
+  if (!date) return 'Waiting for first update';
+  return new Intl.DateTimeFormat(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+};
+
+function createAttendanceRecords(events, employees, now) {
+  const activityByUser = new Map();
+  let latestSampleDay = null;
+  let latestSampleEventAt = null;
+
+  for (const event of events) {
+    const userId = event['User ID'];
+    const timestamp = new Date(event.Timestamp);
+    if (!userId || Number.isNaN(timestamp.getTime()) || timestamp > now) {
+      continue;
+    }
+
+    if (!latestSampleDay || timestamp > latestSampleDay) {
+      latestSampleDay = timestamp;
+    }
   }
-  const [checkInHour, checkInMinute] = checkIn.split(":").map(Number);
-  const [checkOutHour, checkOutMinute] = checkOut.split(":").map(Number);
-  const minutes = checkOutHour * 60 + checkOutMinute - (checkInHour * 60 + checkInMinute);
-  return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m`;
-};
 
-const formatAttendance = (records) => records.map((record) => ({
-  ...record,
-  displayDate: formatDate(record.date),
-  day: formatDay(record.date),
-  displayCheckIn: formatTime(record.checkIn),
-  displayCheckOut: formatTime(record.checkOut),
-  totalHours: getTotalHours(record.checkIn, record.checkOut),
-}));
+  if (!latestSampleDay) {
+    return {
+      records: employees.map((employee) => ({
+        id: employee['User ID'],
+        name: employee['Full Name'],
+        employeeId: employee['Employee ID'],
+        department: employee.Department,
+        status: 'UNKNOWN',
+        employmentStatus: employee.Status,
+        lastClockTime: null,
+        lastCheckInAt: null,
+        lastCheckOutAt: null,
+      })),
+      lastUpdated: null,
+    };
+  }
 
-const attendanceRecords = formatAttendance(mockAttendance);
+  const sampleDayKey = `${latestSampleDay.getFullYear()}-${latestSampleDay.getMonth()}-${latestSampleDay.getDate()}`;
 
-const getWeekStart = (date) => {
-  const start = new Date(date);
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
-  return start;
-};
+  for (const event of events) {
+    const userId = event['User ID'];
+    const sourceTimestamp = new Date(event.Timestamp);
+    if (
+      !userId ||
+      Number.isNaN(sourceTimestamp.getTime()) ||
+      `${sourceTimestamp.getFullYear()}-${sourceTimestamp.getMonth()}-${sourceTimestamp.getDate()}` !==
+        sampleDayKey
+    ) {
+      continue;
+    }
 
-const statusClass = (status) => {
-  const normalized = status.toLowerCase();
-  if (normalized.includes("late")) return "late";
-  if (normalized.includes("absent")) return "absent";
-  return "present";
-};
+    const timestamp = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      sourceTimestamp.getHours(),
+      sourceTimestamp.getMinutes(),
+      sourceTimestamp.getSeconds(),
+      sourceTimestamp.getMilliseconds()
+    );
+    if (timestamp > now) continue;
 
-function Attendance() {
-  const [attendance, setAttendance] = useState(attendanceRecords);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [timestamp, setTimestamp] = useState(() => new Date());
-  const [lastUpdated, setLastUpdated] = useState(null);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [showAll, setShowAll] = useState(false);
-  const [chartRange, setChartRange] = useState("30");
-  const [filters, setFilters] = useState({
-    name: "",
-    employeeId: "",
-    date: "",
-    status: "",
-    checkInFrom: "",
-    checkOutFrom: "",
-  });
+    if (!latestSampleEventAt || timestamp > latestSampleEventAt) {
+      latestSampleEventAt = timestamp;
+    }
 
-  const loadAttendance = useCallback(async (signal) => {
-    setLoading(true);
-    setError("");
-    const minimumLoading = new Promise((resolve) => setTimeout(resolve, MINIMUM_LOADING_MS));
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/attendance`, { signal });
-      if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
-      const result = await response.json();
-      if (result.status !== "success" || !Array.isArray(result.data?.attendance)) {
-        throw new Error(result.message || "Unexpected response from live service");
+    const activity = activityByUser.get(userId) ?? {
+      latestEvent: null,
+      lastCheckInAt: null,
+      lastCheckOutAt: null,
+    };
+
+    if (event['Event Type'] === 'Clock In') {
+      if (!activity.lastCheckInAt || timestamp > activity.lastCheckInAt) {
+        activity.lastCheckInAt = timestamp;
       }
-      setAttendance(formatAttendance(result.data.attendance));
-      setLastUpdated(new Date());
-    } catch (requestError) {
-      if (requestError.name === "AbortError") return;
-      setError("Unable to fetch live attendance data. Showing saved records instead.");
-      setAttendance([...attendanceRecords]);
-      setLastUpdated(new Date());
-    } finally {
-      if (!signal?.aborted) {
-        await minimumLoading;
-        setLoading(false);
+    } else if (event['Event Type'] === 'Clock Out') {
+      if (!activity.lastCheckOutAt || timestamp > activity.lastCheckOutAt) {
+        activity.lastCheckOutAt = timestamp;
       }
     }
-  }, []);
 
-  useEffect(() => {
-    const interval = window.setInterval(() => setTimestamp(new Date()), 1000);
-    return () => window.clearInterval(interval);
-  }, []);
+    if (!activity.latestEvent || timestamp > activity.latestEvent.timestamp) {
+      activity.latestEvent = {
+        event,
+        timestamp,
+      };
+    }
 
-  useEffect(() => {
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => loadAttendance(controller.signal), 0);
-    return () => {
-      window.clearTimeout(timer);
-      controller.abort();
-    };
-  }, [loadAttendance]);
+    activityByUser.set(userId, activity);
+  }
 
-  const currentEmployee = attendance[0] || attendanceRecords[0];
-  const dateLabel = new Intl.DateTimeFormat("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(timestamp);
-  const timeLabel = new Intl.DateTimeFormat("en-ZA", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(timestamp);
-  const lastUpdatedLabel = lastUpdated
-    ? new Intl.DateTimeFormat("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      }).format(lastUpdated)
-    : "Waiting for first refresh";
+  return {
+    records: employees.map((employee) => {
+      const userId = employee['User ID'];
+      const activity = activityByUser.get(userId);
+      const latestEvent = activity?.latestEvent;
+      const status =
+        latestEvent?.event['Event Type'] === 'Clock In'
+          ? 'IN'
+          : latestEvent
+            ? 'OUT'
+            : 'UNKNOWN';
 
-  const monthOptions = useMemo(() => [...new Set(attendance.map((record) => record.date.slice(0, 7)))], [attendance]);
-  const [selectedMonth, setSelectedMonth] = useState(attendanceRecords[0]?.date.slice(0, 7) || "");
-  const activeMonth = selectedMonth && monthOptions.includes(selectedMonth)
-    ? selectedMonth
-    : selectedMonth ? monthOptions[0] || "" : "";
-
-  const filteredAttendance = attendance.filter((record) => {
-    const name = filters.name.trim().toLowerCase();
-    const employeeId = filters.employeeId.trim().toLowerCase();
-    return (
-      (!name || record.name.toLowerCase().includes(name)) &&
-      (!employeeId || record.employeeId.toLowerCase().includes(employeeId)) &&
-      (!filters.date || record.date === filters.date) &&
-      (!filters.status || record.status === filters.status) &&
-      (!activeMonth || record.date.startsWith(activeMonth)) &&
-      (!filters.checkInFrom || (record.checkIn !== "--" && record.checkIn >= filters.checkInFrom)) &&
-      (!filters.checkOutFrom || (record.checkOut !== "--" && record.checkOut >= filters.checkOutFrom))
-    );
-  });
-
-  const statusOptions = [...new Set(attendance.map((record) => record.status))];
-  const clearFilters = () => setFilters({ name: "", employeeId: "", date: "", status: "", checkInFrom: "", checkOutFrom: "" });
-  const updateFilter = (field) => (event) => setFilters((previous) => ({ ...previous, [field]: event.target.value }));
-
-  const chartRecords = useMemo(() => {
-    const cutoff = new Date(timestamp);
-    cutoff.setDate(cutoff.getDate() - Number(chartRange));
-    return attendance
-      .filter((record) => new Date(`${record.date}T00:00:00`) >= cutoff)
-      .slice()
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .slice(-7);
-  }, [attendance, chartRange, timestamp]);
-
-  const chartPoints = chartRecords.map((record, index) => {
-    const x = chartRecords.length === 1 ? 198 : 36 + (index * 330) / (chartRecords.length - 1);
-    const status = record.status.toLowerCase();
-    const value = status.includes("absent") ? 12 : status.includes("late") ? 62 : 80 + ((record.id || index) % 3) * 6;
-    return { x, y: 128 - value, value, label: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(new Date(`${record.date}T00:00:00`)) };
-  });
-  const chartLine = chartPoints.map((point, index) => `${index ? "L" : "M"} ${point.x} ${point.y}`).join(" ");
-  const chartArea = chartPoints.length ? `${chartLine} L ${chartPoints.at(-1).x} 130 L ${chartPoints[0].x} 130 Z` : "";
-
-  const weekStart = getWeekStart(timestamp);
-  const thisWeekRecords = attendance.filter((record) => {
-    const recordDate = new Date(`${record.date}T00:00:00`);
-    const daysSinceMonday = Math.floor((timestamp - weekStart) / 86400000);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + Math.min(daysSinceMonday, 6));
-    return recordDate >= weekStart && recordDate <= weekEnd && !record.status.toLowerCase().includes("absent");
-  });
-  const weekPresent = Math.min(new Set(thisWeekRecords.map((record) => record.date)).size, 5);
-  const attendanceRate = Math.round((weekPresent / 5) * 100);
-
-  const downloadHistory = () => {
-    const rows = [
-      ["Employee", "Employee ID", "Date", "Day", "Status", "Clock-in", "Clock-out", "Total hours"],
-      ...filteredAttendance.map((row) => [row.name, row.employeeId, row.displayDate, row.day, row.status, row.displayCheckIn, row.displayCheckOut, row.totalHours]),
-    ];
-    const csv = rows.map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(",")).join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "attendance-history.csv";
-    link.click();
-    URL.revokeObjectURL(url);
+      return {
+        id: userId,
+        name: employee['Full Name'],
+        employeeId: employee['Employee ID'],
+        department: employee.Department,
+        status,
+        employmentStatus: employee.Status,
+        lastClockTime: latestEvent?.timestamp ?? null,
+        lastCheckInAt: activity?.lastCheckInAt ?? null,
+        lastCheckOutAt: activity?.lastCheckOutAt ?? null,
+      };
+    }),
+    lastUpdated: latestSampleEventAt,
   };
+}
 
-  const historyRows = showAll ? filteredAttendance : filteredAttendance.slice(0, 4);
+function Attendance() {
+  const [records, setRecords] = useState([]);
+  const [totalIn, setTotalIn] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('IN');
+  const [sortBy, setSortBy] = useState('name');
+
+  /*
+  After importing the hook and auth above, call the hook unconditionally here:
+
+  const liveAttendance = useAttendance({
+    getToken: () => auth.currentUser?.getIdToken(),
+    refreshInterval: 5000,
+  });
+    const liveRecords = liveAttendance.staff.map((staff) => ({
+      id: staff.id,
+      name: staff.name,
+      employeeId: staff.id,
+      department: '',
+      status: staff.status,
+      lastClockTime: staff.lastClockEvent,
+      lastCheckInAt:
+        staff.status === 'IN' ? staff.lastClockEvent : null,
+      lastCheckOutAt:
+        staff.status === 'OUT' ? staff.lastClockEvent : null,
+    }));
+
+  useAttendance calls the branch's fetchAttendance, validateAttendance, and
+    useAutoRefresh functions. Replace demo `records`, `totalIn`, `loading`,
+    `error`, and `lastUpdated` with `liveRecords` and the matching
+    `liveAttendance` fields, and remove the demo JSON effect.
+  The committed hook branch currently expects a data.staff payload. Use the
+  updated validator in the attendance-hook stash if the backend returns
+  data.records.
+  */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDemoData() {
+      setLoading(true);
+      setError('');
+
+      try {
+        const [attendanceModule, employeeModule] = await Promise.all([
+          import('../data/attendance.json'),
+          import('../data/employees.json'),
+        ]);
+        if (cancelled) return;
+
+        const demoData = createAttendanceRecords(
+          attendanceModule.default,
+          employeeModule.default,
+          new Date()
+        );
+        setRecords(demoData.records);
+        setTotalIn(
+          demoData.records.filter((record) => record.status === 'IN').length
+        );
+        setLastUpdated(demoData.lastUpdated);
+      } catch {
+        if (!cancelled) {
+          setError('Could not load the sample attendance data.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadDemoData();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /*
+  Live API mode for when the backend is ready:
+  Uncomment the Firebase/API imports and replace the demo-data effect with:
+
+  const firebaseReady = isFirebaseConfigured && Boolean(auth);
+  useEffect(() => {
+    if (!firebaseReady) return undefined;
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setError('Sign in with an admin account to view attendance.');
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      setError('');
+      try {
+        const payload = await fetchLiveAttendance(undefined, user);
+        const result = validateLiveAttendance(payload);
+        setRecords(result.records);
+        setTotalIn(result.totalIn);
+        setLastUpdated(result.lastUpdated);
+      } catch (requestError) {
+        setError(requestError.message || 'Unable to load attendance.');
+      } finally {
+        setLoading(false);
+      }
+    });
+    return unsubscribe;
+  }, [firebaseReady]);
+  */
+
+  const visibleRecords = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return records
+      .filter((record) => {
+        const matchesSearch =
+          !query ||
+          record.name.toLowerCase().includes(query) ||
+          record.employeeId.toLowerCase().includes(query);
+        const matchesStatus =
+          statusFilter === 'ALL' || record.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      })
+      .slice()
+      .sort((first, second) => {
+        if (sortBy === 'status') {
+          return (
+            first.status.localeCompare(second.status) ||
+            first.name.localeCompare(second.name)
+          );
+        }
+        if (sortBy === 'lastActivity') {
+          return (
+            (second.lastClockTime?.getTime() ?? 0) -
+            (first.lastClockTime?.getTime() ?? 0)
+          );
+        }
+        return first.name.localeCompare(second.name);
+      });
+  }, [records, search, sortBy, statusFilter]);
+
+  const today = formatDate(new Date());
 
   return (
     <div className="attendance-page">
-      {loading && (
-        <div className="processing-overlay" role="status" aria-live="polite">
-          <div className="processing-card">
-            <div className="processing-spinner" aria-hidden="true">{Array.from({ length: 8 }, (_, index) => <span key={index} />)}</div>
-            <h2>Processing</h2>
-            <p>Please wait here while we record your attendance</p>
-          </div>
-        </div>
-      )}
-
       <aside className="dashboard-sidebar">
-        <a className="brand-lockup" href="#dashboard"><span className="brand-mark">P</span><strong>Presence</strong></a>
+        <a className="brand-lockup" href="#dashboard" aria-label="LC Attends">
+          <span className="brand-emblem" aria-hidden="true">
+            <img src={lifeChoicesLogo} alt="" />
+          </span>
+          <span className="brand-name">
+            <strong>LC</strong>
+            <em>Attends</em>
+          </span>
+        </a>
         <nav className="sidebar-nav" aria-label="Main navigation">
-          <a className="sidebar-nav-link active" href="#dashboard"><span aria-hidden="true">⌂</span> Dashboard</a>
-          <a className="sidebar-nav-link" href="#profile"><span aria-hidden="true">♙</span> My Profile</a>
-          <a className="sidebar-nav-link" href="#attendance-history"><span aria-hidden="true">◷</span> Attendance Log</a>
-          <a className="sidebar-nav-link" href="#dashboard"><span aria-hidden="true">⚙</span> Settings</a>
+          <a
+            className="sidebar-nav-link active"
+            href="#dashboard"
+            aria-current="page"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <rect x="2" y="2" width="4" height="4" rx=".5" />
+              <rect x="10" y="2" width="4" height="4" rx=".5" />
+              <rect x="2" y="10" width="4" height="4" rx=".5" />
+              <rect x="10" y="10" width="4" height="4" rx=".5" />
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a className="sidebar-nav-link" href="#attendance-log">
+            <svg viewBox="0 0 18 18" aria-hidden="true">
+              <circle cx="9" cy="9" r="7" />
+              <path d="M9 5v4l2.5 1.5" />
+            </svg>
+            <span>Attendance log</span>
+          </a>
+          <a className="sidebar-nav-link" href="#staff-directory">
+            <svg viewBox="0 0 18 18" aria-hidden="true">
+              <circle cx="9" cy="5" r="2.5" />
+              <path d="M4.5 15v-1.3a4.5 4.5 0 0 1 9 0V15zM3 8a2 2 0 0 0 0 4m12-4a2 2 0 0 1 0 4" />
+            </svg>
+            <span>Staff Directory</span>
+          </a>
         </nav>
-        <section className="sidebar-profile" id="profile" aria-label="Employee profile">
-          <div className="profile-avatar">{currentEmployee.name.split(" ").map((part) => part[0]).slice(0, 2).join("").toUpperCase()}</div>
-          <div className="profile-identity"><strong>{currentEmployee.name}</strong><span>Employee</span></div>
-          <small>Employee Access</small>
+
+        <button className="add-employee-button" type="button">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M6 3.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM2.5 13a3.5 3.5 0 0 1 7 0M12 5v5m-2.5-2.5h5" />
+          </svg>
+          <span>Add Employee</span>
+        </button>
+
+        <section className="admin-access-card" aria-label="Account status">
+          <span className="admin-access-label">Admin Access</span>
+          <span className="admin-role">Admin</span>
+          <span className="admin-workspace">Life Choices Lansdowne</span>
+          <span className="admin-live">
+            <i aria-hidden="true" />
+            Live
+          </span>
         </section>
-        <button type="button" className="logout-button"><span aria-hidden="true">⇥</span> Logout</button>
+
+        <a className="logout-link" href="#logout">
+          <svg viewBox="0 0 18 18" aria-hidden="true">
+            <path d="M10 3H4v12h6M8 9h8m-3-3 3 3-3 3" />
+          </svg>
+          <span>LOGOUT</span>
+        </a>
       </aside>
 
-      <div className="dashboard-shell">
-        <main className="dashboard-main" id="dashboard">
-          <header className="topbar">
-            <div className="topbar-date"><span aria-hidden="true">▢</span>{dateLabel}</div>
-            <div className="topbar-actions">
-              <span className="live-timestamp" aria-label={`Current time ${timeLabel}`}><span className="live-dot" />{timeLabel}</span>
-              <button type="button" className="icon-button" aria-label="Notifications">♧</button>
-              <span className="topbar-avatar">{currentEmployee.name.split(" ").map((part) => part[0]).slice(0, 2).join("").toUpperCase()}</span>
-              <span className="topbar-name">{currentEmployee.name.split(" ")[0]} <span aria-hidden="true">⌄</span></span>
+      <main className="dashboard-main" id="dashboard">
+        <header className="topbar">
+          <div className="breadcrumb">
+            <span>Workspace</span>
+            <b>/</b> Overview
+          </div>
+          <div className="topbar-meta">
+            <span className="demo-badge">SAMPLE DATA</span>
+            <span className="topbar-date">{today}</span>
+          </div>
+        </header>
+
+        <section className="welcome-heading">
+          <div>
+            <p className="eyebrow">STAFF PRESENCE</p>
+            <h1>Staff attendance</h1>
+            <p className="welcome-subtitle">
+              View who is currently clocked in.
+            </p>
+          </div>
+        </section>
+
+        <section className="summary-row" aria-label="Attendance summary">
+          <article className="summary-card">
+            <span className="summary-label">Currently clocked IN</span>
+            <strong>{totalIn ?? '—'}</strong>
+            <span className="summary-caption">Today's sample schedule</span>
+          </article>
+        </section>
+
+        {error && (
+          <div className="error-state" role="alert">
+            <strong>Sample attendance unavailable</strong>
+            <span>{error}</span>
+          </div>
+        )}
+
+        <section className="attendance-card" aria-labelledby="attendance-title">
+          <div className="card-heading">
+            <div>
+              <h2 id="attendance-title">Staff attendance</h2>
+              <p>Employees currently clocked in</p>
             </div>
-          </header>
-
-          <section className="welcome-heading">
-            <div><h1>Good morning, {currentEmployee.name.split(" ")[0]}.</h1><p>Here’s your attendance overview for today.</p></div>
-            <button type="button" className="download-history" onClick={downloadHistory}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export CSV</button>
-          </section>
-
-          {error && <div className="error-state" role="alert"><strong>Live data unavailable</strong><span>{error}</span><button type="button" className="error-retry" onClick={() => loadAttendance()} disabled={loading}>Try again</button></div>}
-
-          <section className="status-overview" aria-label="Today's attendance status">
-            <article className="status-card status-card-in">
-              <div className="check-mark" aria-hidden="true">✓</div>
-              <div className="status-value"><span className="card-kicker">Current Status</span><strong>{currentEmployee.status.toLowerCase().includes("absent") ? "OUT" : "IN"}</strong><span className="status-pill"><i />{currentEmployee.status}</span></div>
-              <div className="status-divider" />
-              <div className="clocked-at"><span className="card-kicker">Clocked In At</span><strong>{currentEmployee.displayCheckIn}</strong><small>{currentEmployee.displayDate}</small></div>
-            </article>
-            <div className="status-right-column">
-              <article className="status-card status-card-out">
-                <div className="clock-icon" aria-hidden="true">◷</div>
-                <div className="status-value"><span className="card-kicker">Clocked Out</span><strong>{currentEmployee.displayCheckOut}</strong><small>{currentEmployee.checkOut === "--" ? "Not yet clocked out" : `Today at ${currentEmployee.displayCheckOut}`}</small></div>
-              </article>
-              <div className="last-updated" aria-live="polite">
-                <div><span>Last updated</span><strong>{lastUpdatedLabel}</strong></div>
-                <i aria-hidden="true" />
-              </div>
+            <div className="last-updated" aria-live="polite">
+              <span>Latest demo event today</span>
+              <strong>{formatTimestamp(lastUpdated)}</strong>
             </div>
+          </div>
+
+          <div className="attendance-toolbar">
+            <div
+              className="status-filters"
+              role="group"
+              aria-label="Filter by status"
+            >
+              {[
+                ['IN', 'Currently IN'],
+                ['ALL', 'All'],
+                ['OUT', 'OUT'],
+                ['UNKNOWN', 'Unknown'],
+              ].map(([value, label]) => (
+                <button
+                  className={statusFilter === value ? 'selected' : ''}
+                  key={value}
+                  onClick={() => setStatusFilter(value)}
+                  type="button"
+                  aria-pressed={statusFilter === value}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="list-controls">
+              <label className="search-control">
+                <span className="visually-hidden">
+                  Search by name or employee ID
+                </span>
+                <span aria-hidden="true">⌕</span>
+                <input
+                  type="search"
+                  placeholder="Search staff"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </label>
+              <label className="sort-control">
+                <span className="visually-hidden">Sort attendance list</span>
+                <select
+                  value={sortBy}
+                  onChange={(event) => setSortBy(event.target.value)}
+                >
+                  <option value="name">Sort by name</option>
+                  <option value="status">Sort by status</option>
+                  <option value="lastActivity">Sort by last activity</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div className="attendance-table-wrap">
+            <table className="attendance-table">
+              <thead>
+                <tr>
+                  <th scope="col">Member</th>
+                  <th scope="col">Department</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">In</th>
+                  <th scope="col">Out</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  Array.from({ length: 5 }, (_, index) => (
+                    <tr className="skeleton-row" key={`loading-${index}`}>
+                      <td>
+                        <span />
+                      </td>
+                      <td>
+                        <span />
+                      </td>
+                      <td>
+                        <span />
+                      </td>
+                      <td>
+                        <span />
+                      </td>
+                      <td>
+                        <span />
+                      </td>
+                    </tr>
+                  ))
+                ) : visibleRecords.length > 0 ? (
+                  visibleRecords.map((record) => (
+                    <tr key={record.id}>
+                      <td>
+                        <div className="member-cell">
+                          <span className="member-avatar" aria-hidden="true">
+                            {record.name.charAt(0).toUpperCase()}
+                          </span>
+                          <span>
+                            <strong>{record.name}</strong>
+                            <small>{record.employeeId}</small>
+                          </span>
+                        </div>
+                      </td>
+                      <td>{record.department || '—'}</td>
+                      <td>
+                        <span
+                          className={`status-pill status-${record.status.toLowerCase()}`}
+                        >
+                          <i aria-hidden="true" />
+                          {record.status}
+                        </span>
+                      </td>
+                      <td>{formatTime(record.lastCheckInAt)}</td>
+                      <td>{formatTime(record.lastCheckOutAt)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="empty-state" colSpan={5}>
+                      {error
+                        ? 'Attendance could not be loaded.'
+                        : 'No employees match this filter.'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <footer className="attendance-footer">
+            <span>
+              {error
+                ? 'Attendance list unavailable'
+                : `Showing ${visibleRecords.length} of ${records.length} employees`}
+            </span>
+          </footer>
+        </section>
+
+        <footer className="site-footer">
+          <section className="footer-brand">
+            <div className="footer-brand-lockup">
+              <span className="brand-emblem" aria-hidden="true">
+                <img src={lifeChoicesLogo} alt="" />
+              </span>
+              <span className="brand-name">
+                <strong>LC</strong>
+                <em>Attends</em>
+              </span>
+            </div>
+            <p>
+              Life Choices invests in young people from all over South Africa,
+              so every one of them has a fair chance in life.
+            </p>
           </section>
-
-          <section className="dashboard-grid">
-            <section className="dashboard-card chart-card" aria-labelledby="overview-title">
-              <div className="card-heading"><h2 id="overview-title"><span aria-hidden="true">▥</span> Attendance Overview</h2><label className="select-wrap"><select value={chartRange} onChange={(event) => setChartRange(event.target.value)} aria-label="Chart date range"><option value="7">Last 7 Days</option><option value="30">Last 30 Days</option></select></label></div>
-              <div className="chart-wrap">
-                <svg className="attendance-chart" viewBox="0 0 400 170" role="img" aria-label="Attendance trend chart">
-                  {[20, 45, 70, 95, 120].map((y, index) => <g key={y}><line x1="36" y1={y} x2="378" y2={y} /><text x="4" y={y + 3}>{100 - index * 25}</text></g>)}
-                  {chartPoints.length > 0 && <><path className="chart-area" d={chartArea} /><path className="chart-line" d={chartLine} />{chartPoints.map((point, index) => <g key={`${point.label}-${index}`}><circle cx={point.x} cy={point.y} r="3.5" /><text className="chart-date" x={point.x} y="145" textAnchor="middle">{point.label}</text></g>)}</>}
-                  {chartPoints.length === 0 && <text className="chart-empty" x="205" y="80" textAnchor="middle">No attendance records in this range</text>}
-                </svg>
-              </div>
-            </section>
-
-            <section className="dashboard-card weekly-card" aria-labelledby="weekly-title">
-              <h2 id="weekly-title"><span aria-hidden="true">▢</span> This Week</h2>
-              <strong className="weekly-count">{weekPresent} / 5</strong>
-              <span className="weekly-caption">Days Present</span>
-              <div className="weekly-divider" />
-              <div className="rate-row"><div className="rate-ring" style={{ "--rate": `${attendanceRate}%` }}><span>{attendanceRate}%</span></div><span>Attendance<br />Rate</span></div>
-            </section>
-
-            <section className="dashboard-card history-card" id="attendance-history" aria-labelledby="history-title">
-              <div className="card-heading history-card-heading">
-                <h2 id="history-title"><span aria-hidden="true">▤</span> Attendance History</h2>
-                <div className="history-actions">
-                  <button type="button" className="filter-toggle" onClick={() => setFiltersOpen((open) => !open)} aria-expanded={filtersOpen}>Filters{Object.values(filters).some(Boolean) ? " · On" : ""}</button>
-                  <label className="select-wrap month-select"><select aria-label="Filter by month" value={activeMonth} onChange={(event) => setSelectedMonth(event.target.value)}><option value="">All dates</option>{monthOptions.map((month) => <option key={month} value={month}>{new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(new Date(`${month}-01T00:00:00`))}</option>)}</select></label>
-                  <button type="button" className="view-all-button" onClick={() => setShowAll((value) => !value)}>{showAll ? "Show Less" : "View All"}<span aria-hidden="true">→</span></button>
-                </div>
-              </div>
-              {filtersOpen && <div className="filter-bar" aria-label="Filter attendance history">
-                <div className="filter-field"><label htmlFor="filter-name">Name</label><input id="filter-name" type="text" placeholder="Search name" value={filters.name} onChange={updateFilter("name")} /></div>
-                <div className="filter-field"><label htmlFor="filter-employee-id">Employee ID</label><input id="filter-employee-id" type="text" placeholder="e.g. EMP001" value={filters.employeeId} onChange={updateFilter("employeeId")} /></div>
-                <div className="filter-field"><label htmlFor="filter-date">Date</label><input id="filter-date" type="date" value={filters.date} onChange={updateFilter("date")} /></div>
-                <div className="filter-field"><label htmlFor="filter-status">Status</label><select id="filter-status" value={filters.status} onChange={updateFilter("status")}><option value="">All statuses</option>{statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}</select></div>
-                <div className="filter-field"><label htmlFor="filter-check-in-from">Clock-in from</label><input id="filter-check-in-from" type="time" value={filters.checkInFrom} onChange={updateFilter("checkInFrom")} /></div>
-                <div className="filter-field"><label htmlFor="filter-check-out-from">Clock-out from</label><input id="filter-check-out-from" type="time" value={filters.checkOutFrom} onChange={updateFilter("checkOutFrom")} /></div>
-                <div className="filter-actions"><span className="filter-summary">{filteredAttendance.length} of {attendance.length} records</span><button type="button" className="clear-filters" onClick={clearFilters}>Clear filters</button></div>
-              </div>}
-              <div className="history-table-wrap"><table className="history-table"><thead><tr><th>Date</th><th>Clock In</th><th>Clock Out</th><th>Status</th></tr></thead><tbody>
-                {historyRows.length > 0 ? historyRows.map((record) => <tr key={record.id}><td>{record.day}, {record.displayDate}</td><td>{record.displayCheckIn}</td><td>{record.displayCheckOut}</td><td><span className={`history-status ${statusClass(record.status)}`}><i />{record.status}</span></td></tr>) : <tr><td colSpan={4} className="empty-state">No attendance records match these filters.</td></tr>}
-              </tbody></table></div>
-              <footer className="history-footer"><span>Showing {historyRows.length} of {filteredAttendance.length} records</span><button type="button" onClick={downloadHistory}>Download history <span aria-hidden="true">↓</span></button></footer>
-            </section>
-
-            <aside className="dashboard-card help-card"><div className="help-icon" aria-hidden="true">◉</div><h2>Need Help?</h2><p>Contact your HR department<br />for assistance.</p><a href="mailto:theteam@lcstudio.co.za">✉ Contact HR</a></aside>
+          <span className="footer-divider" aria-hidden="true" />
+          <section className="footer-contact">
+            <h2>VISIT OR CONTACT US</h2>
+            <address>
+              314 Imam Haron Rd, Lansdowne,
+              <br />
+              Cape Town, 7780
+              <br />
+              <a href="tel:+27216964157">+27 (0) 21 696 4157</a>
+              <br />
+              <a href="mailto:theteam@lcstudio.co.za">theteam@lcstudio.co.za</a>
+              <br />
+              <a href="https://www.lcstudio.co.za">www.lcstudio.co.za</a>
+            </address>
+            <small>Employee access only - Presence attendance system</small>
           </section>
-        </main>
-
-        <footer className="company-footer" id="settings">
-          <div className="footer-brand"><span className="footer-symbol">✿</span><span><b>life</b> choices</span></div>
-          <div className="footer-contact"><h2>Visit or Contact Us</h2><p>314 Imam Haron Rd, Lansdowne, Cape Town, 7780</p><p>▣ &nbsp;+27 696 4157</p><p>✉ &nbsp;theteam@lcstudio.co.za</p><a href="https://www.lcstudio.co.za">www.lcstudio.co.za</a></div>
         </footer>
-      </div>
+      </main>
     </div>
   );
 }
