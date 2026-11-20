@@ -1,5 +1,5 @@
 /**
- * Verifies that GET /api/attendance still uses the role-aware Google Sheets
+ * Verifies that GET /api/v1/attendance/history still uses the role-aware Google Sheets
  * retrieval helper with the verified Firebase user.
  *
  * Firebase verification and Google Sheets are stubbed with in-memory data so
@@ -61,8 +61,8 @@ after(async () => {
   }
 });
 
-test('GET /api/attendance uses role-aware Google Sheets retrieval with verified claims', async () => {
-  const response = await fetch(`${baseUrl}/api/attendance?page=1&limit=1`, {
+test('GET /api/v1/attendance/history uses role-aware Google Sheets retrieval with verified claims', async () => {
+  const response = await fetch(`${baseUrl}/api/v1/attendance/history?page=1&limit=1`, {
     headers: { authorization: 'Bearer admin-token' },
   });
 

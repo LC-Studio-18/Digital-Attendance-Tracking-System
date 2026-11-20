@@ -14,7 +14,7 @@ app.use(
 
 app.use(express.json());
 
-app.use('/api/attendance', attendanceRoutes);
+app.use('/api/v1/attendance', attendanceRoutes);
 
 app.use('/api', healthRoutes);
 

@@ -4,7 +4,7 @@ import { getAttendanceHistory } from '../controllers/attendanceController.js';
 
 const router = express.Router();
 
-// Mounted at '/api' in app.js -> GET /api/attendance
-router.get('/', verifyToken, getAttendanceHistory);
+// Mounted at '/api/v1/attendance' in app.js -> GET /api/v1/attendance/history
+router.get('/history', verifyToken, getAttendanceHistory);
 
 export default router;
