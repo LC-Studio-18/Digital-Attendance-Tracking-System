@@ -48,16 +48,16 @@ Render success only after the server confirms the action. `message` defaults to 
 
 ## ExportCsvControl
 
-Ready to drop into the Admin Dashboard when its owner wires it in. It renders the start/end date filters next to an **Export CSV** button, disables both while exporting, and shows an inline `Loader` inside the button. The CSV is built in the browser from the `records` you pass, filtered by the inclusive date range. Styling follows the `L.C Admin/dashboard.html` design (dark `#0f172a` button, 6px radius, compact gray-bordered date inputs); no dashboard page files were added or changed.
+Drop into the Admin Dashboard. It renders the start/end date filters next to an **Export CSV** button, disables both while exporting, and shows an inline `Loader` inside the button. Styling follows the `L.C Admin/dashboard.html` design (dark `#0f172a` button, 6px radius, compact gray-bordered date inputs).
+
+By default it calls `GET /api/reports/export` with the selected `startDate` and `endDate`, downloads the returned Blob using a temporary anchor, and shows a success toast or a safe error message. See [REPORTS-EXPORT-API.md](./REPORTS-EXPORT-API.md) for the full request/response contract and implementation notes.
 
 ```jsx
-// Inside the Admin Dashboard, with the records already loaded:
-<ExportCsvControl records={attendanceRecords} />
+// Inside the Admin Dashboard (backend-driven export):
+<ExportCsvControl token={firebaseToken} />
 ```
 
-Default columns match the attendance history table (date, staff, email, department, clock in, clock out, hours, status). Override them with `columns={[{ key, label, getValue }]}`, change `filename`, `label`, `loadingLabel` or `minLoadingMs`, or pass `onExport(filteredRecords, range)` to replace the built-in download with your own request. The component never mutates the records array.
-
-Reversed date ranges and failed exports show safe, inline feedback instead of raw errors. Shared CSV helpers live in `src/utils/csv.js`.
+Override `filename`, `label`, `loadingLabel` or `minLoadingMs` as before. Pass `onExport(filteredRecords, range)` to replace the API call, or `local` to build the CSV in the browser from `records`/`columns` (the original behaviour). Reversed ranges show an inline error; API failures use `ErrorMessage` and success uses `SuccessMessage` — raw errors are never shown. Shared download/CSV helpers live in `src/utils/csv.js`.
 
 ## Error copy reference
 

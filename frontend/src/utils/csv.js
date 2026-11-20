@@ -86,22 +86,31 @@ export function buildCsv(records, columns) {
   return lines.join('\r\n') + '\r\n';
 }
 
-/** Save CSV content as a browser download. */
-export function downloadCsv(content, filename = 'attendance-export') {
-  const blob = new Blob(['\uFEFF', content], {
-    type: 'text/csv;charset=utf-8;',
-  });
+/**
+ * Trigger a browser download from a Blob using a temporary anchor. This is the
+ * same mechanism used for API responses returned with `responseType: 'blob'`.
+ */
+export function downloadBlob(blob, filename = 'attendance-report.csv') {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
-  const safeName = String(filename).endsWith('.csv')
-    ? String(filename)
-    : `${filename}.csv`;
 
   link.href = url;
-  link.download = safeName;
+  link.download = String(filename);
   document.body.appendChild(link);
   link.click();
   link.remove();
 
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+/** Save CSV content as a browser download. */
+export function downloadCsv(content, filename = 'attendance-export') {
+  const blob = new Blob(['\uFEFF', content], {
+    type: 'text/csv;charset=utf-8;',
+  });
+  const safeName = String(filename).endsWith('.csv')
+    ? String(filename)
+    : `${filename}.csv`;
+
+  downloadBlob(blob, safeName);
 }

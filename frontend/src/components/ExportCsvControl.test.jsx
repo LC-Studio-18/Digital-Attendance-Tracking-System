@@ -1,6 +1,12 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { exportAttendanceReport } from '../services/reportsApi.js';
 import ExportCsvControl from './ExportCsvControl.jsx';
+
+vi.mock('../services/reportsApi.js', () => ({
+  DEFAULT_EXPORT_ERROR: 'We could not export the CSV. Please try again.',
+  exportAttendanceReport: vi.fn(),
+}));
 
 const records = [
   {
@@ -16,6 +22,10 @@ const records = [
     status: 'IN',
   },
 ];
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 describe('ExportCsvControl', () => {
   it('renders the date filter next to the Export CSV button', () => {
@@ -123,5 +133,82 @@ describe('ExportCsvControl', () => {
     expect(
       await screen.findByText('We could not export the CSV. Please try again.')
     ).toBeInTheDocument();
+  });
+
+  it('calls the reports API with the selected range and downloads the blob', async () => {
+    const blob = new Blob(['Date,Staff\r\n'], { type: 'text/csv' });
+    exportAttendanceReport.mockResolvedValue({
+      blob,
+      filename: 'attendance-November.csv',
+      message: 'Report ready.',
+    });
+
+    const createObjectURL = vi.fn(() => 'blob:report');
+    const revokeObjectURL = vi.fn();
+    Object.defineProperty(URL, 'createObjectURL', {
+      value: createObjectURL,
+      configurable: true,
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      value: revokeObjectURL,
+      configurable: true,
+    });
+    let downloadedName = '';
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(function mockClick() {
+        downloadedName = this.download;
+      });
+
+    render(<ExportCsvControl minLoadingMs={0} />);
+
+    fireEvent.change(screen.getByLabelText('Start date'), {
+      target: { value: '2026-11-18' },
+    });
+    fireEvent.change(screen.getByLabelText('End date'), {
+      target: { value: '2026-11-19' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Export CSV/ }));
+
+    expect(
+      await screen.findByText('Report ready.')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Report ready.');
+    expect(exportAttendanceReport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        startDate: '2026-11-18',
+        endDate: '2026-11-19',
+      })
+    );
+    expect(createObjectURL).toHaveBeenCalledWith(blob);
+    expect(downloadedName).toBe('attendance-November.csv');
+    expect(document.querySelector('a[download]')).toBeNull();
+
+    click.mockRestore();
+  });
+
+  it('shows a safe error toast when the API rejects the export', async () => {
+    exportAttendanceReport.mockRejectedValue({ code: 500 });
+
+    render(<ExportCsvControl minLoadingMs={0} />);
+    fireEvent.click(screen.getByRole('button', { name: /Export CSV/ }));
+
+    expect(
+      await screen.findByText('We could not export the CSV. Please try again.')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(exportAttendanceReport).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the API error message when the response reports a failure', async () => {
+    exportAttendanceReport.mockRejectedValue({
+      code: 'export_failed',
+      message: 'No records in range.',
+    });
+
+    render(<ExportCsvControl minLoadingMs={0} />);
+    fireEvent.click(screen.getByRole('button', { name: /Export CSV/ }));
+
+    expect(await screen.findByText('No records in range.')).toBeInTheDocument();
   });
 });

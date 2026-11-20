@@ -1,7 +1,14 @@
 import { useState } from 'react';
+import ErrorMessage from './ErrorMessage.jsx';
 import Loader from './Loader.jsx';
+import SuccessMessage from './SuccessMessage.jsx';
+import {
+  DEFAULT_EXPORT_ERROR,
+  exportAttendanceReport,
+} from '../services/reportsApi.js';
 import {
   buildCsv,
+  downloadBlob,
   downloadCsv,
   filterRecordsByDate,
   getField,
@@ -124,10 +131,11 @@ function DownloadIcon() {
 /**
  * Date-filtered CSV export control for the Admin Dashboard.
  *
- * Pass the dashboard's attendance `records`. The default columns match the
- * attendance history table; supply `columns` (array of
- * `{ key, label, getValue }`) to override them. `onExport` can replace the
- * built-in browser download, e.g. for an API-driven export.
+ * By default the button calls `GET /api/reports/export` with the selected
+ * range, then saves the returned Blob through a temporary anchor. Pass
+ * `onExport(filteredRecords, range)` to replace the request, or `local` to
+ * build the CSV in the browser (useful for offline previews). `columns` and
+ * `records` only affect those two local paths.
  */
 export default function ExportCsvControl({
   records = [],
@@ -137,6 +145,8 @@ export default function ExportCsvControl({
   loadingLabel = 'Exporting…',
   minLoadingMs = 600,
   onExport,
+  local = false,
+  token,
   className = '',
 }) {
   const [startDate, setStartDate] = useState('');
@@ -170,32 +180,55 @@ export default function ExportCsvControl({
     setIsExporting(true);
 
     try {
-      // Keep the spinner visible long enough to be noticed: client-side CSV
-      // generation would otherwise finish within the same frame.
+      // Keep the spinner visible long enough to be noticed: a fast API or
+      // local CSV build would otherwise finish within the same frame.
       if (minLoadingMs > 0) {
         await new Promise((resolve) =>
           window.setTimeout(resolve, minLoadingMs)
         );
       }
 
-      const filtered = filterRecordsByDate(records, range);
-
-      if (onExport) {
-        await onExport(filtered, range);
-      } else {
+      if (local) {
+        const filtered = filterRecordsByDate(records, range);
         downloadCsv(buildCsv(filtered, columns), filename);
+        setFeedback({
+          type: 'success',
+          text: `Exported ${filtered.length} ${
+            filtered.length === 1 ? 'record' : 'records'
+          }.`,
+        });
+        return;
       }
 
+      if (onExport) {
+        const filtered = filterRecordsByDate(records, range);
+        await onExport(filtered, range);
+        setFeedback({
+          type: 'success',
+          text: `Exported ${filtered.length} ${
+            filtered.length === 1 ? 'record' : 'records'
+          }.`,
+        });
+        return;
+      }
+
+      const result = await exportAttendanceReport({
+        startDate,
+        endDate,
+        token,
+      });
+      downloadBlob(result.blob, result.filename);
       setFeedback({
         type: 'success',
-        text: `Exported ${filtered.length} ${
-          filtered.length === 1 ? 'record' : 'records'
-        }.`,
+        text: result.message || 'Report downloaded successfully.',
       });
-    } catch {
+    } catch (error) {
       setFeedback({
         type: 'error',
-        text: 'We could not export the CSV. Please try again.',
+        text:
+          error?.code === 'export_failed' && error.message
+            ? error.message
+            : DEFAULT_EXPORT_ERROR,
       });
     } finally {
       setIsExporting(false);
@@ -248,13 +281,21 @@ export default function ExportCsvControl({
         </button>
       </form>
 
-      {feedback ? (
-        <p
-          className={`export-csv__feedback export-csv__feedback--${feedback.type}`}
-          role={feedback.type === 'error' ? 'alert' : 'status'}
-        >
-          {feedback.text}
-        </p>
+      {feedback?.type === 'success' ? (
+        <SuccessMessage
+          className="export-csv__feedback"
+          message={feedback.text}
+          autoHideMs={5000}
+          onDismiss={() => setFeedback(null)}
+        />
+      ) : null}
+
+      {feedback?.type === 'error' ? (
+        <ErrorMessage
+          className="export-csv__feedback"
+          message={feedback.text}
+          onDismiss={() => setFeedback(null)}
+        />
       ) : null}
     </div>
   );
