@@ -13,3 +13,7 @@ export default function App() {
     </BrowserRouter>
   );
 }
+
+import EntranceQrPage from './pages/EntranceQrPage';
+// Inside your <Routes>:
+<Route path="/entrance-qr" element={<EntranceQrPage />} />

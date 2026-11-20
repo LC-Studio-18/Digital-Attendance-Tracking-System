@@ -1,91 +1,208 @@
 export default function ScannerFeedback({
   submissionState,
-  scannedPayload,
   errorMessage,
   cameraStatus,
   cameraError,
   onReset,
+  onBackHome,
 }) {
-  return (
-    <div className="w-full mt-4">
-      {/* 1. Camera Error / Denied Permission Fallback UI */}
-      {cameraStatus === 'error' ? (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-          <h3 className="text-red-700 font-semibold text-base mb-1">
-            Camera Access Issue
-          </h3>
-          <p className="text-xs text-red-600 mb-2">
-            {cameraError?.message || 'Unable to access camera feed.'}
+  const isError =
+    submissionState === 'error' || cameraStatus === 'error';
+
+  if (submissionState === 'loading') {
+    return (
+      <div className="d-flex flex-column align-items-center justify-content-center text-center py-5 px-3">
+        <div
+          className="spinner-border mb-3"
+          role="status"
+          style={{ width: '3rem', height: '3rem', color: '#1B2430' }}
+        >
+          <span className="visually-hidden">Verifying attendance...</span>
+        </div>
+        <h2 className="h5 fw-bold text-dark mb-1">Recording attendance...</h2>
+        <p className="small text-secondary mb-0">
+          Please wait while we verify your scan.
+        </p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    const displayError =
+      cameraStatus === 'error'
+        ? cameraError?.message ||
+          "We couldn't access your camera. Please check camera permissions and try again."
+        : errorMessage ||
+          "We couldn't read that QR code. It may be invalid or expired. Please scan the current code at the entrance.";
+
+    return (
+      <div className="d-flex flex-column align-items-center text-center">
+        {/* Pink circular badge with dashed scan-X icon */}
+        <div
+          className="rounded-circle d-flex align-items-center justify-content-center mb-3"
+          style={{
+            width: '64px',
+            height: '64px',
+            backgroundColor: '#F3D8DC',
+          }}
+        >
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#9B3B48"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+            <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+            <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+            <path d="m9 9 6 6" />
+            <path d="m15 9-6 6" />
+          </svg>
+        </div>
+
+        <h1 className="h4 fw-bold text-dark mb-2">Scan unsuccessful</h1>
+        <p className="small text-secondary mb-4 px-2" style={{ lineHeight: 1.5 }}>
+          {displayError}
+        </p>
+
+        {/* Checklist card */}
+        <div
+          className="w-100 rounded-3 p-3 text-start mb-3"
+          style={{ backgroundColor: '#E5E9F0' }}
+        >
+          <p className="small fw-semibold text-dark mb-2">
+            Before you try again
           </p>
-          <div className="text-xs bg-white p-3 rounded-lg border border-red-100 text-left mb-3">
-            <span className="font-medium text-gray-700">Error Code:</span>{' '}
-            <code className="text-red-500">
-              {cameraError?.code || 'UNKNOWN'}
-            </code>
-            <p className="font-medium text-gray-700 mt-2">
-              Recovery Instructions:
-            </p>
-            <ul className="list-disc pl-4 mt-1 space-y-1 text-gray-600">
-              <li>Check your browser settings to grant camera permission.</li>
-              <li>Ensure you are using localhost or a secure HTTPS context.</li>
-              <li>Verify your device has a working connected camera.</li>
-            </ul>
+          <ul className="small text-secondary ps-3 mb-0" style={{ lineHeight: 1.6 }}>
+            <li>Hold your phone about 20 cm from the code</li>
+            <li>Make sure there is enough light</li>
+            <li>Keep the whole code inside the frame</li>
+          </ul>
+        </div>
+
+        <p className="small text-secondary mb-4" style={{ fontSize: '0.78rem' }}>
+          Still not working? Please contact your administrator.
+        </p>
+
+        {/* Action buttons */}
+        <div className="w-100 d-grid gap-2 mt-2">
+          <button
+            type="button"
+            onClick={onReset}
+            className="btn fw-semibold py-2 rounded-3 border-0"
+            style={{
+              backgroundColor: '#CEDB27',
+              color: '#1B2430',
+            }}
+          >
+            Try again
+          </button>
+          <button
+            type="button"
+            onClick={onBackHome}
+            className="btn fw-semibold py-2 rounded-3 border-0 text-white"
+            style={{
+              backgroundColor: '#4888B7',
+            }}
+          >
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (submissionState === 'success') {
+    return (
+      <div className="d-flex flex-column align-items-center text-center">
+        {/* Soft slate circular badge with checkmark */}
+        <div
+          className="rounded-circle d-flex align-items-center justify-content-center mb-3"
+          style={{
+            width: '64px',
+            height: '64px',
+            backgroundColor: '#CBD5E1',
+          }}
+        >
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#1B2430"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+
+        <h1 className="h4 fw-bold text-dark mb-2">Check-in successful</h1>
+        <p className="small text-secondary mb-4 px-2" style={{ lineHeight: 1.5 }}>
+          Your attendance has been recorded. You&apos;re checked in and ready to go.
+        </p>
+
+        {/* Attendance status card */}
+        <div
+          className="w-100 rounded-3 p-3 text-start mb-3"
+          style={{ backgroundColor: '#E5E9F0' }}
+        >
+          <p className="small fw-semibold text-dark mb-2">Attendance status</p>
+          <div className="bg-white rounded-2 px-3 py-2 mb-2 d-flex align-items-center gap-2">
+            <span
+              className="rounded-circle d-inline-block"
+              style={{
+                width: '7px',
+                height: '7px',
+                backgroundColor: '#1B2430',
+              }}
+            />
+            <span className="small fw-medium text-dark">Checked in</span>
           </div>
-          <button
-            onClick={onReset}
-            className="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition"
-          >
-            Try Again
-          </button>
-        </div>
-      ) : null}
-
-      {/* 2. Loading State */}
-      {submissionState === 'loading' && (
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center text-white z-20 rounded-xl">
-          <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent mb-3"></div>
-          <p className="text-sm font-medium tracking-wide">
-            Processing check-in...
+          <p className="small text-secondary mb-0" style={{ fontSize: '0.78rem' }}>
+            No further action is needed.
           </p>
         </div>
-      )}
 
-      {/* 3. Success Feedback State */}
-      {submissionState === 'success' && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
-          <h3 className="text-green-800 font-semibold text-lg">
-            Check-In Successful!
-          </h3>
-          <p className="text-xs text-gray-600 mt-1">
-            Payload:{' '}
-            <code className="bg-white px-2 py-0.5 rounded border border-green-200">
-              {scannedPayload}
-            </code>
-          </p>
+        <p className="small text-secondary mb-4" style={{ fontSize: '0.78rem' }}>
+          Scan the QR code again when you check out.
+        </p>
+
+        {/* Action buttons */}
+        <div className="w-100 d-grid gap-2 mt-2">
           <button
-            onClick={onReset}
-            className="mt-3 w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition"
+            type="button"
+            onClick={onBackHome}
+            className="btn fw-semibold py-2 rounded-3 border-0"
+            style={{
+              backgroundColor: '#CEDB27',
+              color: '#1B2430',
+            }}
           >
-            Scan Again
+            Back to Home
+          </button>
+          <button
+            type="button"
+            onClick={onReset}
+            className="btn fw-semibold py-2 rounded-3 border-0 text-white"
+            style={{
+              backgroundColor: '#4888B7',
+            }}
+          >
+            Scan another code
           </button>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {/* 4. Submission Error State */}
-      {submissionState === 'error' && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-          <h3 className="text-amber-800 font-semibold text-base">
-            Check-In Failed
-          </h3>
-          <p className="text-xs text-amber-700 mt-1">{errorMessage}</p>
-          <button
-            onClick={onReset}
-            className="mt-3 w-full py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium transition"
-          >
-            Scan Again
-          </button>
-        </div>
-      )}
-    </div>
-  );
+  return null;
 }
