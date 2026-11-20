@@ -96,12 +96,7 @@ export default function ClockoutPage() {
     hour12: true,
   }).format(now).toUpperCase();
 
-  const greeting =
-    now.getHours() < 12
-      ? 'Good Morning!'
-      : now.getHours() < 18
-        ? 'Good Afternoon!'
-        : 'Good Evening!';
+  const greeting = 'Good Day';
 
   function handleClockout() {
     if (clockedout) return;
@@ -116,7 +111,7 @@ export default function ClockoutPage() {
     setClockedout(true);   // Sets clockout to true
   }
 
-  // Clicking the Clock Out button now opens the pop-up first
+  // Clicking the Clock Out button opens the pop-up first
   function handleConfirmYes() {
     setShowConfirm(false);
     handleClockout();
@@ -162,8 +157,12 @@ export default function ClockoutPage() {
           <ClockOut onClockOut={() => setShowConfirm(true)} disabled={clockedout}/>
 
           <p className="location-notice">
-            Your Live Location is being recorded, please reach out to your supervisor for more
-            information
+            <svg className="location-notice__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              <line x1="12" y1="11" x2="12" y2="17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <circle cx="12" cy="7.5" r="1.1" fill="currentColor" />
+            </svg>
+            Your Attendance is Active
           </p>
 
         </div>
