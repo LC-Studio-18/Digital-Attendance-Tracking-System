@@ -1,4 +1,4 @@
-import { appendRow, findTodayCheckin, } from '../services/googleSheetsService.js';
+import { appendRow, findTodayCheckin } from '../services/sheets.js';
 import { getEmployeeByUid } from '../services/employeeService.js';
 import { randomUUID } from 'node:crypto';
 

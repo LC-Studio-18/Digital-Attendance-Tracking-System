@@ -6,7 +6,7 @@ jest.unstable_mockModule('../services/firebaseService.js', () => ({
   verifyIdToken: jest.fn(),
 }));
 
-jest.unstable_mockModule('../services/googleSheetsService.js', () => ({
+jest.unstable_mockModule('../services/sheets.js', () => ({
   appendRow: jest.fn().mockResolvedValue(undefined),
   findTodayCheckin: jest.fn().mockResolvedValue(false),
   getRows: jest.fn().mockResolvedValue([]),
@@ -17,7 +17,7 @@ jest.unstable_mockModule('../services/employeeService.js', () => ({
 }));
 
 const { verifyIdToken } = await import('../services/firebaseService.js');
-const { findTodayCheckin, appendRow } = await import('../services/googleSheetsService.js');
+const { findTodayCheckin, appendRow } = await import('../services/sheets.js');
 const { getEmployeeByUid } = await import('../services/employeeService.js');
 
 const { default: app } = await import('../app.js');

@@ -1,4 +1,4 @@
-import { getRows } from './googleSheetsService.js';
+import { getRows } from './sheets.js';
 
 export async function getEmployeeByUid(uid) {
   if (!uid) return null;
