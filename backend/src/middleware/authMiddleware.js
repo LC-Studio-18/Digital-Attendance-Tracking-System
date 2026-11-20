@@ -2,7 +2,7 @@ import { auth } from "../config/firebase.js";
 
 const getBearerToken = (req) => {
   const [scheme, token] = (req.headers.authorization || "").split(" ");
-  return scheme === "Bearer" && token ? token : null;
+  return scheme?.toLowerCase() === "bearer" && token ? token : null;
 };
 
 const UNAUTHORIZED_CODES = [
