@@ -18,9 +18,9 @@ const authErrorMessages = {
   'auth/email-not-registered':
     'This email is not registered for this attendance portal.',
   'auth/email-check-failed': 'We could not verify this email. Please try again.',
-  'auth/user-not-found': 'Incorrect email or password.',
-  'auth/invalid-credential': 'Incorrect email or password.',
-  'auth/wrong-password': 'Incorrect email or password.',
+  'auth/user-not-found': 'Email or password is incorrect.',
+  'auth/invalid-credential': 'Email or password is incorrect.',
+  'auth/wrong-password': 'Email or password is incorrect.',
   'auth/user-disabled': 'This account has been disabled.',
   'auth/too-many-requests': 'Too many attempts. Please try again later.',
   'auth/email-already-in-use': 'An account already exists for this email.',
@@ -277,17 +277,19 @@ function Login({ onLoginSuccess }) {
         <section className="welcome-section">
           <img className="login-logo" src={logo} alt="Life Choices" />
           <h1 className="welcome-heading">
-            <span>Welcome to</span>
-            <strong>LC Attends.</strong>
+            <span>WELCOME TO</span>
+            <strong>LC ATTENDS.</strong>
           </h1>
-          <p className="welcome-copy">
-            Your attendance, made simpler. Sign in to manage your working day
-            and stay connected.
-          </p>
+          <div className="welcome-copy">
+            <p>Your attendance, managed in real time.</p>
+            <p>Manage your workday efficiently.</p>
+            <p>
+              Sign in to access your attendance records and stay informed.
+            </p>
+            <p>Modern workforce management, built around simplicity.</p>
+          </div>
           <span className="welcome-divider" aria-hidden="true" />
-          <p className="welcome-tagline">
-            A smarter way to manage staff attendance.
-          </p>
+          <p className="welcome-tagline">POWERED BY LIFE CHOICES</p>
         </section>
 
         <section
@@ -559,8 +561,8 @@ function Login({ onLoginSuccess }) {
           )}
 
           <div className="support-block">
-            <p>Need help accessing your account?</p>
-            <a href="mailto:support@lcattends.app">Contact support</a>
+            <SecurityIcon />
+            <p>Your information. Your attendance. Securely managed.</p>
           </div>
 
           <div className="secondary-actions">
@@ -596,10 +598,52 @@ function Login({ onLoginSuccess }) {
       </div>
 
       <footer className="portal-footer">
-        <span>ATTENDS.</span>
-        <span>STAFF ATTENDANCE MANAGEMENT SYSTEM</span>
+        <span>&copy; 2026 LC ATTENDS</span>
       </footer>
     </main>
+  );
+}
+
+function ErrorIcon() {
+  return (
+    <svg
+      className="error-icon"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v5" />
+      <path d="M12 16.5h.01" />
+    </svg>
+  );
+}
+
+function SecurityIcon() {
+  return (
+    <svg
+      className="security-icon"
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M12 3 4 6v5c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6l-8-3Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
   );
 }
 
@@ -629,7 +673,8 @@ function FieldError({ message }) {
   if (!message) return null;
   return (
     <span className="field-error" role="alert">
-      {message}
+      <ErrorIcon />
+      <span>{message}</span>
     </span>
   );
 }
@@ -638,7 +683,8 @@ function FormMessage({ error, notice }) {
   if (error)
     return (
       <div className="login-error" role="alert">
-        {error}
+        <ErrorIcon />
+        <span>{error}</span>
       </div>
     );
   if (notice)
