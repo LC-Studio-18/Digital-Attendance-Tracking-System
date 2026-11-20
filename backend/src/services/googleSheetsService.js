@@ -45,13 +45,16 @@ export async function appendRow(sheetName, rowValues) {
       requestBody: { values: [rowValues] },
     });
   } catch (err) {
+    console.error('Google Sheets write error:', err.message);
+    console.error('Google API details:', JSON.stringify(err.response?.data, null, 2));
+
     const error = new Error('Google Sheets request failed');
     error.status = 502;
     throw error;
   }
 }
 
-export async function getRows(sheetName, range = 'A:B') {
+export async function getRows(sheetName, range = 'A:F') {
   const sheets = initSheets();
 
   if (!sheets) {
@@ -67,12 +70,12 @@ export async function getRows(sheetName, range = 'A:B') {
     });
     return result.data.values || [];
   } catch (err) {
-  console.error('Google Sheets read error:', err.message);
-  console.error('Google API details:', err.response?.data);
+    console.error('Google Sheets read error:', err.message);
+    console.error('Google API details:', JSON.stringify(err.response?.data, null, 2));
 
-  const error = new Error('Google Sheets request failed');
-  error.status = 502;
-  throw error;
+    const error = new Error('Google Sheets request failed');
+    error.status = 502;
+    throw error;
   }
 }
 
@@ -80,16 +83,20 @@ export async function findTodayCheckin(sheetName, userId) {
   const rows = await getRows(sheetName);
   const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
 
-  // Column A = userId, Column B = timestamp — matches appendRow's order
-  return rows.some((row) => row[0] === userId && row[1]?.startsWith(today));
+  // Attendance columns: Event ID, Timestamp, User ID, Event Type, Location, Comment
+  return rows.some((row) =>
+    row[2] === userId &&
+    row[3]?.toLowerCase() === 'clock in' &&
+    row[1]?.startsWith(today)
+  );
 }
 
 export async function getUserAttendance(sheetName, userId) {
-  const rows = await getRows(sheetName, 'A:Z');
-  const userRows = rows.filter((row) => row[0] === userId);
+  const rows = await getRows(sheetName, 'A:F');
+  const userRows = rows.filter((row) => row[2] === userId);
   const history = userRows.map((row) => ({
     timestamp: row[1] || null,
-    status: 'Present',
+    status: row[3] || 'Present',
   }));
   const lastClockIn = userRows.reduce((latest, row) => {
     const timestamp = row[1];
@@ -99,7 +106,9 @@ export async function getUserAttendance(sheetName, userId) {
 
   return {
     name: userRows.find((row) => row[2])?.[2] || userId,
-    status: userRows.some((row) => row[1]?.startsWith(today)) ? 'Present' : 'Absent',
+    status: userRows.some((row) => row[1]?.startsWith(today) && row[3]?.toLowerCase() === 'clock in')
+      ? 'Present'
+      : 'Absent',
     lastClockIn,
     lastClockOut: null,
     history,

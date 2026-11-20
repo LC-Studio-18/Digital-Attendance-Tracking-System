@@ -1,5 +1,6 @@
 import { appendRow, findTodayCheckin, } from '../services/googleSheetsService.js';
 import { getEmployeeByUid } from '../services/employeeService.js';
+import { randomUUID } from 'node:crypto';
 
 export async function qrCheckin(req, res, next) {
   try {
@@ -52,7 +53,14 @@ export async function qrCheckin(req, res, next) {
 
     const timestamp = new Date().toISOString();
 
-    await appendRow('Attendance', [req.user.uid, timestamp]);
+    await appendRow('Attendance', [
+      randomUUID(),
+      timestamp,
+      req.user.uid,
+      'Clock In',
+      locationId,
+      '',
+    ]);
 
     return res.status(200).json({
       success: true,

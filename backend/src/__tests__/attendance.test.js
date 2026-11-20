@@ -52,6 +52,17 @@ describe('POST /api/attendance/qr-checkin', () => {
       .send({ locationId: 'test-location-001' });
 
     expect(res.statusCode).toBe(200);
+    expect(appendRow).toHaveBeenCalledWith(
+      'Attendance',
+      expect.arrayContaining([
+        expect.any(String),
+        expect.any(String),
+        'test-user-123',
+        'Clock In',
+        'test-location-001',
+        '',
+      ])
+    );
   });
 
   it('returns 401 when the token is invalid', async () => {
