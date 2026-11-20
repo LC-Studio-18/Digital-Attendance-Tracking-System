@@ -93,7 +93,7 @@
   object-fit: contain;
 }
 
-.welcome-heading {
+.login-welcome-heading {
   margin: 0 0 0 80px;
   font-size: 34px;
   font-weight: 700;
@@ -102,17 +102,17 @@
   text-transform: uppercase;
 }
 
-.welcome-heading span,
-.welcome-heading strong {
+.login-welcome-heading span,
+.login-welcome-heading strong {
   display: block;
 }
 
-.welcome-heading span {
+.login-welcome-heading span {
   margin-bottom: 16px;
   color: var(--white);
 }
 
-.welcome-heading strong {
+.login-welcome-heading strong {
   color: var(--lime);
   font-weight: 700;
 }
@@ -598,7 +598,7 @@
     margin-bottom: 14px;
   }
 
-  .welcome-heading,
+  .login-welcome-heading,
   .welcome-intro,
   .welcome-description,
   .welcome-divider,
@@ -606,7 +606,7 @@
     margin-left: 0;
   }
 
-  .welcome-heading {
+  .login-welcome-heading {
     font-size: 28px;
   }
 
@@ -654,7 +654,7 @@
     width: min(250px, 100%);
   }
 
-  .welcome-heading {
+  .login-welcome-heading {
     font-size: 26px;
   }
 }

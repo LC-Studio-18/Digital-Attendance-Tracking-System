@@ -279,7 +279,7 @@ function Login({ onLoginSuccess }) {
       <div className="login-layout">
         <section className="welcome-section">
           <img className="login-logo" src={logo} alt="Life Choices" />
-          <h1 className="welcome-heading">
+          <h1 className="login-welcome-heading">
             <span>WELCOME TO</span>
             <strong>LC ATTENDS.</strong>
           </h1>
