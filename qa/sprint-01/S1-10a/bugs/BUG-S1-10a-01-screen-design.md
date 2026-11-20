@@ -12,35 +12,31 @@
 
 ## Environment
 - Branch: `frontend4-feature/s1-10a-clock-out` (tested in detached worktree; QA branch QA4)
-- Commit SHA / Figma version: `d7fb9f83f8f47d4f2e001097fbfa20fccc760ce0`; Figma node 99-194
+- Commit SHA / Figma version: `3c1238284b765e7b85f1a55d0fb8f85374cb0aa3`; Figma node 99-194 (coloured reference approval not independently verified)
 - Browser: Not recorded
 - Operating system: Windows
 - Device: Not recorded
 
 ## Preconditions
-- Clock-out page rendered locally at `http://localhost:5173/`.
+Open the rendered clock-out page at 3c12382 and compare it with supplied coloured node 99-194.
 
 ## Steps to Reproduce
 1. Open the running application and compare its clock-out page with the supplied Figma wireframe.
 
 ## Expected Result
-- Page layout and styling conform to the supplied Figma design.
+The rendered page conforms to the supplied coloured Figma reference.
 
 ## Actual Result
-- The page has these confirmed visual differences: header styling/alignment, missing clock icon and vertical divider, greeting/employee placement, typography and spacing, absent displayed time, date and greeting shown as fixed values, status card placement/styling/indicator, absent attendance information icon, attendance message spacing, and default Vite styling.
-
-- Source review found a hardcoded date and greeting. A requirement that these values update dynamically is inferred and needs confirmation; the screenshots do not show whether these values change dynamically.
+On 20 Nov the page rendered, with dark header, teal background, dark card and lime button. The logo, green employee name/status badge, button text/triangle colours, correct information message/icon and matching clock icon remain discrepant. Source review found the name span uses `clockout-h1` as an attribute instead of `className="clockout-h1"`. Earlier grayscale wireframe and coloured reference are distinct.
 
 ## Evidence
-- Expected Result — Figma wireframe: ![Expected Result — Figma wireframe](../evidence/2026-11-18-clock-out-figma-expected.png)
-- Actual Result — running application at commit d7fb9f8: ![Actual Result — running application at commit d7fb9f8](../evidence/2026-11-18-d7fb9f8-clock-out-actual.png)
-- The screenshots show visual differences only.
+- [18 Nov expected image](../evidence/2026-11-18-clock-out-figma-expected.png) and [18 Nov actual image at d7fb9f8](../evidence/2026-11-18-d7fb9f8-clock-out-actual.png) are historical only. No screenshot for 3c12382 was saved; no fabricated evidence.
 
 ## Fix and Retest History
 - Date fixed: Pending
-- Fix commit: Pending
-- Retest date: Pending
-- Retest result: Pending
+- Fix commit: Phumezile: correct className and remaining Figma styling. QA will compare a fresh build against the supplied coloured reference and capture evidence during the next authorized test.
+- Retest date: 19 November 2026 (prior build; current-build retest pending)
+- Retest result: Pending current-build verification
 - Notes: Retest the page against the same Figma reference.
 
 ## Resolution

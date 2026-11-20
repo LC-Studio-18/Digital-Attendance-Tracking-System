@@ -2,9 +2,16 @@
 
 ## Information
 - Ticket ID: S1-10a
-- Primary Slack assignee: Elijah (18 November tracker export `Project_tracker(6).json`, as supplied).
-- Additional Sprint Brief collaborators: None recorded.
-- Current QA status: Not Run
+- Primary Slack assignee: Elijah.
+- Current QA status: Fail by source review; runtime failure test Not Run because there is no request/failure path to exercise.
+
+## Acceptance Criteria
+- [ ] Failed clock-out shows clear error feedback and allows recovery.
+
+## Test Cases
+| Test ID | Scenario | Expected Result | Status |
+|---|---|---|---|
+| TC-01 | Cause clock-out operation failure | Clear error appears; status remains unchanged and retry is possible | Fail by source review (no handling); runtime test Not Run |
 
 ## Objective
 - Show useful error feedback when clock-out fails.
@@ -51,3 +58,8 @@ None recorded.
 
 #### Notes
 - Run error tests after implementation and integration.
+
+
+### 19-20 November 2026 - Source review
+- Supplied source findings show no error handling and no API request/failure mechanism. No runtime failure was triggered. Expected: clear feedback, unchanged status and retry. Actual: functionality absent by source review; runtime result is Not Run. Track under BUG-S1-10a-07; absence of a test mechanism is not an application runtime failure.
+- Prepared feedback, not sent: Elijah to implement clear error feedback, keep status unchanged on failure, allow retry, and use `try/catch/finally` where appropriate. QA will inject a failure and check message, state and retry after implementation.

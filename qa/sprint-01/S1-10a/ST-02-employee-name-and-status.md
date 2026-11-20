@@ -2,9 +2,19 @@
 
 ## Information
 - Ticket ID: S1-10a
-- Primary Slack assignee: Phumezile Sibeko (18 November tracker export `Project_tracker(6).json`, as supplied).
-- Additional Sprint Brief collaborators: None recorded.
-- Current QA status: Fail for static fallback review; Blocked for live-data testing
+- Primary Slack assignee: Phumezile Sibeko.
+- Current QA status: Fail for unexpected-status handling; mock display passed; live-data check Blocked.
+
+## Acceptance Criteria
+- [ ] Employee name and status display correctly for the applicable employee.
+- [ ] IN, OUT and unexpected statuses receive accurate messages.
+
+## Test Cases
+
+| Test ID | Scenario | Expected Result | Status |
+|---|---|---|---|
+| TC-01 | Observe employee name and attendance status | Mock display is correct; live accuracy is separately verified against API data | Pass for mock display (f998ab2); live-data verification Blocked |
+| TC-02 | Check OUT and unexpected-status handling | Supported and unexpected values receive accurate handling | Fail - unexpected status remains incomplete; OUT message improved |
 
 ## Objective
 - Display the employee name and attendance status on the clock-out page.
@@ -91,3 +101,9 @@ Mock-data visual observation: Pass. Live-data test: Blocked. Static fallback log
 
 #### Notes
 - Do not treat the mock-data observation as live-data testing or as a pass for API-backed acceptance criteria.
+
+
+### 19 November 2026 - Prior-build runtime and source review
+- Commit `f998ab224f8a83152be733ffbb791079a50869d3`. Displayed mock employee/status data; on clock-out, OUT messaging appeared. Live data was not available. Unexpected-status handling remains incomplete by source review. No screenshot saved.
+- Expected: accurate structured employee data and distinct IN/OUT/unexpected messages. Actual: mock data displayed; live accuracy unverified; unexpected status handling incomplete. TC-01 mock portion Pass/live portion Blocked; TC-02 Fail for remaining handling.
+- Prepared feedback, not sent: Phumezile to use structured mock employee information, explicitly handle IN/OUT/unexpected values and display accurate messages. QA will retest each state and live values when API data is available. Mock data itself is not a defect.

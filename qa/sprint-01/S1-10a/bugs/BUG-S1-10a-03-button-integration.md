@@ -8,36 +8,36 @@
 - Reported by: Adam Jattiem
 - Assigned developer: Elijah
 - Severity: High (proposed QA classification)
-- Status: Open
+- Status: Fixed in source; pending current-build retest
 
 ## Environment
 - Branch: `frontend4-feature/s1-10a-clock-out` (detached testing worktree; QA branch QA4)
-- Commit SHA / Figma version: `d7fb9f83f8f47d4f2e001097fbfa20fccc760ce0`
+- Commit SHA / Figma version: `f998ab224f8a83152be733ffbb791079a50869d3` runtime; current build `3c1238284b765e7b85f1a55d0fb8f85374cb0aa3` not interactively retested
 - Browser: Not recorded
 - Operating system: Windows
 - Device: Not recorded
 
 ## Preconditions
-- Clock-out page rendered locally.
+Open the page on the cited build and click Clock Out once; inspect status, time and button state.
 
 ## Steps to Reproduce
 1. Inspect `ClockOutPage.jsx` for the rendered clock-out control.
 2. Inspect `Clockout.jsx` for the component and its handler/state logic.
 
 ## Expected Result
-- The page provides an actionable clock-out control that supports the required behavior.
+The page has an integrated actionable Clock Out button.
 
 ## Actual Result
-- Code review found `Clockout.jsx`/`Clockout.css` exist but `Clockout` is not imported or rendered by `ClockOutPage.jsx`; visible placeholder button has no click handler. Interactive behavior was not tested.
+On f998ab2, clicking the page button changed local status IN to OUT, showed the time and disabled the button. No Fetch/XHR request was observed. The fix was runtime-verified on that prior build; current-build interaction was not tested.
 
 ## Evidence
-- Source inspection documented in [ST-03](../ST-03-clock-out-button.md). The actual screenshot shows appearance only and does not demonstrate button interaction.
+- 19 Nov manual observation (no saved screenshot/log). A separate ChatGPT Work reproduction corroborated local mock behavior but captured no screenshot and did not complete full retest.
 
 ## Fix and Retest History
 - Date fixed: Pending
-- Fix commit: Pending
-- Retest date: Pending
-- Retest result: Pending
+- Fix commit: Elijah: keep the button integrated and verify pending/disabled and duplicate-submit behavior. QA will repeat the interaction on the current build.
+- Retest date: 19 November 2026 (prior build; current-build retest pending)
+- Retest result: Pending current-build verification
 - Notes: Verify integration and click behavior at runtime after fix; separately test loading/disabled/repeat-click states.
 
 ## Resolution

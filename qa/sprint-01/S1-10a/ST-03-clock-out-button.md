@@ -2,9 +2,20 @@
 
 ## Information
 - Ticket ID: S1-10a
-- Primary Slack assignee: Elijah (18 November tracker export `Project_tracker(6).json`, as supplied).
-- Additional Sprint Brief collaborators: None recorded.
-- Current QA status: Fail for component integration
+- Primary Slack assignee: Elijah.
+- Current QA status: Styling Fail; prior-build integration and disabled behavior passed; current-build interactive regression and rapid-click tests Not Run.
+
+## Acceptance Criteria
+- [ ] Button matches supplied design, works, and gives suitable loading/disabled feedback.
+- [ ] Repeated submissions are prevented.
+
+## Test Cases
+
+| Test ID | Scenario | Expected Result | Status |
+|---|---|---|---|
+| TC-01 | Verify button integration and rendered page | Integrated actionable button works | Pass on prior runtime build f998ab2; current-build regression Not Run |
+| TC-02 | Exercise loading, disabled and rapid-repeat behavior | Pending state is visible; duplicates are prevented | Not Run |
+| TC-03 | Compare button with supplied design | Text and icon/colors match reference | Fail (3c12382) |
 
 ## Objective
 - Integrate the clock-out button and provide loading/disabled behavior.
@@ -60,3 +71,11 @@
 
 #### Notes
 - Screenshots show the placeholder, not the unintegrated component.
+
+
+### 19 November 2026 - Prior-build runtime
+- On `f998ab224f8a83152be733ffbb791079a50869d3`, Clock Out changed local status IN to OUT, displayed the clock-out time and disabled the button. No Fetch/XHR request was observed. Rapid repeated-click behavior was not independently completed. This verifies a mock/local path only, not backend integration. Component integration and local disabled behavior passed on that build. No screenshot/log saved.
+
+### 20 November 2026 - Current-build visual review
+- On `3c1238284b765e7b85f1a55d0fb8f85374cb0aa3`, the lime button rendered, but text and triangle colors differed from the supplied design. TC-03 Fail. Current-build interaction and rapid-repeat behavior were not exercised (TC-01 regression and TC-02 Not Run).
+- Prepared feedback, not sent: Elijah to correct text/icon colors, add visible loading and disabled behavior, and prevent duplicate submissions. QA will test pending state and rapid clicks on the updated build.

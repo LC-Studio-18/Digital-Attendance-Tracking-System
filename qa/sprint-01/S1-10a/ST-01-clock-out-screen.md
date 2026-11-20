@@ -2,9 +2,20 @@
 
 ## Information
 - Ticket ID: S1-10a
-- Primary Slack assignee: Phumezile Sibeko (18 November tracker export `Project_tracker(6).json`, as supplied).
-- Additional Sprint Brief collaborators: None recorded.
-- Current QA status: Fail
+- Primary Slack assignee: Phumezile Sibeko (18 November tracker export `Project_tracker(6).json`, supplied by QA).
+- Current QA status: Fail - page renders; design conformity fails on the latest visual review.
+- Reference: supplied coloured Figma design, [node 99-194](https://www.figma.com/design/Tlkxebvj6tGK2rqH57wFXN/Digital-Attendance-Tracking-System---Wireframe?node-id=99-194). Formal approval of the coloured design is not independently verified; distinguish it from the earlier grayscale wireframe.
+
+## Acceptance Criteria
+- [x] Page renders and is reachable (observed on 20 Nov, 3c12382).
+- [ ] Page matches the supplied design.
+
+## Test Cases
+
+| Test ID | Scenario | Expected Result | Status |
+|---|---|---|---|
+| TC-01 | Verify clock-out page rendering and application connection | Page renders and is reachable | Pass (3c12382) |
+| TC-02 | Compare page with supplied coloured Figma design | Page structure and styling conform | Fail (3c12382) |
 
 ## Objective
 - Provide the clock-out page and connect it to the application entry point.
@@ -91,3 +102,14 @@ TC-01 Pass; TC-02 Fail.
 #### Notes
 - Related visual issues are grouped in one bug report. QA4 remained separate and unaffected during commit retrieval/testing.
 - The hardcoded date and greeting were identified through source review. Dynamic updates are an inferred requirement requiring confirmation; the screenshots alone do not establish that behavior.
+
+
+### 19 November 2026 - Prior-build runtime
+- Commit `f998ab224f8a83152be733ffbb791079a50869d3`; Vite rendered and the clock-out page was visible. This is prior-build evidence, not a test of 3c12382. No screenshot/log saved.
+
+### 20 November 2026 - Current-build render and visual review
+- Tester: Adam Jattiem. Commit `3c1238284b765e7b85f1a55d0fb8f85374cb0aa3` (`added styling to sections`); detached testing worktree, QA4 separate. Vite served `http://127.0.0.1:5173/` successfully.
+- Steps: start existing Vite dependencies; open the local page; compare visible elements with coloured Figma node 99-194. Expected: rendered design matches reference. Actual: dark header, teal background, dark card and lime button were present, but the approved Life Choices logo, green employee name, green status badge, correct button text/triangle colours, correct information message/icon and matching clock icon were missing or incorrect. Source review also found the employee-name span uses `clockout-h1` as an attribute instead of `className="clockout-h1"`.
+- Result: TC-01 Pass; TC-02 Fail. Functional clock-out logic was unchanged from f998ab2. No fresh screenshot exists; the 18 Nov screenshots are historical and do not show this build.
+- Prepared feedback, not sent: Phumezile to fix the className typo and complete remaining styling, logo, badge, clock and message corrections. QA will compare the updated page against the same reference and retest rendering.
+- Automated build/lint pass was reported but logs were not located. Chromium automation was blocked by socket creation denial; no application defect is inferred from the harness failure.

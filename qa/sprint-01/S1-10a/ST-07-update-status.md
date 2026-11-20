@@ -2,9 +2,17 @@
 
 ## Information
 - Ticket ID: S1-10a
-- Primary Slack assignee: Elijah (18 November tracker export `Project_tracker(6).json`, as supplied).
-- Additional Sprint Brief collaborators: None recorded.
-- Current QA status: Fail for static logic; API end-to-end test Blocked
+- Primary Slack assignee: Elijah.
+- Current QA status: Prior-build mock transition Pass; current-build regression Not Run; API-backed verification Blocked.
+
+## Acceptance Criteria
+- [ ] Attendance status updates to OUT after successful clock-out.
+
+## Test Cases
+| Test ID | Scenario | Expected Result | Status |
+|---|---|---|---|
+| TC-01 | Verify local status update after clock-out | Status changes from IN to OUT after successful operation | Pass on f998ab2 mock runtime; current-build regression Not Run |
+| TC-02 | Verify status after API clock-out | Successful API response updates displayed status | Blocked - API request absent/unavailable |
 
 ## Objective
 - Verify status updates after clock-out.
@@ -57,3 +65,8 @@
 
 #### Notes
 - Verify the finding at runtime and retest API-backed behavior when available.
+
+
+### 19 November 2026 - Prior-build mock runtime
+- On `f998ab224f8a83152be733ffbb791079a50869d3`, click changed local attendance status IN to OUT. Refresh reset it to IN and removed the displayed clock-out time. This confirms local React-state behavior and non-persistence, not a defect against a stated persistence requirement. TC-01 Pass for the local transition; API-backed TC-02 Blocked. BUG-S1-10a-05 is fixed in source and was verified on the prior runtime build; current-build regression remains pending.
+- Prepared feedback, not sent: Elijah to update status only after successful operation; implement mock persistence only if required; coordinate with Zaarah on S1-15 dummy service to avoid unnecessary duplication. QA will test successful/failed operations, refresh behavior if persistence is required, and API-backed state once available.

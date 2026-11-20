@@ -8,36 +8,36 @@
 - Reported by: Adam Jattiem
 - Assigned developer: Elijah
 - Severity: High (proposed QA classification)
-- Status: Open - static finding pending runtime verification
+- Status: Fixed in source; pending current-build retest
 
 ## Environment
 - Branch: `frontend4-feature/s1-10a-clock-out` (detached testing worktree; QA branch QA4)
-- Commit SHA / Figma version: `d7fb9f83f8f47d4f2e001097fbfa20fccc760ce0`
+- Commit SHA / Figma version: `f998ab224f8a83152be733ffbb791079a50869d3` runtime; current build `3c1238284b765e7b85f1a55d0fb8f85374cb0aa3` not interactively retested
 - Browser: Not recorded
 - Operating system: Windows
 - Device: Not recorded
 
 ## Preconditions
-- Static inspection of `Clockout.jsx` and `ClockOutPage.jsx`.
+On f998ab2, observe IN, click Clock Out, observe OUT/time, then refresh and observe reset.
 
 ## Steps to Reproduce
 1. Inspect the clock-out status toggle expression and state setter call sites in `Clockout.jsx`.
 2. Inspect the value passed to `StatusCard` in `ClockOutPage.jsx`.
 
 ## Expected Result
-- After successful clock-out, the page displays the updated attendance status.
+A successful clock-out updates the displayed local status to OUT.
 
 ## Actual Result
-- `Clockout === 'Clockin' ? 'Clockout' : 'Clockin'` calculates a value without calling `setClockout()`. The page passes hardcoded `"in"` to `StatusCard`. This is a static code-review finding; API-backed runtime verification remains pending.
+On f998ab2, clicking changed local status IN to OUT and showed the time. Refresh reset status to IN and removed the time. This is mock in-memory behavior. It does not by itself establish a persistence requirement defect. API-backed status remains a separate blocked concern.
 
 ## Evidence
-- Static source finding recorded in [ST-07](../ST-07-update-status.md). Screenshots are not evidence of state changes.
+- 19 Nov runtime observation (no screenshot/log saved).
 
 ## Fix and Retest History
 - Date fixed: Pending
-- Fix commit: Pending
-- Retest date: Pending
-- Retest result: Pending
+- Fix commit: Elijah: update status only after successful operation; add mock persistence only if required and coordinate with Zaarah on S1-15 dummy service. QA will test success/failure and persistence only against agreed requirements.
+- Retest date: 19 November 2026 (prior build; current-build retest pending)
+- Retest result: Pending current-build verification
 - Notes: Verify displayed and API-backed status after a successful clock-out; inspect the corrected state update.
 
 ## Resolution

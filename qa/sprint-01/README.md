@@ -5,7 +5,7 @@
 - Scrum Master: Not recorded
 - Start date: Not recorded
 - End date: Not recorded
-- Last updated: 19 November 2026
+- Last updated: 20 November 2026
 
 ## Sprint Goal
 Deliver clock-out functionality and staff attendance
@@ -39,19 +39,20 @@ status integrated with Team 2's clock-in functionality.
 ## Testing Summary
 The following current totals cover S1-10a only; they are not sprint-wide totals.
 - Total test cases: 13
-- Passed: 1
-- Failed: 5
+- Passed: 3
+- Failed: 3
 - Blocked: 3
 - Not Run: 4
-- Open bugs: 5
-- Closed bugs: 0
+- Total: 13 (S1-10a only)
+- Open bugs: 6 (including partially resolved BUG-S1-10a-02)
+- Fixed pending current-build retest: 2
 
 S1-10b separately: 10 unique functional tests passed (4 automated, 6 manual); one health check passed. Three checks are Blocked and seven are Not Run. These are not included in the S1-10a totals above. See [S1-10b](S1-10b/README.md) for scope and evidence.
 
 ## Outstanding Issues
 - S1-10b requires Firebase verification, Google Sheets persistence, persistent status, Team 2 and frontend integration, contract verification, regression, and final code review. Final sign-off is pending.
-- S1-10a has five open bugs; developer fixes and QA retesting are outstanding.
-- Live-data and API-backed testing depend on backend availability; success, error, interactive loading and mobile checks remain not run.
+- S1-10a has six open bugs (including one partially resolved) and two fixes pending current-build retest. Final QA sign-off is pending.
+- S1-10a live-data and API-backed testing depend on backend availability and confirmation of the mock-data allowance scope. Success, error, current-build interactive loading and responsive checks remain outstanding. Build/lint are reported without located logs; automated Chromium checks were blocked by a socket-creation failure.
 
 ## QA Sign-off
 - Status: Pending

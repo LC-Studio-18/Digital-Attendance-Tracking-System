@@ -12,34 +12,32 @@
 
 ## Environment
 - Branch: `frontend4-feature/s1-10a-clock-out` (detached testing worktree; QA branch QA4)
-- Commit SHA / Figma version: `d7fb9f83f8f47d4f2e001097fbfa20fccc760ce0`; Figma node 99-194
+- Commit SHA / Figma version: `3c1238284b765e7b85f1a55d0fb8f85374cb0aa3`; Figma node 99-194
 - Browser: Not recorded
 - Operating system: Windows
 - Device: Not recorded
 
 ## Preconditions
-- Clock-out page rendered and compared with supplied Figma design.
+Open the page on 3c12382 and compare Clock Out text and triangle colors with node 99-194.
 
 ## Steps to Reproduce
 1. Compare the button shown on the rendered page with the supplied Figma clock-out design.
 2. Inspect `Clockout.jsx` and `Clockout.css` for component label and styling.
 
 ## Expected Result
-- Integrated button matches the reference design, including icon and `Clock Out` label.
+Button text and triangle colors match the supplied reference.
 
 ## Actual Result
-- The rendered placeholder is labelled `Clock Out` and visually differs from the Figma button. Separately, source inspection found the unintegrated component is labelled `Clockout`, lacks the icon and does not fully match the reference styling. The screenshot does not show this unintegrated component. Its behavior was not tested.
+The lime button rendered, but its text and triangle colors differ from the supplied design. Interactive behavior was not tested on this build.
 
 ## Evidence
-- Expected Result — Figma wireframe: ![Expected Result — Figma wireframe](../evidence/2026-11-18-clock-out-figma-expected.png)
-- Actual Result — running application at commit d7fb9f8: ![Actual Result — running application at commit d7fb9f8](../evidence/2026-11-18-d7fb9f8-clock-out-actual.png)
-- Images support appearance comparison only, not interactive behavior or status changes.
+- Historical 18 Nov screenshots show d7fb9f8 only; no screenshot for 3c12382 was saved.
 
 ## Fix and Retest History
 - Date fixed: Pending
-- Fix commit: Pending
-- Retest date: Pending
-- Retest result: Pending
+- Fix commit: Elijah: correct text and icon colors. QA will compare the current rendered button with the same Figma reference.
+- Retest date: 19 November 2026 (prior build; current-build retest pending)
+- Retest result: Pending current-build verification
 - Notes: Compare updated button visually against the same design.
 
 ## Resolution

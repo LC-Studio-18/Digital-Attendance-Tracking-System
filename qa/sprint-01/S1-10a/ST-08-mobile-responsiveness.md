@@ -2,9 +2,16 @@
 
 ## Information
 - Ticket ID: S1-10a
-- Primary Slack assignee: Elijah (18 November tracker export `Project_tracker(6).json`, as supplied).
-- Additional Sprint Brief collaborators: Zaarah.
-- Current QA status: Not Run
+- Primary Slack assignee: Elijah; collaborator: Zaarah.
+- Current QA status: Preliminary Pass on f998ab2 at 393 ? 852; broad/current-build responsive verification Not Run.
+
+## Acceptance Criteria
+- [ ] Interface remains usable on supported mobile viewports.
+
+## Test Cases
+| Test ID | Scenario | Expected Result | Status |
+|---|---|---|---|
+| TC-01 | Inspect clock-out screen at mobile viewport sizes | Layout and controls remain usable | Preliminary Pass at 393 ? 852 on f998ab2; broader/current-build coverage Not Run |
 
 ## Objective
 - Verify mobile responsiveness.
@@ -51,3 +58,8 @@ None recorded.
 
 #### Notes
 - Test mobile viewport sizes after fixes.
+
+
+### 19 November 2026 - Preliminary mobile observation
+- On `f998ab224f8a83152be733ffbb791079a50869d3`, preliminary manual inspection at 393 ? 852 showed a usable layout. No screenshot was saved and no other viewport was tested. This is not current-build or broad responsive coverage.
+- Prepared feedback, not sent: Elijah to complete responsive verification with Zaarah and correct confirmed layout issues. QA will check agreed mobile and desktop sizes after styling changes. No new mobile defect is confirmed.
