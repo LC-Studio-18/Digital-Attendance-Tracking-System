@@ -19,6 +19,10 @@ if (missingVariables.length > 0) {
 if (getApps().length === 0) {
   const privateKey = process.env.FIREBASE_PRIVATE_KEY
     .trim()
+    // Accept private_key values copied directly from service-account JSON.
+    .replace(/^['"]/, '')
+    .replace(/,\s*$/, '')
+    .replace(/["']$/, '')
     .replace(/\\n/g, '\n');
 
   initializeApp({

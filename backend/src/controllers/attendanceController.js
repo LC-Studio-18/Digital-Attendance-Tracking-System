@@ -2,45 +2,46 @@ import {
   sortAttendanceRecords,
   buildAttendanceHistoryResponse,
 } from '../utils/attendanceResponse.js';
-import { fetchAttendanceRecords } from '../services/googleSheetsService.js';
+import { getRecordsByRole } from '../services/googleSheetsService.js';
 
-const getRecordUid = (record) =>
-  record.uid ?? record.user_id ?? record['user id (firebase uid)'] ?? '';
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 100;
+
+const parsePositiveInteger = (value, fallback) => {
+  if (typeof value !== 'string' || !/^\d+$/.test(value.trim())) {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
+};
 
 export const getAttendanceHistory = async (req, res, next) => {
   try {
-    const { uid, role } = req.user;
+    const { role } = req.user;
 
-    // Clamp pagination parameters to at least 1 so negative/zero values never slice backwards
-    const rawPage = parseInt(req.query.page, 10);
-    const rawLimit = parseInt(req.query.limit, 10);
-    const page = Number.isNaN(rawPage) ? 1 : Math.max(1, rawPage);
-    const limit = Number.isNaN(rawLimit) ? 50 : Math.max(1, rawLimit);
-
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-
-    // Fetch live records from Google Sheets
-    const attendanceRecords = await fetchAttendanceRecords();
-
-    // Admins can view all records; staff can view only their own.
-    let filteredRecords;
-
-    if (role === 'admin') {
-      filteredRecords = attendanceRecords;
-    } else if (role === 'staff') {
-      filteredRecords = attendanceRecords.filter(
-        (record) => getRecordUid(record) === uid,
-      );
-    } else {
+    // Validate role before querying Google Sheets
+    if (role !== 'admin' && role !== 'staff') {
       return res.status(403).json({
         success: false,
         message: 'Forbidden: Invalid role',
       });
     }
 
+    const page = parsePositiveInteger(req.query.page, DEFAULT_PAGE);
+    const requestedLimit = parsePositiveInteger(req.query.limit, DEFAULT_LIMIT);
+    const limit = Math.min(requestedLimit, MAX_LIMIT);
+
+    // Fetch normalized records filtered by role (admin = all, staff = matched via Employees tab / UID)
+    const filteredRecords = await getRecordsByRole(req.user);
+
     // Sort newest first before applying pagination
     const sortedRecords = sortAttendanceRecords(filteredRecords);
+    const totalPages = Math.ceil(sortedRecords.length / limit);
+    const startIndex =
+      page > totalPages ? sortedRecords.length : (page - 1) * limit;
+    const endIndex = startIndex + limit;
     const paginatedData = sortedRecords.slice(startIndex, endIndex);
 
     const response = buildAttendanceHistoryResponse({
