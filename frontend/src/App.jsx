@@ -38,24 +38,6 @@ function App() {
         error={error}
         onRetry={refresh}
       />
-
-      {/* Test buttons standing in for the real clock-in and clock-out screens */}
-      {/* <div style={{ display: "flex", gap: 8, marginTop: 24 ,justifyContent: "center" }}>
-        <button
-          className="btn btn-dark"
-          disabled={busy || loading || status === "IN"}
-          onClick={() => handleAction(clockIn)}
-        >
-          Clock In
-        </button>
-        <button
-          className="btn btn-outline-dark"
-          disabled={busy || loading || status !== "IN"}
-          onClick={() => handleAction(clockOut)}
-        >
-          Clock Out
-        </button>
-      </div> */}
     </div>
   );
 }
