@@ -36,3 +36,11 @@
 - Independent QA result: Not Run.
 - Evidence: Not provided; no screenshots or logs supplied.
 - Retest: Adam to reproduce independently after relevant changes; record tested build and evidence then.
+
+
+### 20 November 2026 - QA source review (not runtime test)
+- Reviewer: Adam Jattiem. Source branch: `frontend4-feature/s1-15-attendance-status`. Reviewed commit: `5d68b59d1503448b4f8d370d7e22d92cd9edf51b`; compared with `77e89b660d02f39f5899b559fa511840de1f99d5`.
+- Evidence type: Git diff and source inspection. No browser, device, command output, screenshot or runtime test was recorded.
+- Finding: Latest source changes card CSS, colours, padding, spacing, typography and checkmark assets. Dimensions and alignment have not been measured against Figma; source changes do not prove visual conformity.
+- Result: Source review only; independent runtime QA Not Run.
+- Required follow-up: Compare dimensions, padding, spacing, typography, alignment, radius, colors and approved decoration against Figma; verify desktop/mobile and ensure CSS is component-scoped.

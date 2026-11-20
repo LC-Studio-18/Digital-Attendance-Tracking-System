@@ -35,3 +35,11 @@
 - Independent QA result: Not Run.
 - Evidence: Not provided; no screenshots or logs supplied.
 - Retest: Adam to reproduce independently after relevant changes; record tested build and evidence then.
+
+
+### 20 November 2026 - QA source review (not runtime test)
+- Reviewer: Adam Jattiem. Source branch: `frontend4-feature/s1-15-attendance-status`. Reviewed commit: `5d68b59d1503448b4f8d370d7e22d92cd9edf51b`; compared with `77e89b660d02f39f5899b559fa511840de1f99d5`.
+- Evidence type: Git diff and source inspection. No browser, device, command output, screenshot or runtime test was recorded.
+- Finding: Latest source adds checkmark assets and changes text and time CSS. Source sets time font weight to 700, not the requested 400. A 24-hour formatter and exact Slack colour were not confirmed by this diff. Runtime rendering remains Not Run.
+- Result: Source review only; independent runtime QA Not Run.
+- Required follow-up: Use verified private HH:mm formatter, regular weight 400, exact approved Slack colour, approved decorations; distinguish IN/OUT accessibly and retest readability.

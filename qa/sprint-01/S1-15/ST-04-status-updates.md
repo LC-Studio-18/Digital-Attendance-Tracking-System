@@ -35,3 +35,11 @@ None recorded.
 - Independent QA result: Not Run.
 - Evidence: Not provided; no screenshots or logs supplied.
 - Retest: Adam to reproduce independently after relevant changes; record tested build and evidence then.
+
+
+### 20 November 2026 - QA source review (not runtime test)
+- Reviewer: Adam Jattiem. Source branch: `frontend4-feature/s1-15-attendance-status`. Reviewed commit: `5d68b59d1503448b4f8d370d7e22d92cd9edf51b`; compared with `77e89b660d02f39f5899b559fa511840de1f99d5`.
+- Evidence type: Git diff and source inspection. No browser, device, command output, screenshot or runtime test was recorded.
+- Finding: Source diff shows test buttons call clockIn/clockOut, local busy state, status refresh hook and mock OUT timestamp returned by the service. No runtime action tests were performed for this review.
+- Result: Source review only; independent runtime QA Not Run.
+- Required follow-up: Run successful and failed actions; confirm immediate Processing, no overlapping/repeated submissions, status refresh on success, unchanged accurate state on failure and no incorrect status flash.

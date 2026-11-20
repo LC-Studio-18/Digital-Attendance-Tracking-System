@@ -35,3 +35,11 @@ None recorded.
 - Independent QA result: Not Run.
 - Evidence: Not provided; no screenshots or logs supplied.
 - Retest: Adam to reproduce independently after relevant changes; record tested build and evidence then.
+
+
+### 20 November 2026 - QA source review (not runtime test)
+- Reviewer: Adam Jattiem. Source branch: `frontend4-feature/s1-15-attendance-status`. Reviewed commit: `5d68b59d1503448b4f8d370d7e22d92cd9edf51b`; compared with `77e89b660d02f39f5899b559fa511840de1f99d5`.
+- Evidence type: Git diff and source inspection. No browser, device, command output, screenshot or runtime test was recorded.
+- Finding: The earlier conditional daily message requirement and clock-in/out scenarios remain untested independently. Prior ChatGPT-assisted checks are described in the ticket README only and are not QA results.
+- Result: Source review only; independent runtime QA Not Run.
+- Required follow-up: Expand tests for IN/OUT/empty, previous-day/overnight, conditional messages, actions/timestamps, persistence/storage faults, repeats/failures, loading/flash, retrieval/retry, time/design, desktop/mobile.
