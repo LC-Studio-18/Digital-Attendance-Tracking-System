@@ -13,10 +13,10 @@
 ## Acceptance Criteria
 
 - [✓] Empty email and password fields produce a validation message.
-- [ ] Missing email produces an appropriate validation message.
-- [ ] Missing password produces an appropriate validation message.
-- [ ] Invalid email formats produce validation messages.
-- [ ] Invalid form submissions are prevented before an authentication request is sent.
+- [✓] Missing email produces an appropriate validation message.
+- [✓] Missing password produces an appropriate validation message.
+- [✓] Invalid email formats produce validation messages.
+- [] Invalid form submissions are prevented before an authentication request is sent.
 
 ## Test Cases
 
