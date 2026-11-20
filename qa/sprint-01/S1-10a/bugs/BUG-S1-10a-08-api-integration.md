@@ -8,7 +8,7 @@
 - Reported by: Adam Jattiem
 - Assigned developer: Elijah
 - Severity: High (proposed QA classification)
-- Status: Open - acceptance scope needs Scrum Masters' confirmation
+- Status: Open - real backend API integration is mandatory and missing by prior source review; live execution not tested by Zaarah.
 
 ## Environment
 - Branch: `frontend4-feature/s1-10a-clock-out` (source/runtime review; QA4 documentation branch)
@@ -34,9 +34,14 @@
 
 ## Fix and Retest History
 - Required criterion: preserve the ticket's explicit API requirement unless Scrum Masters formally clarify its scope.
-- Proposed approach: Elijah to provide an asynchronous mock service for mock-path testing and coordinate actual API implementation. Confirm whether live integration is required this sprint.
+- Proposed approach: coordinate and implement the required real API integration.
 - QA retest: observe request/response and resulting state with available backend once scope and dependency are resolved.
 - Retest status: Blocked.
 
 ## Resolution
-Open; acceptance scope and backend availability remain unresolved. Mock data alone is not treated as a defect.
+Open; real API integration is mandatory. Earlier uncertainty about mock-data acceptance is superseded.
+
+
+### 20 November 2026 - Zaarah Okkers reported retest
+- Tested commit `ee8ff3e88a519727015d79ead5446e993ac48ddb`; Open - real backend API integration is mandatory and missing by prior source review; live execution not tested by Zaarah.
+- Her session used dummy data; real authentication and API were not tested. Screenshots/logs pending. Earlier mock-data approval understanding is superseded: real integration is required for S1-10a.

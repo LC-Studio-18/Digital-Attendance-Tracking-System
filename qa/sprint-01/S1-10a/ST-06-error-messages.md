@@ -3,7 +3,7 @@
 ## Information
 - Ticket ID: S1-10a
 - Primary Slack assignee: Elijah.
-- Current QA status: Fail by source review; runtime failure test Not Run because there is no request/failure path to exercise.
+- Current QA status: Fail by source review: error handling missing. Runtime failure, state preservation and retry checks 6.1-6.3 were Blocked.
 
 ## Objective
 - Show useful feedback when clock-out fails.
@@ -56,3 +56,9 @@ None recorded.
 ### 19-20 November 2026 - Source review
 - Supplied source findings show no error handling and no API request/failure mechanism. No runtime failure was triggered. Expected: clear feedback, unchanged status and retry. Actual: functionality absent by source review; runtime result is Not Run. Track under BUG-S1-10a-07; absence of a test mechanism is not an application runtime failure.
 - Prepared feedback, not sent: Elijah to implement clear error feedback, keep status unchanged on failure, allow retry, and use `try/catch/finally` where appropriate. QA will inject a failure and check message, state and retry after implementation.
+
+
+### 20 November 2026 - Zaarah Okkers retest
+- Tester: Zaarah Okkers; tested commit `ee8ff3e88a519727015d79ead5446e993ac48ddb`. Dummy-data frontend only; authentication and API connectivity were not tested.
+- Fail by source review: error handling missing. Runtime failure, state preservation and retry checks 6.1-6.3 were Blocked.
+- Evidence: supplied tester report; session screenshots/logs pending. See [complete session](2026-11-20-zaarah-testing.md). Real integration is mandatory for S1-10a approval.

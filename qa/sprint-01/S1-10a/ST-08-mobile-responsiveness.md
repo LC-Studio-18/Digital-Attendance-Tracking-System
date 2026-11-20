@@ -3,7 +3,7 @@
 ## Information
 - Ticket ID: S1-10a
 - Primary Slack assignee: Elijah; collaborator: Zaarah.
-- Current QA status: Preliminary Pass on f998ab2 at 393 x 852; broad/current-build responsive verification Not Run.
+- Current QA status: Fail: 393 x 852 rendered (7.1), but overlap, horizontal scrolling, clipped text and unusable buttons were reported (7.2-7.5). Exact elements and further reproduction details/screenshots are pending.
 
 ## Objective
 - Verify mobile responsiveness.
@@ -56,3 +56,9 @@ None recorded.
 ### 19 November 2026 - Preliminary mobile observation
 - On `f998ab224f8a83152be733ffbb791079a50869d3`, preliminary manual inspection at 393 x 852 showed a usable layout. No screenshot was saved and no other viewport was tested. This is not current-build or broad responsive coverage.
 - Prepared feedback, not sent: Elijah to complete responsive verification with Zaarah and correct confirmed layout issues. QA will check agreed mobile and desktop sizes after styling changes. No new mobile defect is confirmed.
+
+
+### 20 November 2026 - Zaarah Okkers retest
+- Tester: Zaarah Okkers; tested commit `ee8ff3e88a519727015d79ead5446e993ac48ddb`. Dummy-data frontend only; authentication and API connectivity were not tested.
+- Fail: 393 x 852 rendered (7.1), but overlap, horizontal scrolling, clipped text and unusable buttons were reported (7.2-7.5). Exact elements and further reproduction details/screenshots are pending.
+- Evidence: supplied tester report; session screenshots/logs pending. See [complete session](2026-11-20-zaarah-testing.md). Real integration is mandatory for S1-10a approval.

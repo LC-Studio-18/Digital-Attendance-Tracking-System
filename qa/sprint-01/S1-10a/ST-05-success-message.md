@@ -3,7 +3,7 @@
 ## Information
 - Ticket ID: S1-10a
 - Primary Slack assignee: Elijah.
-- Current QA status: Fail by source review for backend-confirmed success criterion; mock success feedback was observed, but backend confirmation was not implemented or verified.
+- Current QA status: Fail (5.1-5.2): backend-confirmed success and approved success screen missing. Basic local ?You clocked out at...? text exists.
 
 ## Objective
 - Show success feedback after clock-out completes.
@@ -56,3 +56,9 @@ None recorded.
 ### 19 November 2026 - Prior-build mock runtime
 - On `f998ab224f8a83152be733ffbb791079a50869d3`, clicking Clock Out displayed local success feedback and a clock-out time. No API request was observed, so backend-confirmed success is not established. The original test expects completion after a successful operation; the mock path is an observed result, while live confirmation remains Blocked with ST-04.
 - Prepared feedback, not sent: Elijah to display success after the mock or real operation completes successfully. QA will verify both the mock flow and, if in sprint scope, a backend-confirmed response.
+
+
+### 20 November 2026 - Zaarah Okkers retest
+- Tester: Zaarah Okkers; tested commit `ee8ff3e88a519727015d79ead5446e993ac48ddb`. Dummy-data frontend only; authentication and API connectivity were not tested.
+- Fail (5.1-5.2): backend-confirmed success and approved success screen missing. Basic local ?You clocked out at...? text exists.
+- Evidence: supplied tester report; session screenshots/logs pending. See [complete session](2026-11-20-zaarah-testing.md). Real integration is mandatory for S1-10a approval.

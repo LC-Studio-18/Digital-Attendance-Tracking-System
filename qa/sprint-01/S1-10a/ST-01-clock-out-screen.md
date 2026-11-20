@@ -3,7 +3,7 @@
 ## Information
 - Ticket ID: S1-10a
 - Primary Slack assignee: Phumezile Sibeko (18 November tracker export `Project_tracker(6).json`, supplied by QA).
-- Current QA status: Fail - page renders; design conformity fails on the latest visual review.
+- Current QA status: Desktop design retest passed against the tested reference (1.1-1.5, 8.3); Wendy must resolve conflicting button references. Mobile defects are separate.
 - Reference: supplied coloured Figma design, [node 99-194](https://www.figma.com/design/Tlkxebvj6tGK2rqH57wFXN/Digital-Attendance-Tracking-System---Wireframe?node-id=99-194). Formal approval of the coloured design is not independently verified; distinguish it from the earlier grayscale wireframe.
 
 ## Objective
@@ -100,3 +100,9 @@ TC-01 Pass; TC-02 Fail.
 - Result: TC-01 Pass; TC-02 Fail. Functional clock-out logic was unchanged from f998ab2. No fresh screenshot exists; the 18 Nov screenshots are historical and do not show this build.
 - Prepared feedback, not sent: Phumezile to fix the className typo and complete remaining styling, logo, badge, clock and message corrections. QA will compare the updated page against the same reference and retest rendering.
 - Automated build/lint pass was reported but logs were not located. Chromium automation was blocked by socket creation denial; no application defect is inferred from the harness failure.
+
+
+### 20 November 2026 - Zaarah Okkers retest
+- Tester: Zaarah Okkers; tested commit `ee8ff3e88a519727015d79ead5446e993ac48ddb`. Dummy-data frontend only; authentication and API connectivity were not tested.
+- Desktop design retest passed against the tested reference (1.1-1.5, 8.3); Wendy must resolve conflicting button references. Mobile defects are separate.
+- Evidence: supplied tester report; session screenshots/logs pending. See [complete session](2026-11-20-zaarah-testing.md). Real integration is mandatory for S1-10a approval.

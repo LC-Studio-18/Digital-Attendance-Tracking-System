@@ -8,7 +8,7 @@
 - Reported by: Adam Jattiem
 - Assigned developer: Phumezile Sibeko
 - Severity: Medium (proposed QA classification)
-- Status: Partially resolved
+- Status: Open - unexpected or missing attendance status handling remains incomplete.
 
 ## Environment
 - Branch: `frontend4-feature/s1-10a-clock-out` (detached testing worktree; QA branch QA4)
@@ -42,3 +42,8 @@ On f998ab2 mock status changed IN to OUT and OUT messaging improved. Unexpected 
 
 ## Resolution
 Awaiting QA verification.
+
+
+### 20 November 2026 - Zaarah Okkers reported retest
+- Tested commit `ee8ff3e88a519727015d79ead5446e993ac48ddb`; Open - unexpected or missing attendance status handling remains incomplete.
+- Her session used dummy data; real authentication and API were not tested. Screenshots/logs pending. Earlier mock-data approval understanding is superseded: real integration is required for S1-10a.

@@ -8,7 +8,7 @@
 - Reported by: Adam Jattiem
 - Assigned developer: Elijah
 - Severity: High (proposed QA classification)
-- Status: Fixed in source; pending current-build retest
+- Status: Verified fixed in Zaarah reported frontend regression 8.1; backend operation not verified.
 
 ## Environment
 - Branch: `frontend4-feature/s1-10a-clock-out` (detached testing worktree; QA branch QA4)
@@ -42,3 +42,8 @@ On f998ab2, clicking the page button changed local status IN to OUT, showed the 
 
 ## Resolution
 Awaiting QA verification.
+
+
+### 20 November 2026 - Zaarah Okkers reported retest
+- Tested commit `ee8ff3e88a519727015d79ead5446e993ac48ddb`; Verified fixed in Zaarah reported frontend regression 8.1; backend operation not verified.
+- Her session used dummy data; real authentication and API were not tested. Screenshots/logs pending. Earlier mock-data approval understanding is superseded: real integration is required for S1-10a.

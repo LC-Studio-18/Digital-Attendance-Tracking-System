@@ -3,7 +3,7 @@
 ## Information
 - Ticket ID: S1-10a
 - Primary Slack assignee: Elijah.
-- Current QA status: Styling Fail; prior-build integration and disabled behavior passed; current-build interactive regression and rapid-click tests Not Run.
+- Current QA status: Partial: confirmation cancel/yes, rapid clicks, local duplicate prevention and disabled state passed (2.1-2.2, 3.1-3.2); loading missing (3.3). Desktop button styling passed tested reference (3.4); Wendy confirmation pending.
 
 ## Objective
 - Integrate the clock-out button and provide loading and disabled behavior.
@@ -68,3 +68,9 @@
 ### 20 November 2026 - Current-build visual review
 - On `3c1238284b765e7b85f1a55d0fb8f85374cb0aa3`, the lime button rendered, but text and triangle colors differed from the supplied design. TC-03 Fail. Current-build interaction and rapid-repeat behavior were not exercised (TC-01 regression and TC-02 Not Run).
 - Prepared feedback, not sent: Elijah to correct text/icon colors, add visible loading and disabled behavior, and prevent duplicate submissions. QA will test pending state and rapid clicks on the updated build.
+
+
+### 20 November 2026 - Zaarah Okkers retest
+- Tester: Zaarah Okkers; tested commit `ee8ff3e88a519727015d79ead5446e993ac48ddb`. Dummy-data frontend only; authentication and API connectivity were not tested.
+- Partial: confirmation cancel/yes, rapid clicks, local duplicate prevention and disabled state passed (2.1-2.2, 3.1-3.2); loading missing (3.3). Desktop button styling passed tested reference (3.4); Wendy confirmation pending.
+- Evidence: supplied tester report; session screenshots/logs pending. See [complete session](2026-11-20-zaarah-testing.md). Real integration is mandatory for S1-10a approval.

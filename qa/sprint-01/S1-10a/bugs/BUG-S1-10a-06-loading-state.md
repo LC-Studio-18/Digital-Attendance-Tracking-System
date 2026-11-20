@@ -8,7 +8,7 @@
 - Reported by: Adam Jattiem
 - Assigned developer: Elijah
 - Severity: Medium (proposed QA classification)
-- Status: Open
+- Status: Open - loading feedback missing (3.3).
 
 ## Environment
 - Branch: `frontend4-feature/s1-10a-clock-out` (tested in detached worktree; QA4 documentation branch)
@@ -39,3 +39,8 @@
 
 ## Resolution
 Open; awaiting implementation and QA retest.
+
+
+### 20 November 2026 - Zaarah Okkers reported retest
+- Tested commit `ee8ff3e88a519727015d79ead5446e993ac48ddb`; Open - loading feedback missing (3.3).
+- Her session used dummy data; real authentication and API were not tested. Screenshots/logs pending. Earlier mock-data approval understanding is superseded: real integration is required for S1-10a.

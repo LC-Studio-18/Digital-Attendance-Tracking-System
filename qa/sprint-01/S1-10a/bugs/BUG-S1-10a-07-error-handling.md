@@ -8,7 +8,7 @@
 - Reported by: Adam Jattiem
 - Assigned developer: Elijah
 - Severity: High (proposed QA classification)
-- Status: Open
+- Status: Open - missing error handling by source review; runtime checks 6.1-6.3 blocked.
 
 ## Environment
 - Branch: `frontend4-feature/s1-10a-clock-out` (source review; QA4 documentation branch)
@@ -40,3 +40,8 @@
 
 ## Resolution
 Open; awaiting implementation and QA retest.
+
+
+### 20 November 2026 - Zaarah Okkers reported retest
+- Tested commit `ee8ff3e88a519727015d79ead5446e993ac48ddb`; Open - missing error handling by source review; runtime checks 6.1-6.3 blocked.
+- Her session used dummy data; real authentication and API were not tested. Screenshots/logs pending. Earlier mock-data approval understanding is superseded: real integration is required for S1-10a.

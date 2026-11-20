@@ -3,7 +3,7 @@
 ## Information
 - Ticket ID: S1-10a
 - Primary Slack assignee: Phumezile Sibeko.
-- Current QA status: Fail for unexpected-status handling; mock display passed; live-data check Blocked.
+- Current QA status: Fail: actual employee information missing, time hardcoded to 8:40, unknown/missing states unhandled and Since remains after OUT (1.6-1.9).
 
 ## Objective
 - Display the employee name and attendance status on the clock-out page.
@@ -94,3 +94,9 @@ Mock-data visual observation: Pass. Live-data test: Blocked. Static fallback log
 - Commit `f998ab224f8a83152be733ffbb791079a50869d3`. Displayed mock employee/status data; on clock-out, OUT messaging appeared. Live data was not available. Unexpected-status handling remains incomplete by source review. No screenshot saved.
 - Expected: accurate structured employee data and distinct IN/OUT/unexpected messages. Actual: mock data displayed; live accuracy unverified; unexpected status handling incomplete. TC-01 mock portion Pass/live portion Blocked; TC-02 Fail for remaining handling.
 - Prepared feedback, not sent: Phumezile to use structured mock employee information, explicitly handle IN/OUT/unexpected values and display accurate messages. QA will retest each state and live values when API data is available. Mock data itself is not a defect.
+
+
+### 20 November 2026 - Zaarah Okkers retest
+- Tester: Zaarah Okkers; tested commit `ee8ff3e88a519727015d79ead5446e993ac48ddb`. Dummy-data frontend only; authentication and API connectivity were not tested.
+- Fail: actual employee information missing, time hardcoded to 8:40, unknown/missing states unhandled and Since remains after OUT (1.6-1.9).
+- Evidence: supplied tester report; session screenshots/logs pending. See [complete session](2026-11-20-zaarah-testing.md). Real integration is mandatory for S1-10a approval.

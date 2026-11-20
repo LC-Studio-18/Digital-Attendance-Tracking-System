@@ -8,7 +8,7 @@
 - Reported by: Adam Jattiem
 - Assigned developer: Phumezile Sibeko
 - Severity: Medium (proposed QA classification)
-- Status: Open
+- Status: Desktop retest passed against tested reference; mobile defects tracked separately; final reference confirmation pending.
 
 ## Environment
 - Branch: `frontend4-feature/s1-10a-clock-out` (tested in detached worktree; QA branch QA4)
@@ -41,3 +41,8 @@ On 20 Nov the page rendered, with dark header, teal background, dark card and li
 
 ## Resolution
 Awaiting QA verification.
+
+
+### 20 November 2026 - Zaarah Okkers reported retest
+- Tested commit `ee8ff3e88a519727015d79ead5446e993ac48ddb`; Desktop retest passed against tested reference; mobile defects tracked separately; final reference confirmation pending.
+- Her session used dummy data; real authentication and API were not tested. Screenshots/logs pending. Earlier mock-data approval understanding is superseded: real integration is required for S1-10a.

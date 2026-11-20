@@ -3,7 +3,7 @@
 ## Information
 - Ticket ID: S1-10a
 - Primary Slack assignee: Elijah; Sprint Brief collaborators: Phumezile Sibeko and Sibongile.
-- Current QA status: Fail by source review (request implementation absent); API execution Blocked. Scrum Masters' mock-data allowance does not establish that the explicit API criterion was waived.
+- Current QA status: Fail by existing source review: real API implementation missing. Zaarah did not test authentication or API connectivity. Real integration is mandatory.
 
 ## Objective
 - Connect the clock-out action to the backend API.
@@ -59,4 +59,10 @@ None. Backend dependency unavailable; this is not classified as a frontend defec
 
 ### 19-20 November 2026 - Source review and integration status
 - Reviewed supplied findings for `f998ab224f8a83152be733ffbb791079a50869d3` and `3c1238284b765e7b85f1a55d0fb8f85374cb0aa3`. No clock-out Fetch/XHR request was observed on f998ab2; source review confirms no API request implementation. Expected: send request and handle backend result. Actual: local mock behavior only; no live request. TC-01 execution is Blocked; the missing implementation is a source-confirmed acceptance gap, tracked by BUG-S1-10a-08.
-- Prepared feedback, not sent: Elijah to add an asynchronous mock service for mock-path feedback, coordinate real API implementation, and confirm with Scrum Masters whether live integration is required this sprint. QA will inspect the request and verify success/failure against the available endpoint once scope and backend are clear. Do not mark the explicit API acceptance criterion waived based only on mock allowance.
+- Historical prepared feedback, superseded by mandatory real integration: Elijah to add an asynchronous mock service for mock-path feedback, coordinate real API implementation, and confirm with Scrum Masters whether live integration is required this sprint. QA will inspect the request and verify success/failure against the available endpoint once scope and backend are clear. Do not mark the explicit API acceptance criterion waived based only on mock allowance.
+
+
+### 20 November 2026 - Zaarah Okkers retest
+- Tester: Zaarah Okkers; tested commit `ee8ff3e88a519727015d79ead5446e993ac48ddb`. Dummy-data frontend only; authentication and API connectivity were not tested.
+- Fail by existing source review: real API implementation missing. Zaarah did not test authentication or API connectivity. Real integration is mandatory.
+- Evidence: supplied tester report; session screenshots/logs pending. See [complete session](2026-11-20-zaarah-testing.md). Real integration is mandatory for S1-10a approval.

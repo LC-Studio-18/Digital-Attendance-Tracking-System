@@ -8,7 +8,7 @@
 - Reported by: Adam Jattiem
 - Assigned developer: Elijah
 - Severity: Medium (proposed QA classification)
-- Status: Open
+- Status: Desktop button retest passed; Wendy to confirm conflicting design references.
 
 ## Environment
 - Branch: `frontend4-feature/s1-10a-clock-out` (detached testing worktree; QA branch QA4)
@@ -42,3 +42,8 @@ The lime button rendered, but its text and triangle colors differ from the suppl
 
 ## Resolution
 Awaiting QA verification.
+
+
+### 20 November 2026 - Zaarah Okkers reported retest
+- Tested commit `ee8ff3e88a519727015d79ead5446e993ac48ddb`; Desktop button retest passed; Wendy to confirm conflicting design references.
+- Her session used dummy data; real authentication and API were not tested. Screenshots/logs pending. Earlier mock-data approval understanding is superseded: real integration is required for S1-10a.
