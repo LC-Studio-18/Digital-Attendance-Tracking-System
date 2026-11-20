@@ -59,6 +59,19 @@ the UTF-8 BOM and the browser download. Its default columns are Date, Staff,
 Email, Department, Clock in, Clock out, Hours and Status; pass a `columns`
 array to override them.
 
+## Laravel equivalent (added in S2-20a)
+
+The same data handoff has been ported to PHP/Laravel under `frontend/laravel/`:
+
+- `app/Services/AttendanceDataStore.php` — singleton holding the all/filtered arrays
+- `app/Http/Controllers/ReportsExportController.php` — reads the store and returns CSV
+- Full mapping and setup: `frontend/laravel/docs/LARAVEL-MIGRATION.md`
+
+```php
+$records = app(\App\Services\AttendanceDataStore::class)->all();
+$csv = \App\Services\CsvExporter::build($records);
+```
+
 ## Notes
 
 - `useAttendanceData()` also works without a provider: it returns empty arrays
