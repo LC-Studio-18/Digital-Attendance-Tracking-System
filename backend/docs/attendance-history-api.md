@@ -19,22 +19,62 @@ Authorization: Bearer <Firebase ID token>
 - The token is verified server-side with Firebase Admin `auth.verifyIdToken()`.
 - The verified token supplies `uid` and `email`. The user role is read from the
   `role` custom claim. **If the claim is absent, the role defaults to `staff`.**
-- `admin`: may read attendance records for the whole organisation.
+- `admin`: may read attendance records for the whole organisation and may use
+  `employeeId` to filter across employees.
 - `staff`: may read only records whose Firebase UID matches the verified
   token's `uid`. The UID is read from the record key `uid`, then `user_id`, then
-  `user id (firebase uid)` (first present value wins).
+  `user id (firebase uid)` (first present value wins). Any `employeeId` supplied
+  by the client is ignored; date filters still apply to their own records only.
 - Any other verified role (for example `manager`) receives HTTP 403.
 - Tokens in query strings, cookies or other headers are not accepted.
 
 ## Query parameters
 
-Both parameters are parsed with `parseInt(value, 10)` and clamped to a minimum
-of `1`. There is no upper limit in the current implementation.
-
 | Parameter | Default | Behaviour |
 |---|---|---|
-| `page` | `1` | Page number, 1-based. Values below `1` become `1`. A non-numeric value uses the default. |
-| `limit` | `50` | Number of records per page. Values below `1` become `1`. A non-numeric value uses the default. |
+| `date` | none | Return records for one calendar date, for example `2026-11-18`. |
+| `startDate` | none | Inclusive start of a date range. May be used on its own. |
+| `endDate` | none | Inclusive end of a date range. May be used on its own. |
+| `employeeId` | none | Admin only. Employee Firebase UID to filter by. Ignored for `staff` requests (their authenticated UID is always used). |
+| `page` | `1` | Page number, 1-based. Parsed with `parseInt(value, 10)` and clamped to a minimum of `1`. A non-numeric value uses the default. |
+| `limit` | `50` | Records per page. Parsed with `parseInt(value, 10)` and clamped to a minimum of `1`. A non-numeric value uses the default. There is no upper limit. |
+
+Blank values (`?date=`, `?employeeId=`, etc.) are treated as if the parameter
+was not supplied. `date` cannot be combined with `startDate` or `endDate`; use
+one date selection method at a time. `employeeId` can be combined with either
+method.
+
+Filtering is applied **after** role-based access control and **before** sorting
+and pagination, so `totalRecords`, `count` and `totalPages` describe the
+matching records only.
+
+### Accepted date formats
+
+Query dates must use the ISO calendar format `YYYY-MM-DD`
+(`YYYY-M-D` is also accepted and normalised). Calendar validity is checked, so
+`2026-02-30` and `2026-13-01` are rejected.
+
+Spreadsheet `date` cells are strings, not JavaScript `Date` objects. Values such
+as `2026-11-18`, `2026/11/18` and `2026-11-18T08:15:00.000Z` are normalised to
+`YYYY-MM-DD` for comparison; a time portion is ignored. Records with a missing
+or unrecognised date never match a date filter, but are returned when no date
+filter is supplied.
+
+### Accepted employee identifiers
+
+`employeeId` must be a single non-blank string of at most 128 characters
+containing letters, digits or `.`, `_`, `:`, `@` and `-` (and must start with a
+letter or digit). It is matched against the record's `uid`, `user_id`,
+`user id (firebase uid)`, `employeeid`, `employee_id` or `employee id` column.
+
+### Examples
+
+- `/api/v1/attendance/history` — no filters, all permitted records.
+- `/api/v1/attendance/history?date=2026-11-18` — one date.
+- `/api/v1/attendance/history?startDate=2026-11-01&endDate=2026-11-30` — inclusive range.
+- `/api/v1/attendance/history?employeeId=staff-uid-1` — one employee (admin).
+- `/api/v1/attendance/history?employeeId=staff-uid-1&date=2026-11-18` — combined.
+- `/api/v1/attendance/history?employeeId=staff-uid-1&startDate=2026-11-01&endDate=2026-11-30&page=2&limit=25` — combined filters with pagination.
 
 Records are sorted by `date` descending (newest first) **before** pagination is
 applied. Sorting uses a string comparison
@@ -43,11 +83,6 @@ the Google Sheets service returns cell values as strings. ISO-style dates such
 as `YYYY-MM-DD` therefore sort correctly in descending order; other formats are
 compared lexicographically and may not sort chronologically. Missing or empty
 dates sort last.
-
-Examples:
-
-- `/api/v1/attendance/history`
-- `/api/v1/attendance/history?page=2&limit=25`
 
 ## Successful response (HTTP 200)
 
@@ -66,7 +101,7 @@ Examples:
 |---|---|---|
 | `success` | boolean | Always `true` for a successful response. |
 | `count` | number | Number of records in `data` on the current page (not the total). |
-| `totalRecords` | number | Number of matching records **after role filtering**, before pagination. |
+| `totalRecords` | number | Number of matching records **after role and filter parameters are applied**, before pagination. |
 | `currentPage` | number | Effective page number after parsing/clamping. |
 | `totalPages` | number | `0` when `totalRecords` is `0`; otherwise `Math.ceil(totalRecords / limit)`. |
 | `data` | array | The records for the current page, newest first. |
@@ -114,8 +149,9 @@ other fields to each record.
 
 ### Empty result
 
-A staff user with no matching records (or an empty spreadsheet) still receives
-HTTP 200 with an empty `data` array:
+A user with no matching records (for example an unmatched filter, a staff user
+with no records, or an empty spreadsheet) still receives HTTP 200 with an empty
+`data` array:
 
 ```json
 {
@@ -164,6 +200,31 @@ Returned when the token is valid but its `role` claim is neither `admin` nor
   "message": "Forbidden: Invalid role"
 }
 ```
+
+### HTTP 400 — invalid filters
+
+Filter validation failures use the same response shape as the 401/403 errors,
+with a `message` describing the problem:
+
+```json
+{
+  "success": false,
+  "message": "Bad Request: Invalid date. Use YYYY-MM-DD."
+}
+```
+
+Possible messages:
+
+| Condition | Message |
+|---|---|
+| Malformed or impossible `date`, `startDate` or `endDate` | `Bad Request: Invalid <parameter>. Use YYYY-MM-DD.` |
+| Repeated or non-string date/employee parameter | Corresponding `Invalid ...` message above |
+| `startDate` after `endDate` | `Bad Request: Invalid date range. startDate must be on or before endDate.` |
+| `date` combined with `startDate`/`endDate` | `Bad Request: Use either date or startDate/endDate, not both.` |
+| Malformed, repeated or too-long `employeeId` | `Bad Request: Invalid employeeId.` |
+
+Filter validation runs after authentication and role checks, so missing tokens
+still receive 401 and unsupported roles still receive 403.
 
 ### HTTP 500 — server/upstream failure
 

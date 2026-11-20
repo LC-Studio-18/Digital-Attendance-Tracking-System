@@ -15,11 +15,11 @@ merging remain separate decisions**.
 - [x] Admin sees all records; staff sees only records matching the verified UID;
       other verified roles receive 403.
 - [x] Invalid tokens and missing/malformed Bearer headers receive 401.
-- [x] Response shape, empty results and pagination match the documented contract
-      (`docs/attendance-history-api.md`).
+- [x] Response shape, empty results, filtering and pagination match the
+      documented contract (`docs/attendance-history-api.md`).
 - [x] Automated tests added (`tests/attendanceAuth.test.js`,
-      `tests/attendanceAccessControl.test.js`) and the existing response tests
-      still pass.
+      `tests/attendanceAccessControl.test.js`, `tests/attendanceFiltering.test.js`)
+      and the existing response tests still pass.
 - [x] No production attendance data is touched by tests: Google Sheets is
       replaced with in-memory fixtures.
 - [x] No secrets, `.env` values or service-account JSON are part of the changes.
@@ -58,7 +58,7 @@ npm test
 node --check src/app.js
 ```
 
-Expected result: 23 tests discovered; 20 pass, 0 fail, 3 skipped. The three
+Expected result: 46 tests discovered; 43 pass, 0 fail, 3 skipped. The three
 skipped tests require real test ID tokens (see section 5).
 
 After deploying to staging, smoke-test:
@@ -68,6 +68,12 @@ After deploying to staging, smoke-test:
 3. With a valid staff token, only that user's records are returned.
 4. With a valid admin token, all records are returned.
 5. With a valid token whose role is neither admin nor staff, 403 is returned.
+6. With an admin token, `?date=YYYY-MM-DD`,
+   `?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`, `?employeeId=<uid>` and combined
+   filters return only matching records.
+7. Invalid dates, invalid ranges and invalid `employeeId` values return 400.
+8. A staff token supplying `employeeId` for another employee still receives
+   only their own records.
 
 ## 4. Deployment status
 
