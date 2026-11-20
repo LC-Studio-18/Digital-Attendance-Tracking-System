@@ -52,6 +52,9 @@ The server runs at:
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/api/health` | Checks whether the API is running |
+| GET | `/api/attendance` | Returns attendance records for the dashboard |
+
+The attendance endpoint currently returns sample records in the same shape the dashboard consumes. Replace the sample array in `src/controllers/attendanceController.js` with the database query when a persistence layer is configured.
 
 ## Project Structure
 
