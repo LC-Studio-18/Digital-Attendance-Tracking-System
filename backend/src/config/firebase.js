@@ -1,6 +1,9 @@
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
+// Strips stray spaces, quotes, and trailing commas (common when copying from the service account JSON)
+const clean = (v = '') => v.trim().replace(/^["'\s]+|["',;\s]+$/g, '');
+
 const formatPrivateKey = (key = '') =>
   key
     .trim()
@@ -12,8 +15,8 @@ const app =
   getApps()[0] ??
   initializeApp({
     credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID?.trim(),
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL?.trim(),
+      projectId: clean(process.env.FIREBASE_PROJECT_ID),
+      clientEmail: clean(process.env.FIREBASE_CLIENT_EMAIL),
       privateKey: formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY),
     }),
   });
