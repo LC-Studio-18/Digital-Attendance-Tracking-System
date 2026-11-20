@@ -109,3 +109,17 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+ 
+:root {
+  --lc-ink: #0E181F;
+  --lc-white: #FFFFFF;
+  --lc-black: #000000;
+  --lc-lime: #B2ED1D;
+  --lc-lime-pressed: #8CB22A;
+  --lc-teal: #2F6B75;
+  --lc-scrim: #7A7A7A;
+  --lc-helper: #474646;
+  --lc-disabled-label: #6A6767;
+  --lc-time-card: #B6B4B4;
+  --lc-error: #EDDF1D;
+}
