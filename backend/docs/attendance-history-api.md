@@ -1,11 +1,11 @@
 # Attendance History API Contract
 
-Endpoint: `GET /api/attendance`
+Endpoint: `GET /api/v1/attendance/history`
 
-This document describes the **actual** behaviour of the implemented endpoint in
-`src/routes/attendanceRoutes.js`, `src/middleware/authMiddleware.js`,
-`src/controllers/attendanceController.js`, `src/services/googleSheetsService.js`
-and `src/utils/attendanceResponse.js`.
+This document describes the **actual** behaviour of the integrated endpoint in
+`src/routes/attendance.js`, `src/app.js`, `src/middleware/authMiddleware.js`,
+`src/controllers/attendanceController.js`, `src/services/sheets.js` and
+`src/utils/attendanceResponse.js`.
 
 ## Authentication
 
@@ -36,7 +36,7 @@ Authorization: Bearer <Firebase ID token>
 | `date` | none | Return records for one calendar date, for example `2026-11-18`. |
 | `startDate` | none | Inclusive start of a date range. May be used on its own. |
 | `endDate` | none | Inclusive end of a date range. May be used on its own. |
-| `employeeId` | none | Admin only. Employee Firebase UID to filter by. Ignored for `staff` requests (their authenticated UID is always used). |
+| `employeeId` | none | Admin only. Employee identifier to filter by (matched against record employee identifier fields). Ignored for `staff` requests (their authenticated identity is always used). |
 | `page` | `1` | Page number, 1-based. Only positive integer strings are accepted; malformed, zero, negative or non-string values use the default. A page beyond the last page returns an empty `data` array. |
 | `limit` | `20` | Records per page. Only positive integer strings are accepted; malformed, zero, negative or non-string values use the default. Values above `100` are capped at `100`. |
 
@@ -65,18 +65,19 @@ filter is supplied.
 
 `employeeId` must be a single non-blank string of at most 128 characters
 containing letters, digits or `.`, `_`, `:`, `@` and `-` (and must start with a
-letter or digit). It is matched against the record's `employeeId`, `employeeID`,
-`uid`, `user_id`, `user id (firebase uid)`, `employeeid`, `employee_id` or
-`employee id` column.
+letter or digit). It is matched against the record's employee identifier fields
+(for example `uid`, `user_id`, `user id (firebase uid)`, `employeeId`,
+`employeeID`, `employeeid`, `employee_id` or `employee id`, depending on the
+sheet headers and mapped keys).
 
 ### Examples
 
-- `/api/attendance` — no filters, all permitted records.
-- `/api/attendance?date=2026-11-18` — one date.
-- `/api/attendance?startDate=2026-11-01&endDate=2026-11-30` — inclusive range.
-- `/api/attendance?employeeId=staff-uid-1` — one employee (admin).
-- `/api/attendance?employeeId=staff-uid-1&date=2026-11-18` — combined.
-- `/api/attendance?employeeId=staff-uid-1&startDate=2026-11-01&endDate=2026-11-30&page=2&limit=25` — combined filters with pagination.
+- `/api/v1/attendance/history` — no filters, all permitted records.
+- `/api/v1/attendance/history?date=2026-11-18` — one date.
+- `/api/v1/attendance/history?startDate=2026-11-01&endDate=2026-11-30` — inclusive range.
+- `/api/v1/attendance/history?employeeId=staff-uid-1` — one employee (admin).
+- `/api/v1/attendance/history?employeeId=staff-uid-1&date=2026-11-18` — combined.
+- `/api/v1/attendance/history?employeeId=staff-uid-1&startDate=2026-11-01&endDate=2026-11-30&page=2&limit=25` — combined filters with pagination.
 
 Records are sorted newest first **before** pagination is applied. Sorting uses
 the normalized `timestamp` value when present, otherwise the `date` value; both
@@ -107,16 +108,21 @@ timestamps and dates sort last.
 
 ### Record shape inside `data`
 
-Records come directly from the Google Sheets service. Each object has:
+Attendance rows are retrieved via `src/services/sheets.js` (`getAttendance()`,
+which returns 2D spreadsheet rows) and mapped by the controller
+(`mapSheetRowsToRecords`). For each non-empty data row:
 
-- `id`: a number generated from the row position, starting at `1` for the first
-  data row (header row is excluded).
-- One key per spreadsheet header. Header text is trimmed and lower-cased; cell
-  values are strings, or `""` for empty cells.
+- Empty header cells are ignored.
+- The original (trimmed) header key is included when present.
+- A lowercase header key and a camelCase header key are also exposed when they
+  do not collide with an existing key.
+- Cell values are trimmed strings. Values that match an integer pattern (for
+  example `"4"`) are converted to numbers; other values remain strings.
+- Records do **not** include a controller/service-generated `id` field. If an
+  identifier is needed, it must come from the spreadsheet data/headers.
 
-The field names below are an example based on typical sheet headers; the exact
-keys depend on the spreadsheet's header row. The API does not rename or add
-other fields to each record.
+The exact fields depend on the spreadsheet headers. Do not assume a fixed key
+set beyond what your sheet provides.
 
 ### Example with records
 
@@ -129,18 +135,18 @@ other fields to each record.
   "totalPages": 1,
   "data": [
     {
-      "id": 1,
       "uid": "firebase-uid-example",
       "date": "2026-11-18",
       "status": "Present",
-      "check in": "08:02"
+      "employeeId": "EMP001",
+      "employeeid": "EMP001"
     },
     {
-      "id": 2,
       "uid": "firebase-uid-example",
       "date": "2026-11-17",
       "status": "Absent",
-      "check in": ""
+      "employeeId": "EMP001",
+      "employeeid": "EMP001"
     }
   ]
 }

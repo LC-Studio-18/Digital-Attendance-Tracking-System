@@ -36,11 +36,13 @@ The other service account fields (`FIREBASE_TYPE`, `PRIVATE_KEY_ID`, and the
 certificate URLs) may remain in `.env`, but Firebase Admin only needs the three
 values listed above for this configuration.
 
-Attendance history also requires Google Sheets credentials and a spreadsheet
-ID: `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, and `SPREADSHEET_ID`. Share the
-spreadsheet with the Google service account. `SHEET_RANGE` is optional; when
-omitted, the API reads columns A through Z from the first sheet tab. Private
-keys for both services can use `\n` escaped newlines.
+Attendance history also requires Google Sheets credentials and spreadsheet
+configuration: `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `SPREADSHEET_ID`
+and `SHEET_RANGE`. Share the spreadsheet with the Google service account. The
+integrated sheets service reads data using the configured `SHEET_RANGE` (for
+example a tab/range such as `Attendance!A:Z`); ensure this is set correctly in
+each environment. Private keys for both services can use `\n` escaped
+newlines.
 
 Keep real credentials in the ignored `backend/.env` file or a deployment
 secret manager. Never commit credentials.
@@ -67,7 +69,7 @@ different port and `FRONTEND_URL` to the frontend origin allowed by CORS.
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/api/health` | Checks whether the API is running |
-| GET | `/api/attendance` | Returns authenticated attendance history; supports `date`, `startDate`, `endDate`, `employeeId`, `page` and `limit` query parameters |
+| GET | `/api/v1/attendance/history` | Returns authenticated attendance history; supports `date`, `startDate`, `endDate`, `employeeId`, `page` and `limit` query parameters |
 
 The full request/response contract for attendance history is documented in
 [docs/attendance-history-api.md](docs/attendance-history-api.md). Staging
