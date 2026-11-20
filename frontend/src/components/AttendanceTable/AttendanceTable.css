@@ -1,0 +1,35 @@
+/* Replace the fallback values with your project's colours/variables (check Figma). */
+.attendance-table__wrapper {
+  overflow-x: auto; /* scrolls sideways on small screens instead of breaking the layout */
+}
+
+.attendance-table {
+  width: 100%;
+  border-collapse: collapse;
+  transition: opacity 0.15s;
+}
+
+.attendance-table--busy {
+  opacity: 0.5;
+}
+
+.attendance-table__caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.attendance-table th,
+.attendance-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--color-border, #e1e5ea);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.attendance-table th {
+  font-weight: 600;
+}
+
