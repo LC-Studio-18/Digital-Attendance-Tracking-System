@@ -18,7 +18,7 @@ status integrated with Team 2's clock-in functionality.
 | [S1-08](S1-08/README.md) | Attendance interface design | Not Run |
 | [S1-10a](S1-10a/README.md) | Clock-out frontend | Fail - changes required |
 | [S1-10b](S1-10b/README.md) | Clock-out backend | Preliminary Pass — Awaiting Integration |
-| [S1-15](S1-15/README.md) | Attendance status display | Not Run |
+| [S1-15](S1-15/README.md) | Attendance status display | Preliminary developer findings; independent QA Not Run |
 
 ## Testing Scope
 - Design validation
@@ -52,6 +52,7 @@ S1-10b separately: 10 unique functional tests passed (4 automated, 6 manual); on
 - S1-10b requires Firebase verification, Google Sheets persistence, persistent status, Team 2 and frontend integration, contract verification, regression, and final code review. Final sign-off is pending.
 - S1-10a has six open bugs (including one partially resolved) and two fixes pending current-build retest. Its 13 original test cases reconcile to 4 Pass, 6 Fail, 3 Blocked, 0 Not Run. Final QA sign-off is pending.
 - S1-10a live-data and API-backed testing depend on backend availability and confirmation of the mock-data allowance scope. Success, error, current-build interactive loading and responsive checks remain outstanding. Build/lint are reported without located logs; automated Chromium checks were blocked by a socket-creation failure.
+- S1-15 has preliminary developer findings from Zaarah, recorded in its nine subtask reports and four linked reported-defect reports. They are not independently verified QA results and are excluded from S1-10a totals. Reported passes, failures, conditional checks and feature requests remain separately identified. Independent QA and sign-off are pending; persistence mechanism and API/integration requirements remain unverified.
 
 ## QA Sign-off
 - Status: Pending
