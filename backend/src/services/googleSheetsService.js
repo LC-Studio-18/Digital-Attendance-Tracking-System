@@ -13,12 +13,11 @@ function initSheets() {
   }
 
   try {
-    const auth = new google.auth.JWT(
-      GOOGLE_CLIENT_EMAIL,
-      null,
-      GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      ['https://www.googleapis.com/auth/spreadsheets']
-    );
+    const auth = new google.auth.JWT({
+      email: GOOGLE_CLIENT_EMAIL,
+      key: GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
 
     sheetsClient = google.sheets({ version: 'v4', auth });
     return sheetsClient;
@@ -28,13 +27,33 @@ function initSheets() {
   }
 }
 
+function classifyAndThrow(err, action) {
+  console.error(`Google Sheets ${action} error:`, err.message);
+  console.error('Google API details:', JSON.stringify(err.response?.data, null, 2));
+
+  const code = err.code || err.response?.status;
+
+  if (code === 401 || err.message?.includes('invalid_grant') || err.message?.includes('DECODER')) {
+    throw Object.assign(new Error('Google authentication failed'), { status: 401 });
+  }
+  if (code === 403) {
+    throw Object.assign(new Error('No permission to access the spreadsheet'), { status: 403 });
+  }
+  if (code === 400) {
+    throw Object.assign(new Error('Invalid spreadsheet range'), { status: 400 });
+  }
+  if (code === 404) {
+    throw Object.assign(new Error('Spreadsheet or range not found'), { status: 404 });
+  }
+
+  throw Object.assign(new Error('Google Sheets request failed'), { status: 502 });
+}
+
 export async function appendRow(sheetName, rowValues) {
   const sheets = initSheets();
 
   if (!sheets) {
-    const error = new Error('Google Sheets is not configured');
-    error.status = 503;
-    throw error;
+    throw Object.assign(new Error('Google Sheets is not configured'), { status: 503 });
   }
 
   try {
@@ -45,12 +64,7 @@ export async function appendRow(sheetName, rowValues) {
       requestBody: { values: [rowValues] },
     });
   } catch (err) {
-    console.error('Google Sheets write error:', err.message);
-    console.error('Google API details:', JSON.stringify(err.response?.data, null, 2));
-
-    const error = new Error('Google Sheets request failed');
-    error.status = 502;
-    throw error;
+    classifyAndThrow(err, 'write');
   }
 }
 
@@ -58,9 +72,7 @@ export async function getRows(sheetName, range = 'A:F') {
   const sheets = initSheets();
 
   if (!sheets) {
-    const error = new Error('Google Sheets is not configured');
-    error.status = 503;
-    throw error;
+    throw Object.assign(new Error('Google Sheets is not configured'), { status: 503 });
   }
 
   try {
@@ -70,20 +82,14 @@ export async function getRows(sheetName, range = 'A:F') {
     });
     return result.data.values || [];
   } catch (err) {
-    console.error('Google Sheets read error:', err.message);
-    console.error('Google API details:', JSON.stringify(err.response?.data, null, 2));
-
-    const error = new Error('Google Sheets request failed');
-    error.status = 502;
-    throw error;
+    classifyAndThrow(err, 'read');
   }
 }
 
 export async function findTodayCheckin(sheetName, userId) {
   const rows = await getRows(sheetName);
-  const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+  const today = new Date().toISOString().slice(0, 10);
 
-  // Attendance columns: Event ID, Timestamp, User ID, Event Type, Location, Comment
   return rows.some((row) =>
     row[2] === userId &&
     row[3]?.toLowerCase() === 'clock in' &&

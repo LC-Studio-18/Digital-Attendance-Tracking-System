@@ -16,7 +16,7 @@ app.use(express.json());
 
 app.use('/api', healthRoutes);
 
-app.use('/api', attendanceRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 app.use(errorHandler);
 
