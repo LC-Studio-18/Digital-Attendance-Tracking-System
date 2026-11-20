@@ -288,8 +288,6 @@ function Login({ onLoginSuccess }) {
             </p>
             <p>Modern workforce management, built around simplicity.</p>
           </div>
-          <span className="welcome-divider" aria-hidden="true" />
-          <p className="welcome-tagline">POWERED BY LIFE CHOICES</p>
         </section>
 
         <section
@@ -598,6 +596,7 @@ function Login({ onLoginSuccess }) {
       </div>
 
       <footer className="portal-footer">
+        <span>POWERED BY LIFE CHOICES</span>
         <span>&copy; 2026 LC ATTENDS</span>
       </footer>
     </main>
