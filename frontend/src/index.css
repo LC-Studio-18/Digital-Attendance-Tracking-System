@@ -10,7 +10,7 @@
 
   font-family: 'Inter', Arial, Helvetica, sans-serif;
   color: var(--lc-ink);
-  background: var(--lc-white);
+  background: #0e181f;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -27,9 +27,13 @@ body,
   margin: 0;
 }
 
+html {
+  background: #0e181f;
+}
+
 body {
   min-width: 320px;
-  background: var(--lc-white);
+  background: #0e181f;
   color: var(--lc-ink);
 }
 
@@ -46,7 +50,7 @@ button {
 button:focus-visible,
 a:focus-visible,
 input:focus-visible {
-  outline: 3px solid var(--lc-teal);
+  outline: 3px solid #28616b;
   outline-offset: 2px;
 }
 

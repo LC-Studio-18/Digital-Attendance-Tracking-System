@@ -57,6 +57,7 @@ function Login({ onLoginSuccess }) {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [authFailed, setAuthFailed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -71,6 +72,7 @@ function Login({ onLoginSuccess }) {
     setError('');
     setNotice('');
     setFieldErrors({});
+    setAuthFailed(false);
   };
 
   const validateEmail = (value) => {
@@ -135,6 +137,7 @@ function Login({ onLoginSuccess }) {
       onLoginSuccess?.(user);
     } catch (authError) {
       setError(resolveAuthError(authError));
+      setAuthFailed(true);
     } finally {
       busyRef.current = false;
       setLoading(false);
@@ -265,7 +268,7 @@ function Login({ onLoginSuccess }) {
     >
       <header className="portal-header">
         <div className="portal-brand">
-          <span>LC</span> Attends
+          <span>LC</span> <em>Attends</em>
         </div>
         <div className="portal-status">
           <span className="portal-status-dot" aria-hidden="true" />
@@ -280,14 +283,18 @@ function Login({ onLoginSuccess }) {
             <span>WELCOME TO</span>
             <strong>LC ATTENDS.</strong>
           </h1>
-          <div className="welcome-copy">
-            <p>Your attendance, managed in real time.</p>
-            <p>Manage your workday efficiently.</p>
-            <p>
-              Sign in to access your attendance records and stay informed.
-            </p>
-            <p>Modern workforce management, built around simplicity.</p>
-          </div>
+          <p className="welcome-intro">Your attendance, managed in real time.</p>
+          <p className="welcome-description">
+            Manage your workday efficiently.
+            <br />
+            Sign in to access your attendance
+            <br />
+            records and stay informed.
+          </p>
+          <span className="welcome-divider" aria-hidden="true" />
+          <p className="welcome-tagline">
+            Modern workforce management, built around simplicity.
+          </p>
         </section>
 
         <section
@@ -482,16 +489,19 @@ function Login({ onLoginSuccess }) {
               aria-busy={loading}
             >
               <div className="form-group">
-                <label htmlFor="login-email">Email Address</label>
+                <label htmlFor="login-email">Email address</label>
                 <input
                   id="login-email"
                   name="username"
                   type="email"
                   autoComplete="username"
-                  placeholder="Enter your email address"
+                  placeholder="name@example.com"
                   value={email}
-                  aria-invalid={Boolean(fieldErrors.email)}
-                  onChange={(event) => setEmail(event.target.value)}
+                  aria-invalid={Boolean(fieldErrors.email) || authFailed}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    setAuthFailed(false);
+                  }}
                 />
                 <FieldError message={fieldErrors.email} />
               </div>
@@ -505,8 +515,11 @@ function Login({ onLoginSuccess }) {
                     autoComplete="current-password"
                     placeholder="Enter your password"
                     value={password}
-                    aria-invalid={Boolean(fieldErrors.password)}
-                    onChange={(event) => setPassword(event.target.value)}
+                    aria-invalid={Boolean(fieldErrors.password) || authFailed}
+                    onChange={(event) => {
+                      setPassword(event.target.value);
+                      setAuthFailed(false);
+                    }}
                   />
                   <button
                     className="password-toggle"
@@ -562,6 +575,7 @@ function Login({ onLoginSuccess }) {
             <SecurityIcon />
             <p>Your information. Your attendance. Securely managed.</p>
           </div>
+          <span className="card-bottom-accent" aria-hidden="true" />
 
           <div className="secondary-actions">
             {!isSignup && !isEmail && (
