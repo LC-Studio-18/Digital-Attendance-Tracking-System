@@ -18,3 +18,5 @@ local-test/
 .DS_Store
 .vscode/
 .idea/
+
+localtest/
