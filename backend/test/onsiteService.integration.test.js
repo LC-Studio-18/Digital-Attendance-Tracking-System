@@ -24,8 +24,7 @@ import assert from "node:assert/strict";
 // and calculates the current onsite employee count.
 import {
   getCurrentOnsiteCountFromSheets,
-} from "backend/src/services/onsiteService.js";
-
+} from "../src/services/onSiteService.js";
 
 test(
   "Reads Google Sheets and calculates the current onsite count",

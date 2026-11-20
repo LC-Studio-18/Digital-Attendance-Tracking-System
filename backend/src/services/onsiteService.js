@@ -5,31 +5,34 @@
  * ============================================================
  *
  * PURPOSE:
- * - Retrieve Users and Events records from Google Sheets.
+ * - Retrieve Employees and Attendance records from Google Sheets.
  * - Identify active employees.
  * - Match clock events using Firebase UIDs.
  * - Identify each employee's latest valid clock event.
  * - Calculate the number of employees currently onsite.
  * - Prevent duplicate employees from being counted.
  * - Reject invalid and future-dated clock events.
+ * - Correctly interpret South African attendance timestamps.
  * - Return zero when no employees are currently onsite.
  *
  * IMPORTANT:
  * This service reuses the existing Google Sheets connection
  * from attendanceService.js.
  *
- * The completed attendance timestamp service is not modified.
+ * TIMEZONE:
+ * Incoming Google Sheets timestamps are normalised through
+ * timezone.js before chronological comparisons are performed.
  *
  * SCOPE:
  * This service only calculates the current onsite employee total.
  */
 
 
+// ============================================================
+// 1. IMPORT GOOGLE SHEETS FUNCTIONS
+// ============================================================
+
 /**
- * ============================================================
- * 1. IMPORT GOOGLE SHEETS FUNCTIONS
- * ============================================================
- *
  * Reuse the existing Google Sheets retrieval and row conversion
  * functions from attendanceService.js.
  *
@@ -40,10 +43,19 @@
  * Reusing these functions avoids duplicating authentication
  * logic and keeps the services consistent.
  */
+
 import {
   getAttendanceSheetTables,
   mapSheetRowsToObjects,
 } from "./attendanceService.js";
+
+
+// Import the shared timezone normalisation function.
+// This converts timezone-free South African timestamps and
+// Google Sheets numeric date serials into consistent UTC.
+import {
+  normaliseAttendanceTimestamp,
+} from "./timezone.js";
 
 
 // ============================================================
@@ -54,9 +66,25 @@ import {
  * Convert spreadsheet headings into consistent JavaScript keys.
  *
  * WHY:
- * This allows the service to identify the Users and Events tabs
- * using their column headings rather than their tab names.
+ * This allows the service to identify the Employees and
+ * Attendance tabs using their column headings rather than
+ * depending on fixed spreadsheet tab names.
+ *
+ * EXAMPLE:
+ *
+ * User ID (Firebase UID)
+ * becomes:
+ * userIdFirebaseUid
+ *
+ * Status
+ * becomes:
+ * status
+ *
+ * Event Type (Clock In/Clock Out)
+ * becomes:
+ * eventTypeClockInClockOut
  */
+
 function normaliseHeader(header) {
 
   return String(header ?? "")
@@ -74,7 +102,7 @@ function normaliseHeader(header) {
 
 
 // ============================================================
-// 3. IDENTIFY USERS AND EVENTS SPREADSHEET TABS
+// 3. IDENTIFY EMPLOYEES AND ATTENDANCE SPREADSHEET TABS
 // ============================================================
 
 /**
@@ -89,6 +117,7 @@ function normaliseHeader(header) {
  * @param {string} description - Tab description.
  * @returns {Object} Matching spreadsheet tab.
  */
+
 function findSheetByHeaders(
   sheetTables,
   requiredHeaders,
@@ -98,7 +127,11 @@ function findSheetByHeaders(
   const matchingSheet = sheetTables.find((sheet) => {
 
     // Ignore tabs without a valid header row.
-    if (!Array.isArray(sheet.values) || sheet.values.length === 0) {
+    if (
+      !Array.isArray(sheet.values) ||
+      sheet.values.length === 0 ||
+      !Array.isArray(sheet.values[0])
+    ) {
       return false;
     }
 
@@ -131,10 +164,15 @@ function findSheetByHeaders(
  * Standardise Firebase UIDs before matching spreadsheet records.
  *
  * WHY:
- * Both the Users and Events tabs use Firebase UIDs.
- * Consistent identifiers ensure clock events are matched
+ * Both the Employees and Attendance tabs use Firebase UIDs.
+ *
+ * Consistent identifiers ensure that clock events are matched
  * to the correct employee.
+ *
+ * @param {*} value - Incoming Firebase UID.
+ * @returns {string} Normalised Firebase UID.
  */
+
 function normaliseUserId(value) {
 
   if (value === null || value === undefined) {
@@ -157,7 +195,14 @@ function normaliseUserId(value) {
  * onsite workforce calculation.
  *
  * Accounts without an explicitly active status are excluded.
+ *
+ * Supported active value:
+ * Active
+ *
+ * @param {*} value - Employee account status.
+ * @returns {boolean}
  */
+
 function isActiveEmployee(value) {
 
   const status = String(value ?? "")
@@ -179,8 +224,22 @@ function isActiveEmployee(value) {
  * The service must distinguish clock-in actions from
  * clock-out actions when calculating onsite attendance.
  *
+ * Examples recognised as IN:
+ * - Clock In
+ * - Check In
+ * - IN
+ *
+ * Examples recognised as OUT:
+ * - Clock Out
+ * - Check Out
+ * - OUT
+ *
  * Unrecognised event types are rejected.
+ *
+ * @param {*} value - Incoming event description.
+ * @returns {"IN"|"OUT"|null}
  */
+
 function normaliseEventType(value) {
 
   const event = String(value ?? "")
@@ -203,72 +262,69 @@ function normaliseEventType(value) {
 
 
 // ============================================================
-// 7. VALIDATE CLOCK EVENT TIMESTAMPS
+// 7. VALIDATE AND NORMALISE CLOCK EVENT TIMESTAMPS
 // ============================================================
 
 /**
  * Validate incoming clock event timestamps.
  *
- * Requires ISO 8601 timestamps containing explicit timezone data.
+ * Uses the shared timezone service to handle:
+ * - Google Sheets numeric date serials.
+ * - Timezone-free South African date strings.
+ * - ISO timestamps containing UTC Z.
+ * - ISO timestamps containing explicit timezone offsets.
+ * - Existing JavaScript Date objects.
  *
  * WHY:
- * Accurate chronological comparisons are required to identify
- * the latest clock action for each employee.
+ * Google Sheets may return date/time values without explicit
+ * timezone information.
+ *
+ * The shared timezone service interprets these values as
+ * South African local time and converts them into UTC.
  *
  * Future timestamps are rejected so that clock events which
  * have not yet occurred cannot influence the onsite total.
  *
- * @param {string|Date} value - Incoming timestamp.
+ * @param {string|number|Date} value - Incoming timestamp.
  * @param {number} nowMs - Current backend time in milliseconds.
  * @returns {string|null} Valid UTC timestamp or null.
  */
+
 function normaliseTimestamp(value, nowMs = Date.now()) {
 
   // Reject missing timestamp values.
-  if (!value) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
     return null;
   }
 
-  let date;
+  // Use the shared timezone service.
+  // Do not manually add two hours here.
+  const timestamp = normaliseAttendanceTimestamp(value);
 
-  // Support valid JavaScript Date objects.
-  if (value instanceof Date) {
-
-    date = value;
-
-  } else {
-
-    // Only accept string timestamps from the spreadsheet.
-    if (typeof value !== "string") {
-      return null;
-    }
-
-    const timestamp = value.trim();
-
-    // Require ISO 8601 format with explicit timezone information.
-    const validISOFormat =
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/i;
-
-    if (!validISOFormat.test(timestamp)) {
-      return null;
-    }
-
-    // Convert the incoming timestamp into a Date object.
-    date = new Date(timestamp);
+  // Reject invalid timestamps.
+  if (!timestamp) {
+    return null;
   }
 
-  // Reject timestamps JavaScript cannot interpret.
-  if (!Number.isFinite(date.getTime())) {
+  // Convert the normalised ISO timestamp into milliseconds.
+  const timestampMs = Date.parse(timestamp);
+
+  // Reject timestamps that cannot be interpreted.
+  if (!Number.isFinite(timestampMs)) {
     return null;
   }
 
   // Reject clock events that are later than backend time.
-  if (date.getTime() > nowMs) {
+  if (timestampMs > nowMs) {
     return null;
   }
 
   // Return the timestamp in standard UTC format.
-  return date.toISOString();
+  return timestamp;
 }
 
 
@@ -277,13 +333,17 @@ function normaliseTimestamp(value, nowMs = Date.now()) {
 // ============================================================
 
 /**
- * Extract active employees from the Users spreadsheet tab.
+ * Extract active employees from the Employees spreadsheet tab.
  *
- * REQUIRED COLUMNS:
+ * ACTUAL GOOGLE SHEETS COLUMNS:
+ *
  * - User ID (Firebase UID)
  * - Employee ID
  * - Full Name
- * - Status (Active/Inactive)
+ * - Email
+ * - Department
+ * - Role
+ * - Status
  *
  * WHY:
  * The service must identify which employees are eligible
@@ -292,9 +352,12 @@ function normaliseTimestamp(value, nowMs = Date.now()) {
  * Firebase UIDs are used as unique identifiers to prevent
  * duplicate employees from being counted.
  *
- * @param {Array} values - Raw Users spreadsheet rows.
+ * Employee ID and Full Name are retained for identification.
+ *
+ * @param {Array} values - Raw Employees spreadsheet rows.
  * @returns {Array<Object>} Unique active employee records.
  */
+
 export function prepareActiveEmployees(values = []) {
 
   // Convert spreadsheet rows into JavaScript objects.
@@ -306,6 +369,7 @@ export function prepareActiveEmployees(values = []) {
   for (const row of rows) {
 
     // Retrieve the employee's Firebase UID.
+    // The first property matches the actual Google Sheets heading.
     const userId = normaliseUserId(
       row.userIdFirebaseUid ??
       row.firebaseUid ??
@@ -318,8 +382,17 @@ export function prepareActiveEmployees(values = []) {
       continue;
     }
 
+    // The actual spreadsheet heading is simply "Status".
+    // Its normalised JavaScript property is row.status.
+    //
+    // Keep the older property as a fallback for compatibility.
+    const employeeStatus =
+      row.status ??
+      row.statusActiveInactive ??
+      row.accountStatus;
+
     // Only employees explicitly marked Active are included.
-    if (!isActiveEmployee(row.statusActiveInactive)) {
+    if (!isActiveEmployee(employeeStatus)) {
       continue;
     }
 
@@ -349,23 +422,29 @@ export function prepareActiveEmployees(values = []) {
 // ============================================================
 
 /**
- * Extract clock events from the Events spreadsheet tab.
+ * Extract clock events from the Attendance spreadsheet tab.
  *
- * REQUIRED COLUMNS:
+ * ACTUAL GOOGLE SHEETS COLUMNS:
+ *
  * - Event ID
  * - Timestamp
- * - User ID
+ * - User ID (Firebase UID)
  * - Event Type (Clock In/Clock Out)
+ * - Location
+ * - Comment
  *
  * WHY:
  * Clock events determine whether an employee has most recently
  * entered or left the workplace.
  *
+ * The Firebase UID links an event to its employee.
+ *
  * Location and Comment are not required for this calculation.
  *
- * @param {Array} values - Raw Events spreadsheet rows.
+ * @param {Array} values - Raw Attendance spreadsheet rows.
  * @returns {Array<Object>} Prepared clock event records.
  */
+
 export function prepareClockEvents(values = []) {
 
   // Convert spreadsheet rows into JavaScript objects.
@@ -377,13 +456,33 @@ export function prepareClockEvents(values = []) {
     eventId: row.eventId ?? "",
 
     // Identify the employee using their Firebase UID.
-    userId: normaliseUserId(row.userId),
+    //
+    // The actual heading is:
+    // User ID (Firebase UID)
+    //
+    // Its normalised property is:
+    // userIdFirebaseUid
+    userId: normaliseUserId(
+      row.userIdFirebaseUid ??
+      row.userId ??
+      row.firebaseUid ??
+      row.uid
+    ),
 
     // Retrieve the clock action type.
-    eventType: row.eventTypeClockInClockOut ?? "",
+    eventType:
+      row.eventTypeClockInClockOut ??
+      row.eventType ??
+      row.clockEvent ??
+      row.action ??
+      "",
 
     // Retrieve the original event timestamp.
-    timestamp: row.timestamp ?? "",
+    timestamp:
+      row.timestamp ??
+      row.eventTimestamp ??
+      row.createdAt ??
+      "",
 
   }));
 }
@@ -417,6 +516,7 @@ export function prepareClockEvents(values = []) {
  * @param {Array} data.clockEvents - Clock event records.
  * @returns {number} Current onsite employee total.
  */
+
 export function calculateCurrentOnsiteCount({
 
   staff = [],
@@ -445,6 +545,7 @@ export function calculateCurrentOnsiteCount({
    * Only active employees should be counted.
    * Using a Map prevents duplicate user records.
    */
+
   const activeEmployees = new Map();
 
   for (const employee of safeStaff) {
@@ -472,6 +573,7 @@ export function calculateCurrentOnsiteCount({
    *
    * Spreadsheet row order is not used to determine recency.
    */
+
   const latestEvents = new Map();
 
   for (const event of safeClockEvents) {
@@ -511,6 +613,7 @@ export function calculateCurrentOnsiteCount({
      * Replace the previous record when the incoming event
      * has a newer timestamp.
      */
+
     if (!previousEvent || eventTime > previousEvent.eventTime) {
 
       latestEvents.set(userId, {
@@ -535,6 +638,7 @@ export function calculateCurrentOnsiteCount({
      * WHY:
      * The service must not guess whether the employee is onsite.
      */
+
     else if (
       eventTime === previousEvent.eventTime &&
       eventType !== previousEvent.eventType
@@ -555,6 +659,7 @@ export function calculateCurrentOnsiteCount({
    * The dashboard needs the number of unique employees
    * currently onsite, not the total number of clock-in rows.
    */
+
   let totalOnsite = 0;
 
   for (const userId of activeEmployees.keys()) {
@@ -591,10 +696,11 @@ export function calculateCurrentOnsiteCount({
  *
  * Performs the complete process:
  * - Retrieves fresh Google Sheets records.
- * - Identifies the Users tab.
- * - Identifies the Events tab.
+ * - Identifies the Employees tab.
+ * - Identifies the Attendance tab.
  * - Prepares active employee records.
  * - Prepares clock events.
+ * - Normalises attendance timestamps.
  * - Calculates the current onsite employee total.
  *
  * WHY:
@@ -606,6 +712,7 @@ export function calculateCurrentOnsiteCount({
  *
  * @returns {Promise<number>} Current onsite employee total.
  */
+
 export async function getCurrentOnsiteCountFromSheets() {
 
   try {
@@ -614,7 +721,17 @@ export async function getCurrentOnsiteCountFromSheets() {
     const sheetTables = await getAttendanceSheetTables();
 
 
-    // STEP 2: Identify the Users tab by its column headings.
+    // STEP 2: Identify the Employees tab by its actual column headings.
+    //
+    // Actual spreadsheet headings:
+    // User ID (Firebase UID)
+    // Employee ID
+    // Full Name
+    // Status
+    //
+    // The normalised status heading is "status", not
+    // "statusActiveInactive".
+
     const usersSheet = findSheetByHeaders(
 
       sheetTables,
@@ -623,15 +740,25 @@ export async function getCurrentOnsiteCountFromSheets() {
         "userIdFirebaseUid",
         "employeeId",
         "fullName",
-        "statusActiveInactive",
+        "status",
       ],
 
-      "Users"
+      "Employees"
 
     );
 
 
-    // STEP 3: Identify the Events tab by its column headings.
+    // STEP 3: Identify the Attendance tab by its actual column headings.
+    //
+    // Actual spreadsheet headings:
+    // Event ID
+    // Timestamp
+    // User ID (Firebase UID)
+    // Event Type (Clock In/Clock Out)
+    //
+    // The normalised Firebase UID heading is
+    // "userIdFirebaseUid", not "userId".
+
     const eventsSheet = findSheetByHeaders(
 
       sheetTables,
@@ -639,11 +766,11 @@ export async function getCurrentOnsiteCountFromSheets() {
       [
         "eventId",
         "timestamp",
-        "userId",
+        "userIdFirebaseUid",
         "eventTypeClockInClockOut",
       ],
 
-      "Events"
+      "Attendance"
 
     );
 
@@ -661,6 +788,10 @@ export async function getCurrentOnsiteCountFromSheets() {
 
 
     // STEP 6: Calculate and return the current onsite total.
+    //
+    // The calculation uses the latest valid clock action
+    // for each active employee.
+
     return calculateCurrentOnsiteCount({
 
       staff: activeEmployees,

@@ -33,7 +33,7 @@ import assert from "node:assert/strict";
 import {
   getAttendanceSheetTables,
   getAttendanceTimestampsFromSheets,
-} from "./attendanceService.js";
+} from "../src/services/attendanceService.js";
 
 
 // ============================================================

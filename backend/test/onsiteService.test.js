@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 
 import {
   calculateCurrentOnsiteCount,
-} from "./onSiteService.js";
+} from "../src/services/onSiteService.js";
 
 
 test("Counts active employees whose latest event is Clock In", () => {
