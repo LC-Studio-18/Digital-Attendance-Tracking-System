@@ -7,7 +7,7 @@ merging remain separate decisions**.
 
 ## 1. Code readiness
 
-- [x] `GET /api/v1/attendance/history` is registered with `verifyToken` before
+- [x] `GET /api/attendance` is registered with `verifyToken` before
       the controller (`src/routes/attendanceRoutes.js`, `src/app.js`).
 - [x] Firebase ID tokens are verified by Firebase Admin in
       `src/middleware/authMiddleware.js`; role comes from the `role` custom
@@ -18,8 +18,9 @@ merging remain separate decisions**.
 - [x] Response shape, empty results, filtering and pagination match the
       documented contract (`docs/attendance-history-api.md`).
 - [x] Automated tests added (`tests/attendanceAuth.test.js`,
-      `tests/attendanceAccessControl.test.js`, `tests/attendanceFiltering.test.js`)
-      and the existing response tests still pass.
+      `tests/attendanceAccessControl.test.js`, `tests/attendanceFiltering.test.js`,
+      `tests/attendanceRoleAwareRetrieval.test.js`) and the existing response
+      tests still pass.
 - [x] No production attendance data is touched by tests: Google Sheets is
       replaced with in-memory fixtures.
 - [x] No secrets, `.env` values or service-account JSON are part of the changes.
@@ -58,13 +59,13 @@ npm test
 node --check src/app.js
 ```
 
-Expected result: 46 tests discovered; 43 pass, 0 fail, 3 skipped. The three
+Expected result: 47 tests discovered; 44 pass, 0 fail, 3 skipped. The three
 skipped tests require real test ID tokens (see section 5).
 
 After deploying to staging, smoke-test:
 
 1. `GET /api/health` returns a healthy response.
-2. `GET /api/v1/attendance/history` without a token returns 401.
+2. `GET /api/attendance` without a token returns 401.
 3. With a valid staff token, only that user's records are returned.
 4. With a valid admin token, all records are returned.
 5. With a valid token whose role is neither admin nor staff, 403 is returned.

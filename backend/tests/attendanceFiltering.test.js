@@ -1,5 +1,5 @@
 /**
- * Filtering tests for GET /api/v1/attendance/history.
+ * Filtering tests for GET /api/attendance.
  *
  * Firebase verifyIdToken and Google Sheets are stubbed with in-memory data so
  * no credentials are required and no production spreadsheet is accessed.
@@ -93,7 +93,7 @@ after(async () => {
 
 const requestHistory = (token, query = '') => {
   const headers = token ? { authorization: `Bearer ${token}` } : {};
-  return fetch(`${baseUrl}/api/v1/attendance/history${query}`, { headers });
+  return fetch(`${baseUrl}/api/attendance${query}`, { headers });
 };
 
 const queryString = (params) => `?${new URLSearchParams(params)}`;

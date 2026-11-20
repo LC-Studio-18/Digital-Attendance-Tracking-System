@@ -1,5 +1,5 @@
 /**
- * Parsing and filtering helpers for GET /api/v1/attendance/history.
+ * Parsing and filtering helpers for GET /api/attendance.
  *
  * Google Sheets cell values arrive as strings (for example "2026-11-18"),
  * so dates are normalised to canonical YYYY-MM-DD strings and compared as

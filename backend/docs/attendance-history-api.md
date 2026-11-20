@@ -1,6 +1,6 @@
 # Attendance History API Contract
 
-Endpoint: `GET /api/v1/attendance/history`
+Endpoint: `GET /api/attendance`
 
 This document describes the **actual** behaviour of the implemented endpoint in
 `src/routes/attendanceRoutes.js`, `src/middleware/authMiddleware.js`,
@@ -71,12 +71,12 @@ letter or digit). It is matched against the record's `employeeId`, `employeeID`,
 
 ### Examples
 
-- `/api/v1/attendance/history` — no filters, all permitted records.
-- `/api/v1/attendance/history?date=2026-11-18` — one date.
-- `/api/v1/attendance/history?startDate=2026-11-01&endDate=2026-11-30` — inclusive range.
-- `/api/v1/attendance/history?employeeId=staff-uid-1` — one employee (admin).
-- `/api/v1/attendance/history?employeeId=staff-uid-1&date=2026-11-18` — combined.
-- `/api/v1/attendance/history?employeeId=staff-uid-1&startDate=2026-11-01&endDate=2026-11-30&page=2&limit=25` — combined filters with pagination.
+- `/api/attendance` — no filters, all permitted records.
+- `/api/attendance?date=2026-11-18` — one date.
+- `/api/attendance?startDate=2026-11-01&endDate=2026-11-30` — inclusive range.
+- `/api/attendance?employeeId=staff-uid-1` — one employee (admin).
+- `/api/attendance?employeeId=staff-uid-1&date=2026-11-18` — combined.
+- `/api/attendance?employeeId=staff-uid-1&startDate=2026-11-01&endDate=2026-11-30&page=2&limit=25` — combined filters with pagination.
 
 Records are sorted newest first **before** pagination is applied. Sorting uses
 the normalized `timestamp` value when present, otherwise the `date` value; both

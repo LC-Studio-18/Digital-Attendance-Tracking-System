@@ -1,5 +1,5 @@
 /**
- * Security tests for GET /api/v1/attendance/history that use the REAL
+ * Security tests for GET /api/attendance that use the REAL
  * Firebase Admin SDK token verifier.
  *
  * Notes on the environment:
@@ -62,7 +62,7 @@ after(async () => {
 
 const requestHistory = (authorization, query = '') => {
   const headers = authorization === undefined ? {} : { authorization };
-  return fetch(`${baseUrl}/api/v1/attendance/history${query}`, { headers });
+  return fetch(`${baseUrl}/api/attendance${query}`, { headers });
 };
 
 const assertUnauthorized = async (response) => {

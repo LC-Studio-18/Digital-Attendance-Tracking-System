@@ -1,6 +1,6 @@
 /**
  * Role-authorisation and response-shape tests for
- * GET /api/v1/attendance/history.
+ * GET /api/attendance.
  *
  * IMPORTANT: Firebase verifyIdToken is STUBBED in this file. It returns
  * predefined claims based on the token string so that staff/admin filtering
@@ -118,7 +118,7 @@ after(async () => {
 
 const requestHistory = (token, query = '') => {
   const headers = token ? { authorization: `Bearer ${token}` } : {};
-  return fetch(`${baseUrl}/api/v1/attendance/history${query}`, { headers });
+  return fetch(`${baseUrl}/api/attendance${query}`, { headers });
 };
 
 test('a Staff token returns only that staff member own records', async () => {
@@ -153,7 +153,7 @@ test('a Staff token cannot read another user or Admin records', async () => {
 
 test('a Staff token cannot escalate access with a role query parameter or header', async () => {
   const response = await fetch(
-    `${baseUrl}/api/v1/attendance/history?role=admin`,
+    `${baseUrl}/api/attendance?role=admin`,
     {
       headers: {
         authorization: 'Bearer staff-one-token',

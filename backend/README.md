@@ -67,7 +67,7 @@ different port and `FRONTEND_URL` to the frontend origin allowed by CORS.
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/api/health` | Checks whether the API is running |
-| GET | `/api/v1/attendance/history` | Returns authenticated attendance history; supports `date`, `startDate`, `endDate`, `employeeId`, `page` and `limit` query parameters |
+| GET | `/api/attendance` | Returns authenticated attendance history; supports `date`, `startDate`, `endDate`, `employeeId`, `page` and `limit` query parameters |
 
 The full request/response contract for attendance history is documented in
 [docs/attendance-history-api.md](docs/attendance-history-api.md). Staging
