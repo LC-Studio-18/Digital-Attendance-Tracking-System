@@ -1,7 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ErrorMessage, Loader } from '../components/index.js';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ErrorMessage, HistoryFilters, Loader } from '../components/index.js';
 import { getAttendanceHistory } from '../services/attendanceApi.js';
 import { getAuthSession } from '../services/authService.js';
+import {
+  EMPTY_ATTENDANCE_FILTERS,
+  filterAttendanceRecords,
+  getEmployeeOptions,
+  getRecordStatus,
+  hasActiveFilters,
+  toApiParams,
+} from '../utils/attendanceFilters.js';
 import '../styles/attendance-history.css';
 
 const BASE_COLUMNS = [
@@ -29,6 +37,15 @@ function field(record, ...keys) {
     }
   }
   return '—';
+}
+
+/** Keep employee choices available even after the results are filtered. */
+function mergeEmployeeOptions(current, records) {
+  const byId = new Map(current.map((option) => [option.id, option]));
+  for (const option of getEmployeeOptions(records)) {
+    byId.set(option.id, option);
+  }
+  return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function formatDate(value) {
@@ -72,14 +89,6 @@ function getDuration(record) {
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
 
-function getStatus(record) {
-  const value = String(field(record, 'status', 'state')).toLowerCase();
-
-  if (value.includes('in') && !value.includes('out')) return 'IN';
-  if (value.includes('out')) return 'OUT';
-  return String(field(record, 'status', 'state')).toUpperCase();
-}
-
 function renderCell(record, key) {
   switch (key) {
     case 'date':
@@ -91,7 +100,7 @@ function renderCell(record, key) {
     case 'duration':
       return getDuration(record);
     case 'status': {
-      const status = getStatus(record);
+      const status = getRecordStatus(record);
       return (
         <span
           className={`history-status history-status--${
@@ -113,7 +122,7 @@ function renderCell(record, key) {
   }
 }
 
-function EmptyState({ isAdmin, onRefresh }) {
+function EmptyState({ isAdmin, onRefresh, isFiltered, onClear }) {
   return (
     <div className="history-empty">
       <span className="history-empty__icon" aria-hidden="true">
@@ -135,12 +144,23 @@ function EmptyState({ isAdmin, onRefresh }) {
           />
         </svg>
       </span>
-      <h3 className="history-empty__title">No attendance records yet</h3>
+      <h3 className="history-empty__title">
+        {isFiltered
+          ? 'No records match your filters'
+          : 'No attendance records yet'}
+      </h3>
       <p className="history-empty__text">
-        {isAdmin
-          ? 'When a staff member clocks in or out, their record will appear here.'
-          : 'When you clock in or out, your record will appear here.'}
+        {isFiltered
+          ? 'Try a different date range, status or search term.'
+          : isAdmin
+            ? 'When a staff member clocks in or out, their record will appear here.'
+            : 'When you clock in or out, your record will appear here.'}
       </p>
+      {isFiltered ? (
+        <button type="button" className="history-refresh" onClick={onClear}>
+          Clear filters
+        </button>
+      ) : null}
       <button type="button" className="history-refresh" onClick={onRefresh}>
         Refresh
       </button>
@@ -156,14 +176,21 @@ export default function AttendanceHistoryPage({
   const [records, setRecords] = useState([]);
   const [status, setStatus] = useState('loading');
   const [errorCode, setErrorCode] = useState(null);
+  const [filters, setFilters] = useState({ ...EMPTY_ATTENDANCE_FILTERS });
+  const [employeeOptions, setEmployeeOptions] = useState([]);
 
   const token = session?.token ?? null;
   const isAdmin = (session?.role ?? 'staff') === 'admin';
   const columns = isAdmin ? [...ADMIN_COLUMNS, ...BASE_COLUMNS] : BASE_COLUMNS;
+  const isFiltered = hasActiveFilters(filters);
+  const visibleRecords = useMemo(
+    () => filterAttendanceRecords(records, filters),
+    [records, filters]
+  );
 
   const request = useCallback(
-    (signal) => fetchHistory({ token, signal }),
-    [fetchHistory, token]
+    (signal) => fetchHistory({ token, signal, params: toApiParams(filters) }),
+    [fetchHistory, token, filters]
   );
 
   const refresh = useCallback(async () => {
@@ -172,7 +199,9 @@ export default function AttendanceHistoryPage({
 
     try {
       const result = await request();
-      setRecords(Array.isArray(result) ? result : []);
+      const list = Array.isArray(result) ? result : [];
+      setRecords(list);
+      setEmployeeOptions((current) => mergeEmployeeOptions(current, list));
       setStatus('ready');
     } catch (error) {
       if (error?.code === 'cancelled') return;
@@ -180,6 +209,18 @@ export default function AttendanceHistoryPage({
       setStatus('error');
     }
   }, [request]);
+
+  const applyFilters = useCallback((next) => {
+    setStatus('loading');
+    setErrorCode(null);
+    setFilters(next);
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setStatus('loading');
+    setErrorCode(null);
+    setFilters({ ...EMPTY_ATTENDANCE_FILTERS });
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -207,7 +248,9 @@ export default function AttendanceHistoryPage({
       .then(() => request(controller.signal))
       .then((result) => {
         if (controller.signal.aborted) return;
-        setRecords(Array.isArray(result) ? result : []);
+        const list = Array.isArray(result) ? result : [];
+        setRecords(list);
+        setEmployeeOptions((current) => mergeEmployeeOptions(current, list));
         setStatus('ready');
       })
       .catch((error) => {
@@ -248,12 +291,29 @@ export default function AttendanceHistoryPage({
         </div>
       </header>
 
+      <section
+        className="history-filters-card"
+        aria-label="Filter attendance history"
+      >
+        <h2 className="history-filters-card__title">Filters</h2>
+        <HistoryFilters
+          key={`${filters.date}|${filters.startDate}|${filters.endDate}|${filters.status}|${filters.search}|${filters.employee}`}
+          onApply={applyFilters}
+          onClear={clearFilters}
+          disabled={status === 'loading'}
+          isAdmin={isAdmin}
+          employees={employeeOptions}
+          filters={filters}
+        />
+      </section>
+
       <section className="history-card" aria-label="Attendance history">
         <div className="history-card__head">
           <h2>Records</h2>
-          {status === 'ready' && records.length > 0 ? (
+          {status === 'ready' && visibleRecords.length > 0 ? (
             <span className="history-card__count">
-              {records.length} {records.length === 1 ? 'record' : 'records'}
+              {visibleRecords.length}{' '}
+              {visibleRecords.length === 1 ? 'record' : 'records'}
             </span>
           ) : null}
         </div>
@@ -270,11 +330,16 @@ export default function AttendanceHistoryPage({
           </div>
         ) : null}
 
-        {status === 'ready' && records.length === 0 ? (
-          <EmptyState isAdmin={isAdmin} onRefresh={refresh} />
+        {status === 'ready' && visibleRecords.length === 0 ? (
+          <EmptyState
+            isAdmin={isAdmin}
+            onRefresh={refresh}
+            isFiltered={isFiltered}
+            onClear={clearFilters}
+          />
         ) : null}
 
-        {status === 'ready' && records.length > 0 ? (
+        {status === 'ready' && visibleRecords.length > 0 ? (
           <div className="history-table-wrap">
             <table className="history-table">
               <thead>
@@ -287,7 +352,7 @@ export default function AttendanceHistoryPage({
                 </tr>
               </thead>
               <tbody>
-                {records.map((record, index) => (
+                {visibleRecords.map((record, index) => (
                   <tr key={record.id ?? `${record.date ?? index}-${index}`}>
                     {columns.map((column) => (
                       <td key={column.key}>{renderCell(record, column.key)}</td>

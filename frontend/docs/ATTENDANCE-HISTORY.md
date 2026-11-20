@@ -12,7 +12,9 @@ Route: `/attendance-history` (the existing S1-16 feedback preview stays at `/`).
 | `src/services/authService.js`              | Firebase ID token + custom-claim role lookup             |
 | `src/firebase/firebase.js`                 | Firebase app and Auth initialisation                     |
 | `src/utils/authToken.js`                   | Token fallback + role claim helpers                      |
-| `src/styles/attendance-history.css`        | Page styles using the shared design tokens               |
+| `src/utils/attendanceFilters.js`           | Filter helpers, API params and client-side fallback      |
+| `src/components/HistoryFilters.jsx`        | Filter form (date mode, status, search, employee, clear) |
+| `src/styles/attendance-history.css`        | Page + filter styles using the shared design tokens      |
 
 ## Integration notes
 
@@ -38,9 +40,33 @@ Route: `/attendance-history` (the existing S1-16 feedback preview stays at `/`).
 - Loading uses the shared `Loader`; failures use the shared `ErrorMessage` with
   a Retry action; an empty array renders the empty state.
 
+## Filters
+
+- The filter form sends its values as query parameters on the history request:
+  `startDate`, `endDate`, `status` (`IN` / `OUT`), `search` (staff name, email
+  or department) and `employee` (admin only). Empty values are omitted.
+- **Date filter** supports `Date range` (From/To), `Specific date` (a single
+  `Date`, mirrored into `startDate`/`endDate` and sent as `date`) and
+  `Any date`. An invalid range shows an inline error and does not send a
+  request.
+- The **Employee** field is shown only to administrators. It is a searchable
+  selection: options are built from the attendance records and can be typed
+  freely (name, employee ID or email). Staff never see or send this filter.
+- Filters can be combined, so an admin can filter by a date (or range) and an
+  employee at the same time.
+- Filters are applied with **Apply filters** (or Enter). **Clear filters**
+  resets the form (including the date mode and employee) and refetches without
+  parameters. Refresh keeps the active filters.
+- The table renders the records returned by the API. The same filters are also
+  applied client-side as a fallback if the API ignores the parameters, so the
+  displayed rows always match the active filters.
+- If nothing matches, the empty state offers **Clear filters** as well as
+  Refresh.
+
 ## Still to confirm
 
 - Login flow: which Firebase method is used (email/password, etc.) and whether
   it stores an ID token anywhere.
 - Exact custom-claim name for `admin` on the backend.
-- Final Figma column set and the API response/query parameters.
+- Final Figma column set and confirmation of the query parameter names above
+  with the backend owner.
