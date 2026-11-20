@@ -291,7 +291,7 @@ function Login({ onLoginSuccess }) {
         </section>
 
         <section
-          className="login-card"
+          className={`login-card card-${mode}`}
           aria-label={
             isSignup ? 'Sign up' : isReset ? 'Reset password' : 'Sign in'
           }
@@ -300,7 +300,7 @@ function Login({ onLoginSuccess }) {
           <p className="card-eyebrow">{cardCopy.eyebrow}</p>
           <h2 className="card-title">{cardCopy.title}</h2>
           <p className="card-description">{cardCopy.description}</p>
- ? (
+          {isSignup ? (
             <form
               onSubmit={handleSignup}
               autoComplete="on"
@@ -322,7 +322,7 @@ function Login({ onLoginSuccess }) {
                 <FieldError message={fieldErrors.name} />
               </div>
               <div className="form-group">
-                <label htmlFor="signup-email">Email address</label>
+                <label htmlFor="signup-email">Email Address</label>
                 <input
                   id="signup-email"
                   name="email"
@@ -335,7 +335,7 @@ function Login({ onLoginSuccess }) {
                 />
                 <FieldError message={fieldErrors.email} />
               </div>
-              <div className="form-group">
+              <div className="form-group password-group">
                 <label htmlFor="signup-password">Password</label>
                 <div className="password-input-wrap">
                   <input
@@ -357,7 +357,7 @@ function Login({ onLoginSuccess }) {
                     aria-pressed={showPassword}
                     onClick={() => setShowPassword((visible) => !visible)}
                   >
-                    {showPassword ? 'Hide' : 'Show'}
+                    <PasswordVisibilityIcon visible={showPassword} />
                   </button>
                 </div>
                 <FieldError message={fieldErrors.password} />
@@ -402,7 +402,7 @@ function Login({ onLoginSuccess }) {
               aria-busy={loading}
             >
               <div className="form-group">
-                <label htmlFor="email-link-email">Email address</label>
+                <label htmlFor="email-link-email">Email Address</label>
                 <input
                   id="email-link-email"
                   name="email"
@@ -445,7 +445,7 @@ function Login({ onLoginSuccess }) {
               aria-busy={loading}
             >
               <div className="form-group">
-                <label htmlFor="reset-email">Email address</label>
+                <label htmlFor="reset-email">Email Address</label>
                 <input
                   id="reset-email"
                   name="email"
@@ -482,7 +482,7 @@ function Login({ onLoginSuccess }) {
               aria-busy={loading}
             >
               <div className="form-group">
-                <label htmlFor="login-email">Email address</label>
+                <label htmlFor="login-email">Email Address</label>
                 <input
                   id="login-email"
                   name="username"
@@ -495,7 +495,7 @@ function Login({ onLoginSuccess }) {
                 />
                 <FieldError message={fieldErrors.email} />
               </div>
-              <div className="form-group">
+              <div className="form-group password-group">
                 <label htmlFor="login-password">Password</label>
                 <div className="password-input-wrap">
                   <input
@@ -517,7 +517,7 @@ function Login({ onLoginSuccess }) {
                     aria-pressed={showPassword}
                     onClick={() => setShowPassword((visible) => !visible)}
                   >
-                    {showPassword ? 'Hide' : 'Show'}
+                    <PasswordVisibilityIcon visible={showPassword} />
                   </button>
                 </div>
                 <FieldError message={fieldErrors.password} />
@@ -560,7 +560,7 @@ function Login({ onLoginSuccess }) {
 
           <div className="support-block">
             <p>Need help accessing your account?</p>
-            <a href="mailto:support@daymark.app">Contact support</a>
+            <a href="mailto:support@lcattends.app">Contact support</a>
           </div>
 
           <div className="secondary-actions">
@@ -600,6 +600,28 @@ function Login({ onLoginSuccess }) {
         <span>STAFF ATTENDANCE MANAGEMENT SYSTEM</span>
       </footer>
     </main>
+  );
+}
+
+function PasswordVisibilityIcon({ visible }) {
+  return (
+    <svg
+      className="password-icon"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M2.3 12c1.5 3.6 5.4 6 9.7 6s8.2-2.4 9.7-6c-1.5-3.6-5.4-6-9.7-6S3.8 8.4 2.3 12Z" />
+      <circle cx="12" cy="12" r="2.8" />
+      {!visible && <path d="M3 3 21 21" />}
+    </svg>
   );
 }
 

@@ -1,4 +1,4 @@
-import { auth } from '../config/firebase.js';
+import { getFirebaseAuth } from '../config/firebase.js';
 
 const getBearerToken = (req) => {
   const [scheme, token] = (req.headers.authorization || '').split(' ');
@@ -25,7 +25,7 @@ export const verifyToken =
     }
 
     try {
-      const decoded = await auth.verifyIdToken(token, checkRevoked);
+      const decoded = await getFirebaseAuth().verifyIdToken(token, checkRevoked);
       req.user = decoded;      // full decoded token (email, custom claims, etc.)
       req.uid = decoded.uid;   // the Firebase UID
       next();

@@ -1,8 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-  font-family: 'DM Sans', sans-serif;
-  color: #202b36;
+  --lc-ink: #0e181f;
+  --lc-white: #ffffff;
+  --lc-lime: #b2ed1d;
+  --lc-teal: #2f6b75;
+  --lc-grey: #767676;
+  --lc-error: #d93025;
+
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
+  color: var(--lc-ink);
+  background: var(--lc-white);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -21,6 +29,8 @@ body,
 
 body {
   min-width: 320px;
+  background: var(--lc-white);
+  color: var(--lc-ink);
 }
 
 button,
@@ -36,16 +46,16 @@ button {
 button:focus-visible,
 a:focus-visible,
 input:focus-visible {
-  outline: 3px solid #9ecbb0;
+  outline: 3px solid var(--lc-teal);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: #d9eee1;
-  color: #284239;
+  background: var(--lc-lime);
+  color: var(--lc-ink);
 }
 
 .auth-loading {
   min-height: 100vh;
-  background: #fff;
+  background: var(--lc-white);
 }

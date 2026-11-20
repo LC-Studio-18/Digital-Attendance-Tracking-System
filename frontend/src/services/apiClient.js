@@ -2,7 +2,8 @@ import axios from 'axios';
 import { getFirebaseIdToken } from './authService';
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  // In development, /api is proxied to the Express server by vite.config.js.
+  baseURL: import.meta.env.VITE_API_URL || '/api',
 });
 
 apiClient.interceptors.request.use(async (request) => {
