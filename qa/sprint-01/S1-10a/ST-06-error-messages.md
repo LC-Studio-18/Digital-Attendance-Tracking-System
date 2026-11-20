@@ -5,24 +5,17 @@
 - Primary Slack assignee: Elijah.
 - Current QA status: Fail by source review; runtime failure test Not Run because there is no request/failure path to exercise.
 
-## Acceptance Criteria
-- [ ] Failed clock-out shows clear error feedback and allows recovery.
-
-## Test Cases
-| Test ID | Scenario | Expected Result | Status |
-|---|---|---|---|
-| TC-01 | Cause clock-out operation failure | Clear error appears; status remains unchanged and retry is possible | Fail by source review (no handling); runtime test Not Run |
-
 ## Objective
-- Show useful error feedback when clock-out fails.
+- Show useful feedback when clock-out fails.
 
 ## Acceptance Criteria
-- [ ] A failed clock-out shows clear error feedback.
+- [ ] See original ticket acceptance criteria and Definition of Done in [S1-10a README](README.md).
 
 ## Test Cases
-| Test ID | Scenario | Expected Result | Status |
+
+| Test ID | Scenario | Expected Result | Primary Status and Notes |
 |---|---|---|---|
-| TC-01 | Cause clock-out request failure | Clear error feedback appears | Not Run |
+| TC-01 | Cause clock-out operation failure | Show error feedback, preserve status and allow retry | Fail - source review confirms handling absent; runtime failure test not run. |
 
 ## Linked Bugs
 None recorded.

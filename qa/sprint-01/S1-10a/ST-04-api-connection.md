@@ -5,24 +5,17 @@
 - Primary Slack assignee: Elijah; Sprint Brief collaborators: Phumezile Sibeko and Sibongile.
 - Current QA status: Fail by source review (request implementation absent); API execution Blocked. Scrum Masters' mock-data allowance does not establish that the explicit API criterion was waived.
 
-## Acceptance Criteria
-- [ ] Frontend sends clock-out request to backend and handles its response.
-
-## Test Cases
-| Test ID | Scenario | Expected Result | Status |
-|---|---|---|---|
-| TC-01 | Send clock-out request and inspect response | Request reaches available backend and result is handled | Blocked - no request implementation; integration execution unavailable |
-
 ## Objective
-- Connect clock-out action to the backend API.
+- Connect the clock-out action to the backend API.
 
 ## Acceptance Criteria
-- [ ] Clock-out request connects successfully to the backend.
+- [ ] See original ticket acceptance criteria and Definition of Done in [S1-10a README](README.md).
 
 ## Test Cases
-| Test ID | Scenario | Expected Result | Status |
+
+| Test ID | Scenario | Expected Result | Primary Status and Notes |
 |---|---|---|---|
-| TC-01 | Send clock-out request and inspect API response | Request succeeds against available backend | Blocked |
+| TC-01 | Send clock-out request and inspect response | Request is sent and its response is handled | Fail - source review confirms request implementation absent; live execution blocked. |
 
 ## Linked Bugs
 None. Backend dependency unavailable; this is not classified as a frontend defect.

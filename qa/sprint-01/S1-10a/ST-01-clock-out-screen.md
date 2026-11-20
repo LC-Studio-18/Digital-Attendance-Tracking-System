@@ -6,31 +6,18 @@
 - Current QA status: Fail - page renders; design conformity fails on the latest visual review.
 - Reference: supplied coloured Figma design, [node 99-194](https://www.figma.com/design/Tlkxebvj6tGK2rqH57wFXN/Digital-Attendance-Tracking-System---Wireframe?node-id=99-194). Formal approval of the coloured design is not independently verified; distinguish it from the earlier grayscale wireframe.
 
-## Acceptance Criteria
-- [x] Page renders and is reachable (observed on 20 Nov, 3c12382).
-- [ ] Page matches the supplied design.
-
-## Test Cases
-
-| Test ID | Scenario | Expected Result | Status |
-|---|---|---|---|
-| TC-01 | Verify clock-out page rendering and application connection | Page renders and is reachable | Pass (3c12382) |
-| TC-02 | Compare page with supplied coloured Figma design | Page structure and styling conform | Fail (3c12382) |
-
 ## Objective
 - Provide the clock-out page and connect it to the application entry point.
 
 ## Acceptance Criteria
-- [x] Basic clock-out page structure is implemented; design conformity is assessed separately.
-- [x] Page is connected to the application and renders.
-- [ ] Page conforms to the approved Figma design.
+- [ ] See original ticket acceptance criteria and Definition of Done in [S1-10a README](README.md).
 
 ## Test Cases
 
-| Test ID | Scenario | Expected Result | Status |
+| Test ID | Scenario | Expected Result | Primary Status and Notes |
 |---|---|---|---|
-| TC-01 | Verify clock-out page rendering and application connection | Clock-out page renders and is reachable through the application | Pass |
-| TC-02 | Compare page with supplied Figma clock-out wireframe | Page structure and visual styling conform to the design | Fail |
+| TC-01 | Verify clock-out page rendering and application connection | Page renders and is reachable | Pass - observed on 3c12382. |
+| TC-02 | Compare page with supplied coloured Figma design | Page structure and styling conform to the reference | Fail - design differences remain on 3c12382. |
 
 ## Linked Bugs
 - [BUG-S1-10a-01](bugs/BUG-S1-10a-01-screen-design.md) - Clock-out screen does not match the Figma wireframe.

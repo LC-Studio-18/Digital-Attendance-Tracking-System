@@ -5,24 +5,17 @@
 - Primary Slack assignee: Elijah.
 - Current QA status: Fail by source review for backend-confirmed success criterion; mock success feedback was observed, but backend confirmation was not implemented or verified.
 
-## Acceptance Criteria
-- [ ] Show success feedback only after clock-out operation succeeds.
-
-## Test Cases
-| Test ID | Scenario | Expected Result | Status |
-|---|---|---|---|
-| TC-01 | Complete successful clock-out | Clear success feedback appears after operation succeeds | Fail for backend-confirmed criterion; mock feedback observed on f998ab2 |
-
 ## Objective
 - Show success feedback after clock-out completes.
 
 ## Acceptance Criteria
-- [ ] Successful clock-out shows clear success feedback.
+- [ ] See original ticket acceptance criteria and Definition of Done in [S1-10a README](README.md).
 
 ## Test Cases
-| Test ID | Scenario | Expected Result | Status |
+
+| Test ID | Scenario | Expected Result | Primary Status and Notes |
 |---|---|---|---|
-| TC-01 | Complete successful clock-out | Clear success feedback appears | Not Run |
+| TC-01 | Complete successful clock-out | Show feedback after backend confirms success | Blocked - mock success observed on f998ab2; backend-confirmed result unverified. |
 
 ## Linked Bugs
 None recorded.

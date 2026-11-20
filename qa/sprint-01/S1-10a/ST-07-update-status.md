@@ -5,26 +5,18 @@
 - Primary Slack assignee: Elijah.
 - Current QA status: Prior-build mock transition Pass; current-build regression Not Run; API-backed verification Blocked.
 
-## Acceptance Criteria
-- [ ] Attendance status updates to OUT after successful clock-out.
-
-## Test Cases
-| Test ID | Scenario | Expected Result | Status |
-|---|---|---|---|
-| TC-01 | Verify local status update after clock-out | Status changes from IN to OUT after successful operation | Pass on f998ab2 mock runtime; current-build regression Not Run |
-| TC-02 | Verify status after API clock-out | Successful API response updates displayed status | Blocked - API request absent/unavailable |
-
 ## Objective
-- Verify status updates after clock-out.
+- Verify that attendance status updates after clock-out.
 
 ## Acceptance Criteria
-- [ ] Attendance status updates after successful clock-out.
+- [ ] See original ticket acceptance criteria and Definition of Done in [S1-10a README](README.md).
 
 ## Test Cases
-| Test ID | Scenario | Expected Result | Status |
+
+| Test ID | Scenario | Expected Result | Primary Status and Notes |
 |---|---|---|---|
-| TC-01 | Review state update logic | New attendance status is applied | Fail - static review |
-| TC-02 | Verify status update after API clock-out | Successful API response updates displayed status | Blocked |
+| TC-01 | Verify local status update after clock-out | Status changes from IN to OUT after successful operation | Pass - observed on f998ab2 mock runtime; current-build regression pending. |
+| TC-02 | Verify status after API clock-out | Successful API response updates displayed status | Blocked - API-backed verification unavailable. |
 
 ## Linked Bugs
 - [BUG-S1-10a-05](bugs/BUG-S1-10a-05-state-setter.md)

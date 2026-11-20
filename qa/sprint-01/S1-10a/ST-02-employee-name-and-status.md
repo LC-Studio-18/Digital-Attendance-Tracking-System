@@ -5,31 +5,18 @@
 - Primary Slack assignee: Phumezile Sibeko.
 - Current QA status: Fail for unexpected-status handling; mock display passed; live-data check Blocked.
 
-## Acceptance Criteria
-- [ ] Employee name and status display correctly for the applicable employee.
-- [ ] IN, OUT and unexpected statuses receive accurate messages.
-
-## Test Cases
-
-| Test ID | Scenario | Expected Result | Status |
-|---|---|---|---|
-| TC-01 | Observe employee name and attendance status | Mock display is correct; live accuracy is separately verified against API data | Pass for mock display (f998ab2); live-data verification Blocked |
-| TC-02 | Check OUT and unexpected-status handling | Supported and unexpected values receive accurate handling | Fail - unexpected status remains incomplete; OUT message improved |
-
 ## Objective
 - Display the employee name and attendance status on the clock-out page.
 
 ## Acceptance Criteria
-- [ ] Employee name is displayed from dynamic employee data.
-- [ ] Attendance status is displayed accurately for supported states.
-- [ ] Clocked-out and unexpected statuses receive accurate handling and messaging.
+- [ ] See original ticket acceptance criteria and Definition of Done in [S1-10a README](README.md).
 
 ## Test Cases
 
-| Test ID | Scenario | Expected Result | Status |
+| Test ID | Scenario | Expected Result | Primary Status and Notes |
 |---|---|---|---|
-| TC-01 | Visually observe displayed employee name and attendance status | Name and status are displayed; live-data accuracy is verified against API data | Blocked for live-data verification; mock-data display observed |
-| TC-02 | Review clocked-out and unexpected-status fallback handling | Accurate, distinct messages are presented for supported and unexpected statuses | Fail - static code-review finding; runtime verification pending |
+| TC-01 | Observe employee name and attendance status | Display mock values and verify live accuracy against employee data | Blocked - live-data check; mock display observed on f998ab2. |
+| TC-02 | Check OUT and unexpected-status handling | Show accurate handling for both states | Fail - OUT message improved; unexpected-state handling remains incomplete by source review. |
 
 ## Linked Bugs
 - [BUG-S1-10a-02](bugs/BUG-S1-10a-02-attendance-fallback.md) - Incorrect attendance fallback messaging (proposed severity: Medium; static finding pending runtime verification).

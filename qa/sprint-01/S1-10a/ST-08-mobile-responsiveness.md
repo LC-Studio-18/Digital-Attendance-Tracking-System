@@ -3,26 +3,19 @@
 ## Information
 - Ticket ID: S1-10a
 - Primary Slack assignee: Elijah; collaborator: Zaarah.
-- Current QA status: Preliminary Pass on f998ab2 at 393 ? 852; broad/current-build responsive verification Not Run.
-
-## Acceptance Criteria
-- [ ] Interface remains usable on supported mobile viewports.
-
-## Test Cases
-| Test ID | Scenario | Expected Result | Status |
-|---|---|---|---|
-| TC-01 | Inspect clock-out screen at mobile viewport sizes | Layout and controls remain usable | Preliminary Pass at 393 ? 852 on f998ab2; broader/current-build coverage Not Run |
+- Current QA status: Preliminary Pass on f998ab2 at 393 x 852; broad/current-build responsive verification Not Run.
 
 ## Objective
 - Verify mobile responsiveness.
 
 ## Acceptance Criteria
-- [ ] The interface remains usable on mobile viewports.
+- [ ] See original ticket acceptance criteria and Definition of Done in [S1-10a README](README.md).
 
 ## Test Cases
-| Test ID | Scenario | Expected Result | Status |
+
+| Test ID | Scenario | Expected Result | Primary Status and Notes |
 |---|---|---|---|
-| TC-01 | Inspect clock-out screen at mobile viewport sizes | Layout and controls remain usable | Not Run |
+| TC-01 | Inspect clock-out screen at mobile viewport sizes | Layout and controls remain usable | Pass - preliminary f998ab2 check at 393 x 852; broad/current-build checks remain outstanding. |
 
 ## Linked Bugs
 None recorded.
@@ -61,5 +54,5 @@ None recorded.
 
 
 ### 19 November 2026 - Preliminary mobile observation
-- On `f998ab224f8a83152be733ffbb791079a50869d3`, preliminary manual inspection at 393 ? 852 showed a usable layout. No screenshot was saved and no other viewport was tested. This is not current-build or broad responsive coverage.
+- On `f998ab224f8a83152be733ffbb791079a50869d3`, preliminary manual inspection at 393 x 852 showed a usable layout. No screenshot was saved and no other viewport was tested. This is not current-build or broad responsive coverage.
 - Prepared feedback, not sent: Elijah to complete responsive verification with Zaarah and correct confirmed layout issues. QA will check agreed mobile and desktop sizes after styling changes. No new mobile defect is confirmed.

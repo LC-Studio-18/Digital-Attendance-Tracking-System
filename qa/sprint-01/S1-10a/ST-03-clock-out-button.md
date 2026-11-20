@@ -5,30 +5,19 @@
 - Primary Slack assignee: Elijah.
 - Current QA status: Styling Fail; prior-build integration and disabled behavior passed; current-build interactive regression and rapid-click tests Not Run.
 
-## Acceptance Criteria
-- [ ] Button matches supplied design, works, and gives suitable loading/disabled feedback.
-- [ ] Repeated submissions are prevented.
-
-## Test Cases
-
-| Test ID | Scenario | Expected Result | Status |
-|---|---|---|---|
-| TC-01 | Verify button integration and rendered page | Integrated actionable button works | Pass on prior runtime build f998ab2; current-build regression Not Run |
-| TC-02 | Exercise loading, disabled and rapid-repeat behavior | Pending state is visible; duplicates are prevented | Not Run |
-| TC-03 | Compare button with supplied design | Text and icon/colors match reference | Fail (3c12382) |
-
 ## Objective
-- Integrate the clock-out button and provide loading/disabled behavior.
+- Integrate the clock-out button and provide loading and disabled behavior.
 
 ## Acceptance Criteria
-- [ ] Button matches the design and supports loading and disabled states.
+- [ ] See original ticket acceptance criteria and Definition of Done in [S1-10a README](README.md).
 
 ## Test Cases
-| Test ID | Scenario | Expected Result | Status |
+
+| Test ID | Scenario | Expected Result | Primary Status and Notes |
 |---|---|---|---|
-| TC-01 | Inspect button integration and rendered page | Clockout component is rendered with an actionable button | Fail |
-| TC-02 | Exercise loading, disabled, and repeated-click behavior | Loading/disabled states work and duplicate actions are prevented | Not Run |
-| TC-03 | Compare button with supplied design | Button label and icon/design match reference | Fail |
+| TC-01 | Verify button integration and rendered page | Integrated actionable button works | Pass - verified on prior runtime build f998ab2; current-build regression pending. |
+| TC-02 | Exercise loading, disabled and rapid-repeat behavior | Show pending feedback and prevent duplicate submissions | Fail - source review confirms loading state absent; rapid-repeat runtime test not run. |
+| TC-03 | Compare button with supplied design | Text and icon colors match the reference | Fail - differences observed on 3c12382. |
 
 ## Linked Bugs
 - [BUG-S1-10a-03](bugs/BUG-S1-10a-03-button-integration.md)
