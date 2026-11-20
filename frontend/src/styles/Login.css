@@ -402,6 +402,30 @@
   cursor: not-allowed;
 }
 
+.back-link {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--teal);
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+}
+
+.back-link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.back-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .button-arrow {
   font-size: 13px;
   line-height: 1;
@@ -486,7 +510,9 @@
 
 /* The sign-in reference keeps the card focused on the credentials form. */
 .login-page:not(.signup-page):not(.reset-page):not(.email-page)
-  .secondary-actions {
+  .secondary-actions,
+.login-page.reset-page .secondary-actions,
+.login-page.email-page .secondary-actions {
   display: none;
 }
 

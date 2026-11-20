@@ -443,6 +443,14 @@ function Login({ onLoginSuccess }) {
                   </span>
                 )}
               </button>
+              <button
+                className="back-link"
+                type="button"
+                disabled={loading}
+                onClick={() => switchMode('login')}
+              >
+                ← Back to login
+              </button>
             </form>
           ) : isReset ? (
             <form
@@ -479,6 +487,14 @@ function Login({ onLoginSuccess }) {
                     →
                   </span>
                 )}
+              </button>
+              <button
+                className="back-link"
+                type="button"
+                disabled={loading}
+                onClick={() => switchMode('login')}
+              >
+                ← Back to login
               </button>
             </form>
           ) : (
@@ -596,7 +612,7 @@ function Login({ onLoginSuccess }) {
                 Sign in with an email link
               </button>
             )}
-            {mode !== 'login' && (
+            {isSignup && (
               <button
                 type="button"
                 disabled={loading}
