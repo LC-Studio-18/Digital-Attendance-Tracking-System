@@ -184,7 +184,6 @@ export default function ClockIn({ user }) {
               </p>
             </div>
           </div>
-          <AttendanceStatus clockedIn={clockedIn} clockInTime={clockInTime} />
         </div>
 
         <div className="clock-action">
