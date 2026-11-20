@@ -2,7 +2,7 @@ import express from 'express';
 import { getAttendance } from '../services/sheets.js';
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+router.get('/api/attendance', async (req, res) => {
   res.json(await getAttendance());
 });
 

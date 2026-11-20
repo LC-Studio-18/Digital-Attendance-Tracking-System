@@ -13,25 +13,6 @@ function ClockIcon() {
   );
 }
 
-function AttendanceStatus({ clockedIn, clockInTime }) {
-  return (
-    <aside className="attendance-status" aria-live="polite">
-      <div className="attendance-status__card">
-        <span className="attendance-status__badge">
-          {clockedIn ? 'Clocked In' : 'Clocked Out'}
-        </span>
-        <p className="attendance-status__headline">
-          {clockedIn ? `You clocked in at ${clockInTime}` : "You haven't clocked in yet"}
-        </p>
-        <p className="attendance-status__description">
-          {clockedIn
-            ? 'Your attendance has been recorded for today'
-            : "Your attendance hasn't been recorded for today"}
-        </p>
-      </div>
-    </aside>
-  );
-}
 
 export default function ClockIn({ user }) {
   const employeeName = user?.displayName || 'Employee';
@@ -169,7 +150,7 @@ export default function ClockIn({ user }) {
             <div className="clock-success__copy">
               <h1 id="success-greeting">{greeting.replace(' ', '\n')}</h1>
               <p className="clock-success__welcome">
-                Welcome, <span>{'{Employee}'}</span>
+                Welcome, <span>{employeeName}</span>
               </p>
               <div className="clock-success__brand-copy">
                 <p>WELCOME TO</p>
@@ -197,7 +178,7 @@ export default function ClockIn({ user }) {
             <ClockIcon />
             <div className="welcome-copy">
               <p className="welcome-copy__greeting">{greeting}</p>
-              <h1 id="welcome-heading">Welcome, <span>{'{Employee}'}</span></h1>
+              <h1 id="welcome-heading">Welcome, <span>{employeeName}</span></h1>
               <p className="welcome-copy__datetime">
                 {dateLabel} <span aria-hidden="true">•</span> {timeLabel}
               </p>
