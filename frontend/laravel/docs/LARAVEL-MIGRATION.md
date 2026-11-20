@@ -16,8 +16,11 @@ Not changed:
 - React files written by teammates (project foundation from the initial commits)
 - Git history on `main`
 
-The Laravel app is added at `frontend/laravel/` rather than replacing the React
-files in place. This keeps both stacks available while the team transitions.
+The Laravel app is added at `frontend/laravel/` as the new home for Rasool's
+code. The original React files that Rasool created are kept with their original
+file names, but their contents have been replaced by a short placeholder note
+pointing here. Files created by teammates are untouched; teammates will update
+or remove their own React files separately.
 
 ## File mapping
 
