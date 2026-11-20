@@ -1,253 +1,179 @@
-# Attendance History API Contract
+# Attendance History API
 
-Endpoint: `GET /api/v1/attendance/history`
+## Endpoint
 
-This document describes the **actual** behaviour of the integrated endpoint in
-`src/routes/attendance.js`, `src/app.js`, `src/middleware/authMiddleware.js`,
-`src/controllers/attendanceController.js`, `src/services/sheets.js` and
-`src/utils/attendanceResponse.js`.
+`GET /api/v1/attendance/history`
 
-## Authentication
+The route is mounted by `src/app.js` and registered in `src/routes/attendance.js`.
 
-The endpoint is protected by `verifyToken`. Requests must include a Firebase
-ID token in the `Authorization` header:
+## Authentication and access
+
+Send a Firebase ID token in the `Authorization` header:
 
 ```http
 Authorization: Bearer <Firebase ID token>
 ```
 
-- The token is verified server-side with Firebase Admin `auth.verifyIdToken()`.
-- The verified token supplies `uid` and `email`. The user role is read from the
-  `role` custom claim. **If the claim is absent, the role defaults to `staff`.**
-- `admin`: may read attendance records for the whole organisation and may use
-  `employeeId` to filter across employees.
-- `staff`: may read only their own records. The Google Sheets service resolves
-  the verified `uid`/`email` through the `Employees` tab to an employee ID, then
-  returns attendance rows with a matching `employeeId` (or legacy `uid`,
-  `user_id`, `user id (firebase uid)`) value. Any `employeeId` supplied by the
-  client is ignored; date filters still apply to their own records only.
-- Any other verified role (for example `manager`) receives HTTP 403.
-- Tokens in query strings, cookies or other headers are not accepted.
+`verifyToken` validates the token with Firebase Admin. The authenticated
+identity contains `uid`, `email`, and `role`; a missing role claim defaults to
+`staff`.
+
+- `admin` can read all retrieved records and use `employeeId` to filter them.
+- `staff` can read only records whose `uid`, `user_id`, or
+  `user id (firebase uid)` field matches the authenticated Firebase UID. A
+  valid `employeeId` query is ignored for staff. It is still validated, so an
+  invalid value returns HTTP 400.
+- Other roles receive HTTP 403.
+
+The current `sheets.js` service returns the configured attendance range. The
+controller maps those rows and scopes staff access by the Firebase UID fields
+listed above; it does not perform an employee-directory lookup.
 
 ## Query parameters
 
-| Parameter | Default | Behaviour |
-|---|---|---|
-| `date` | none | Return records for one calendar date, for example `2026-11-18`. |
-| `startDate` | none | Inclusive start of a date range. May be used on its own. |
-| `endDate` | none | Inclusive end of a date range. May be used on its own. |
-| `employeeId` | none | Admin only. Employee identifier to filter by (matched against record employee identifier fields). Ignored for `staff` requests (their authenticated identity is always used). |
-| `page` | `1` | Page number, 1-based. Only positive integer strings are accepted; malformed, zero, negative or non-string values use the default. A page beyond the last page returns an empty `data` array. |
-| `limit` | `20` | Records per page. Only positive integer strings are accepted; malformed, zero, negative or non-string values use the default. Values above `100` are capped at `100`. |
+| Parameter | Default | Behavior |
+|---|---:|---|
+| `date` | none | Match one calendar date. |
+| `startDate` | none | Inclusive start of a date range; may be used alone. |
+| `endDate` | none | Inclusive end of a date range; may be used alone. |
+| `employeeId` | none | Admin-only record filter; ignored for staff after validation. |
+| `page` | `1` | Positive integer page number; invalid values use the default. |
+| `limit` | `20` | Positive integer page size; invalid values use the default and values above `100` are capped at `100`. |
 
-Blank values (`?date=`, `?employeeId=`, etc.) are treated as if the parameter
-was not supplied. `date` cannot be combined with `startDate` or `endDate`; use
-one date selection method at a time. `employeeId` can be combined with either
-method.
+Date query values use `YYYY-MM-DD`; one- or two-digit month/day components are
+accepted and normalized. Calendar validity is checked. `date` cannot be used
+with `startDate` or `endDate`. If both range endpoints are supplied,
+`startDate` must be on or before `endDate`. A range can have either endpoint
+open. For spreadsheet date cells, normalization accepts year-month-day or
+year/month/day values, with an optional time suffix; missing or unrecognized
+dates do not match a date filter.
 
-Filtering is applied **after** role-based access control and **before** sorting
-and pagination, so `totalRecords`, `count` and `totalPages` describe the
-matching records only.
+`employeeId` must be a string of 1–128 characters. It must start with a letter
+or digit and may otherwise contain letters, digits, `.`, `_`, `:`, `@`, or `-`.
+Repeated filter parameters and non-string values are rejected. Empty filter
+values are treated as omitted; whitespace-only values are invalid.
 
-### Accepted date formats
+Malformed, zero, negative, repeated, or unsafe-integer pagination values fall
+back to the default. Pagination does not return a validation error. A page past
+the last page returns an empty `data` array.
 
-Query dates must use the ISO calendar format `YYYY-MM-DD`
-(`YYYY-M-D` is also accepted and normalised). Calendar validity is checked, so
-`2026-02-30` and `2026-13-01` are rejected.
+Filtering runs on the role-scoped records before sorting and pagination.
+`totalRecords` and `totalPages` describe the filtered result. Records are sorted
+newest first using the first parseable value among `timestamp` and then `date`;
+records with no parseable value sort last. Sorting uses JavaScript date parsing
+for strings.
 
-Spreadsheet `date` cells are strings, not JavaScript `Date` objects. Values such
-as `2026-11-18`, `2026/11/18` and `2026-11-18T08:15:00.000Z` are normalised to
-`YYYY-MM-DD` for comparison; a time portion is ignored. Records with a missing
-or unrecognised date never match a date filter, but are returned when no date
-filter is supplied.
+## Spreadsheet mapping
 
-### Accepted employee identifiers
+`sheets.js` reads the configured `SHEET_RANGE` as a two-dimensional array. The
+controller treats the first row as headers and maps subsequent non-empty rows.
 
-`employeeId` must be a single non-blank string of at most 128 characters
-containing letters, digits or `.`, `_`, `:`, `@` and `-` (and must start with a
-letter or digit). It is matched against the record's employee identifier fields
-(for example `uid`, `user_id`, `user id (firebase uid)`, `employeeId`,
-`employeeID`, `employeeid`, `employee_id` or `employee id`, depending on the
-sheet headers and mapped keys).
+- Blank headers are skipped; header text is trimmed.
+- Each cell is converted to a trimmed string. Missing or null cells become an
+  empty string. Strings matching `^-?\d+$` are converted with JavaScript
+  `Number`; other cell contents stay strings.
+- Each non-empty header adds the original trimmed header as a property. A
+  lowercase header key and a camelCase key are also added if those keys do not
+  already exist. Header-derived keys can therefore vary and may collide; the
+  original key is written first.
+- The controller does not generate an `id`. Any ID must come from a sheet
+  column.
+- UID access matching recognizes `uid`, `user_id`, and
+  `user id (firebase uid)`. Employee filtering recognizes those fields plus
+  `employeeId`, `employeeID`, `employeeid`, `employee_id`, and `employee id`.
 
-### Examples
+Employee-ID filtering trims the record value and compares it exactly, including
+case, to the trimmed query value.
 
-- `/api/v1/attendance/history` — no filters, all permitted records.
-- `/api/v1/attendance/history?date=2026-11-18` — one date.
-- `/api/v1/attendance/history?startDate=2026-11-01&endDate=2026-11-30` — inclusive range.
-- `/api/v1/attendance/history?employeeId=staff-uid-1` — one employee (admin).
-- `/api/v1/attendance/history?employeeId=staff-uid-1&date=2026-11-18` — combined.
-- `/api/v1/attendance/history?employeeId=staff-uid-1&startDate=2026-11-01&endDate=2026-11-30&page=2&limit=25` — combined filters with pagination.
+## Examples
 
-Records are sorted newest first **before** pagination is applied. Sorting uses
-the normalized `timestamp` value when present, otherwise the `date` value; both
-`Date` objects and parseable date strings are supported. Missing or unparseable
-timestamps and dates sort last.
-
-## Successful response (HTTP 200)
-
-```json
-{
-  "success": true,
-  "count": 2,
-  "totalRecords": 2,
-  "currentPage": 1,
-  "totalPages": 1,
-  "data": []
-}
+```http
+GET /api/v1/attendance/history?page=2&limit=25
+GET /api/v1/attendance/history?date=2026-11-18
+GET /api/v1/attendance/history?startDate=2026-11-01&endDate=2026-11-30
+GET /api/v1/attendance/history?employeeId=EMP001
+GET /api/v1/attendance/history?employeeId=EMP001&date=2026-11-18
 ```
 
-| Field | Type | Meaning |
-|---|---|---|
-| `success` | boolean | Always `true` for a successful response. |
-| `count` | number | Number of records in `data` on the current page (not the total). |
-| `totalRecords` | number | Number of matching records **after role and filter parameters are applied**, before pagination. |
-| `currentPage` | number | Effective page number after parsing/clamping. |
-| `totalPages` | number | `0` when `totalRecords` is `0`; otherwise `Math.ceil(totalRecords / limit)`. |
-| `data` | array | The records for the current page, newest first. |
+The `employeeId` examples require an admin token; staff still receive only
+UID-matched records.
 
-### Record shape inside `data`
-
-Attendance rows are retrieved via `src/services/sheets.js` (`getAttendance()`,
-which returns 2D spreadsheet rows) and mapped by the controller
-(`mapSheetRowsToRecords`). For each non-empty data row:
-
-- Empty header cells are ignored.
-- The original (trimmed) header key is included when present.
-- A lowercase header key and a camelCase header key are also exposed when they
-  do not collide with an existing key.
-- Cell values are trimmed strings. Values that match an integer pattern (for
-  example `"4"`) are converted to numbers; other values remain strings.
-- Records do **not** include a controller/service-generated `id` field. If an
-  identifier is needed, it must come from the spreadsheet data/headers.
-
-The exact fields depend on the spreadsheet headers. Do not assume a fixed key
-set beyond what your sheet provides.
-
-### Example with records
+## Successful response
 
 ```json
 {
   "success": true,
-  "count": 2,
-  "totalRecords": 2,
+  "count": 1,
+  "totalRecords": 1,
   "currentPage": 1,
   "totalPages": 1,
   "data": [
     {
+      "UID": "firebase-uid-example",
       "uid": "firebase-uid-example",
+      "Date": "2026-11-18",
       "date": "2026-11-18",
-      "status": "Present",
+      "Employee ID": "EMP001",
+      "employee id": "EMP001",
       "employeeId": "EMP001",
-      "employeeid": "EMP001"
-    },
-    {
-      "uid": "firebase-uid-example",
-      "date": "2026-11-17",
-      "status": "Absent",
-      "employeeId": "EMP001",
-      "employeeid": "EMP001"
+      "Status": "Present",
+      "status": "Present"
     }
   ]
 }
 ```
 
-### Empty result
+The properties shown are produced by headers `UID`, `Date`, `Employee ID`, and
+`Status`; actual record fields depend on the spreadsheet headers. Integer-like
+cell strings appear as JSON numbers. The response always includes `success`,
+`count` (current page length), `totalRecords` (filtered total), `currentPage`,
+`totalPages`, and `data`. With no matching records, `count` and `totalRecords`
+are `0`, `totalPages` is `0`, and `data` is `[]`.
 
-A user with no matching records (for example an unmatched filter, a staff user
-with no records, or an empty spreadsheet) still receives HTTP 200 with an empty
-`data` array:
+## Errors
 
-```json
-{
-  "success": true,
-  "count": 0,
-  "totalRecords": 0,
-  "currentPage": 1,
-  "totalPages": 0,
-  "data": []
-}
-```
+Authentication and filter/role errors use `{ "success": false, "message": "..." }`.
 
-## Error responses
+| HTTP status | Condition | Message |
+|---:|---|---|
+| 401 | Missing or malformed Bearer header | `Unauthorized: Missing or malformed Bearer token` |
+| 401 | Token invalid or expired | `Unauthorized: Invalid or expired token` |
+| 403 | Verified role is not `admin` or `staff` | `Forbidden: Invalid role` |
+| 400 | Invalid date | `Bad Request: Invalid <parameter>. Use YYYY-MM-DD.` |
+| 400 | Invalid employee ID | `Bad Request: Invalid employeeId.` |
+| 400 | `date` combined with a range | `Bad Request: Use either date or startDate/endDate, not both.` |
+| 400 | Reversed range | `Bad Request: Invalid date range. startDate must be on or before endDate.` |
 
-### HTTP 401 — missing or malformed Bearer token
+The sheets service maps upstream failures as follows:
 
-Returned by the auth middleware when the `Authorization` header is absent or
-does not start with `Bearer `.
+| HTTP status | Condition | Message |
+|---:|---|---|
+| 401 | Google authentication failure | `Google authentication failed` |
+| 403 | Spreadsheet permission denied | `No permission to access the spreadsheet` |
+| 400 | Invalid range | `Invalid spreadsheet range` |
+| 404 | Spreadsheet or range not found | `Spreadsheet or range not found` |
+| 502 | Other Google Sheets API failure | `Could not reach Google Sheets API` |
 
-```json
-{
-  "success": false,
-  "message": "Unauthorized: Missing or malformed Bearer token"
-}
-```
-
-### HTTP 401 — invalid or expired token
-
-Returned when Firebase Admin rejects the supplied ID token.
-
-```json
-{
-  "success": false,
-  "message": "Unauthorized: Invalid or expired token"
-}
-```
-
-### HTTP 403 — invalid role
-
-Returned when the token is valid but its `role` claim is neither `admin` nor
-`staff`.
-
-```json
-{
-  "success": false,
-  "message": "Forbidden: Invalid role"
-}
-```
-
-### HTTP 400 — invalid filters
-
-Filter validation failures use the same response shape as the 401/403 errors,
-with a `message` describing the problem:
-
-```json
-{
-  "success": false,
-  "message": "Bad Request: Invalid date. Use YYYY-MM-DD."
-}
-```
-
-Possible messages:
-
-| Condition | Message |
-|---|---|
-| Malformed or impossible `date`, `startDate` or `endDate` | `Bad Request: Invalid <parameter>. Use YYYY-MM-DD.` |
-| Repeated or non-string date/employee parameter | Corresponding `Invalid ...` message above |
-| `startDate` after `endDate` | `Bad Request: Invalid date range. startDate must be on or before endDate.` |
-| `date` combined with `startDate`/`endDate` | `Bad Request: Use either date or startDate/endDate, not both.` |
-| Malformed, repeated or too-long `employeeId` | `Bad Request: Invalid employeeId.` |
-
-Filter validation runs after authentication and role checks, so missing tokens
-still receive 401 and unsupported roles still receive 403.
-
-### HTTP 500 — server/upstream failure
-
-Errors thrown by the controller (for example a missing `SPREADSHEET_ID` or a
-Google Sheets API failure) are passed to the Express error handler. Note that
-this error shape is intentionally different from the 401/403 responses:
+These errors use the Express error-handler shape:
 
 ```json
 {
   "status": "error",
-  "message": "Missing SPREADSHEET_ID in environment variables"
+  "message": "Invalid spreadsheet range"
 }
 ```
 
-## Frontend integration notes
+Other unhandled controller errors use the same shape with HTTP 500 unless they
+carry an explicit status.
 
-- Treat `data` as the only source of rows for the table; `count` describes that
-  page only. Use `totalRecords` and `totalPages` for pagination controls.
-- A staff response can legitimately be empty with HTTP 200; this is not an error.
-- Do not rely on a fixed set of record keys: they are derived from sheet headers.
-- Send the Firebase ID token on every request; the API does not use sessions.
+## Configuration
+
+The endpoint needs Firebase Admin credentials:
+`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`.
+Google Sheets reads require `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`,
+`SPREADSHEET_ID`, and a valid `SHEET_RANGE`. The sheet service converts literal
+`\n` sequences in the Google private key to newlines. Although the current
+`backend/.env.example` comment describes `SHEET_RANGE` as optional, the service
+provides no default, so set a valid range. Set `PORT` and
+`FRONTEND_URL` for the server and CORS as needed. See `../.env.example` for
+placeholder names and never put real credentials in documentation.

@@ -21,31 +21,24 @@ npm install
 
 ## Environment configuration
 
-Create `backend/.env` using `backend/.env.example` as a template. The server
-loads this file with `dotenv` when it starts.
+Create `backend/.env` from `backend/.env.example`. The server loads it through
+`dotenv` in `src/server.js` before loading the application.
 
-Firebase Admin authentication requires these values:
+Firebase Admin requires `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and
+`FIREBASE_PRIVATE_KEY`. A single-line private key may use literal `\n`
+sequences between PEM lines; `src/config/firebase.js` converts them to actual
+newlines. Keep values in dotenv `NAME=value` form rather than copying JSON
+property syntax.
 
-- `FIREBASE_PROJECT_ID`
-- `FIREBASE_CLIENT_EMAIL`
-- `FIREBASE_PRIVATE_KEY`
+Google Sheets access requires `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`,
+`SPREADSHEET_ID`, and `SHEET_RANGE`. The sheet service requests the
+`spreadsheets.readonly` scope and uses `SHEET_RANGE` as supplied; configure a
+valid A1 range such as `Attendance!A:Z`. An empty range is not given a default
+by the current service. Google private keys also use literal `\n` sequences.
 
-The Firebase private key can be entered on one line with `\n` between lines;
-the application converts those escaped newlines before initializing Firebase.
-The other service account fields (`FIREBASE_TYPE`, `PRIVATE_KEY_ID`, and the
-certificate URLs) may remain in `.env`, but Firebase Admin only needs the three
-values listed above for this configuration.
-
-Attendance history also requires Google Sheets credentials and spreadsheet
-configuration: `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `SPREADSHEET_ID`
-and `SHEET_RANGE`. Share the spreadsheet with the Google service account. The
-integrated sheets service reads data using the configured `SHEET_RANGE` (for
-example a tab/range such as `Attendance!A:Z`); ensure this is set correctly in
-each environment. Private keys for both services can use `\n` escaped
-newlines.
-
-Keep real credentials in the ignored `backend/.env` file or a deployment
-secret manager. Never commit credentials.
+Set `PORT` to choose the listening port (`5000` by default) and `FRONTEND_URL`
+to the allowed frontend origin for CORS. Keep real credentials in the ignored
+`backend/.env` file or a deployment secret manager. Never commit credentials.
 
 ## Running the server
 
@@ -61,20 +54,21 @@ Production mode:
 npm start
 ```
 
-By default, the server listens on `http://localhost:5000`. Set `PORT` to use a
-different port and `FRONTEND_URL` to the frontend origin allowed by CORS.
+By default, the server listens on `http://localhost:5000`.
 
 ## API endpoints
 
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/api/health` | Checks whether the API is running |
-| GET | `/api/v1/attendance/history` | Returns authenticated attendance history; supports `date`, `startDate`, `endDate`, `employeeId`, `page` and `limit` query parameters |
+| GET | `/api/v1/attendance/history` | Authenticated attendance history; supports `date`, `startDate`, `endDate`, `employeeId`, `page` and `limit` |
 
-The full request/response contract for attendance history is documented in
-[docs/attendance-history-api.md](docs/attendance-history-api.md). Staging
-requirements and the current verification status are in
-[docs/staging-checklist.md](docs/staging-checklist.md).
+Attendance history requires `Authorization: Bearer <Firebase ID token>`.
+Firebase roles are taken from the verified token; users without a role claim
+default to `staff`. Admins can query across employees. Staff are restricted to
+records matching their authenticated Firebase UID. See
+[docs/attendance-history-api.md](docs/attendance-history-api.md) for filters,
+validation, response fields and errors.
 
 ## Testing
 
@@ -84,10 +78,11 @@ Run the automated tests from `backend/`:
 npm test
 ```
 
-Tests use in-memory fixture data and do not read or modify the production
-spreadsheet. Tests that require genuine Firebase ID tokens are skipped with an
-explicit reason unless `TEST_STAFF_ID_TOKEN`, `TEST_ADMIN_ID_TOKEN` and
-`TEST_EXPIRED_ID_TOKEN` are supplied to the test environment.
+Most API behavior tests use in-memory fixtures; authentication tests also exercise
+Firebase verification with invalid tokens. Tests requiring genuine
+Firebase ID tokens are skipped with an explicit reason unless the corresponding
+`TEST_STAFF_ID_TOKEN`, `TEST_ADMIN_ID_TOKEN` and `TEST_EXPIRED_ID_TOKEN`
+environment variables are supplied.
 
 ## Project structure
 

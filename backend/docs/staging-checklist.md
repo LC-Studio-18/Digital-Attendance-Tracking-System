@@ -1,130 +1,70 @@
-# Attendance History — Staging Preparation Checklist
+# Attendance History — Staging Checklist
 
-This checklist covers attendance history work integrated on
-`backend6-attendance-history` (including the latest remote architecture changes).
-It is a preparation and verification record: **deployment, pull-request creation
-and merging remain separate decisions**.
+This checklist records the current integrated implementation. Local automated
+results are separated from live-service and deployment checks.
 
-## 1. Code readiness
+## Implemented and verified by source review
 
-- [x] `GET /api/v1/attendance/history` is registered with `verifyToken` before
-      the controller (`src/routes/attendance.js`, `src/app.js`).
-- [x] Firebase ID tokens are verified by Firebase Admin in
-      `src/middleware/authMiddleware.js`; role comes from the `role` custom
-      claim and defaults to `staff`.
-- [x] Admin access and staff access restrictions are enforced by controller
-      role checks and role-scoped record retrieval.
-- [x] Invalid tokens and missing/malformed Bearer headers receive 401.
-- [x] Response shape, empty results, filtering and pagination are implemented by
-      `src/controllers/attendanceController.js`,
-      `src/utils/attendanceFilters.js` and `src/utils/attendanceResponse.js`
-      (see `docs/attendance-history-api.md` for the integrated contract).
-- [x] Attendance history automated tests exist (`tests/attendanceAuth.test.js`,
-      `tests/attendanceAccessControl.test.js`, `tests/attendanceFiltering.test.js`,
-      `tests/attendanceRoleAwareRetrieval.test.js`). Run `npm test` from
-      `backend/` to verify current results in your environment.
-- [x] Tests use stubbed/in-memory data for Firebase and Google Sheets access
-      paths as implemented; live Firebase/Sheets integration is not verified by
-      unit-style tests.
-- [x] No secrets, `.env` values or service-account JSON are part of the changes.
+- [x] `GET /api/v1/attendance/history` is mounted in `src/app.js` and protected
+      by `verifyToken` in `src/routes/attendance.js`.
+- [x] Firebase ID tokens supply `uid`, `email`, and `role`; absent role claims
+      default to `staff`. Only `admin` and `staff` roles are accepted.
+- [x] Admins can query all retrieved rows. Staff rows are scoped to the
+      authenticated UID using the supported Firebase UID columns.
+- [x] `date`, `startDate`, `endDate`, `employeeId`, `page`, and `limit` are
+      implemented with validation, filtering, sorting, and pagination. See
+      `attendance-history-api.md` for the contract.
+- [x] Google Sheets reads use `src/services/sheets.js` and the configured
+      `SHEET_RANGE`; sheet rows are mapped by the controller.
+- [x] Likona confirmed the frontend API arrangement uses
+      `GET /api/v1/attendance/history`.
 
-## 2. Configuration required on staging
+## Automated tests run locally
 
-Provide these as environment variables or deployment secrets (see
-`.env.example` for names):
+- [x] `npm test` from `backend/`: **44 passed, 0 failed, 3 skipped** in the
+      verification run for this documentation update.
+- [x] Automated tests cover route authentication, access control, filtering,
+      sorting, pagination, empty results, and role-aware retrieval using test
+      doubles or in-memory fixtures.
+- [ ] Three tests requiring genuine Firebase ID tokens were skipped because
+      `TEST_STAFF_ID_TOKEN`, `TEST_ADMIN_ID_TOKEN`, and
+      `TEST_EXPIRED_ID_TOKEN` were not supplied. The suite did not verify real
+      staff/admin token acceptance or an expired real token.
+- [ ] The controller's mapping of actual two-dimensional Google Sheets rows is
+      implemented in source, but the current tests do not establish live sheet
+      header/content behavior against Google Sheets.
 
-- `FIREBASE_PROJECT_ID`
-- `FIREBASE_CLIENT_EMAIL`
-- `FIREBASE_PRIVATE_KEY`
-- `GOOGLE_CLIENT_EMAIL`
-- `GOOGLE_PRIVATE_KEY`
-- `SPREADSHEET_ID`
-- `SHEET_RANGE` (required by the integrated sheets service for attendance reads)
-- `PORT` and `FRONTEND_URL` (CORS origin)
+## Staging configuration still required
 
-Access requirements:
+Provide these values through the staging secret/environment configuration:
 
-- The Firebase service account must be able to verify ID tokens for the project.
-- The Google service account must have read access to the attendance
-  spreadsheet. The API only requests the `spreadsheets.readonly` scope.
-- The spreadsheet must contain a header row; the UID column must be named
-  `uid`, `user_id` or `user id (firebase uid)` so staff records can be matched.
-- Real Firebase user accounts need a `role` custom claim of `admin` or `staff`.
-  Without the claim, a user is treated as staff.
+- [ ] Firebase: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`,
+      `FIREBASE_PRIVATE_KEY`.
+- [ ] Google Sheets: `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`,
+      `SPREADSHEET_ID`, and a valid `SHEET_RANGE` (the service has no range
+      default; the current `.env.example` optional/default comment is stale).
+- [ ] Server/CORS: `PORT` as needed and `FRONTEND_URL` set to the deployed
+      frontend origin.
+- [ ] Grant the Google service account read access to the target spreadsheet
+      and verify the configured range includes the header row and attendance
+      data. The service requests only the `spreadsheets.readonly` scope.
+- [ ] Ensure Firebase users have `admin` or `staff` role claims as appropriate;
+      users without a role claim are treated as staff.
 
-## 3. Verification before deploying
+## Live checks still required
 
-From `backend/`:
+- [ ] Verify staging Firebase token acceptance with real staff and admin ID
+      tokens, including a token with no role claim and an expired token.
+- [ ] Verify Google authentication, spreadsheet access, range selection,
+      header mapping, and records against the staging spreadsheet.
+- [ ] Smoke-test health, missing/invalid token responses, role restrictions,
+      filters, pagination, and upstream Google Sheets error handling in staging.
+- [ ] Confirm records in staging match expected staff UID scoping and admin
+      visibility; confirm filter results against real sheet data.
 
-```bash
-npm install
-npm test
-node --check src/app.js
-```
+## Deployment and production status
 
-Review the actual test summary produced in your environment (some tests may be
-skipped when real Firebase test tokens are not supplied).
-
-After deploying to staging, smoke-test:
-
-1. `GET /api/health` returns a healthy response.
-2. `GET /api/v1/attendance/history` without a token returns 401.
-3. With a valid staff token, only that user's records are returned.
-4. With a valid admin token, all records are returned.
-5. With a valid token whose role is neither admin nor staff, 403 is returned.
-6. With an admin token, `?date=YYYY-MM-DD`,
-   `?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`, `?employeeId=<id>` and combined
-   filters return only matching records.
-7. Invalid dates, invalid ranges and invalid `employeeId` values return 400.
-8. A staff token supplying `employeeId` for another employee still receives
-   only their own records.
-
-## 4. Deployment status
-
-**Not deployed.** No staging environment was configured for this task and
-deployment was not explicitly authorised. This checklist records the locally
-integrated state on `backend6-attendance-history` (including latest remote
-changes) before any authorised push.
-
-To deploy later, an authorised team member should:
-
-1. Configure staging secrets from section 2 in the deployment platform.
-2. Run the checks in section 3 on the target branch.
-3. Deploy using the project's normal staging process.
-4. Run the smoke tests in section 3 and report results.
-
-## 5. Known local limitations
-
-- The local `backend/.env` has a `FIREBASE_PRIVATE_KEY` that cannot be parsed as
-  a PEM private key (`app/invalid-credential`). Genuine Firebase Admin
-  initialisation therefore fails locally. The invalid-token tests use the real
-  Firebase Admin SDK verifier with a project-ID-only app, which is sufficient
-  to prove rejection but not acceptance of a genuine token.
-- No valid staff/admin ID token or expired ID token is available locally. The
-  corresponding three real-token tests skip with an explicit reason. Supply
-  `TEST_STAFF_ID_TOKEN`, `TEST_ADMIN_ID_TOKEN` and `TEST_EXPIRED_ID_TOKEN` to
-  the test environment to enable them; never store those values in test files.
-- A genuine Admin token previously returned zero records instead of the two
-  expected fixture records. The API reads the `role` custom claim and defaults
-  to `staff` when it is absent, so a token without `role: 'admin'` is filtered
-  by its UID and can legitimately match no rows. Verify the decoded claims and
-  reissue the token after setting the claim (custom claims can take time to
-  propagate). This could not be re-verified here because no real test ID tokens
-  are available. Mocked Admin tests only prove controller filtering.
-- A locally parseable service-account key and a safe staging Firebase project
-  are needed before real end-to-end authenticated requests can be verified.
-
-## 6. Review / PR handover
-
-- Integrated branch: `backend6-attendance-history` (local, synchronized with
-  `origin/backend6-attendance-history` after fast-forward integration; not
-  pushed by this process).
-- Key integrated implementation files: `src/routes/attendance.js`,
-  `src/controllers/attendanceController.js`, `src/services/sheets.js`,
-  `src/utils/attendanceFilters.js`, `src/utils/attendanceResponse.js`.
-- Reviewers should check attendance tests and the API contract in
-  `docs/attendance-history-api.md`.
-- Frontend/shared endpoint alignment should be confirmed with the team if any
-  consumer still expects a different path.
-- Pull-request creation, review approval, merging and deployment require
-  explicit authorisation.
+- [ ] Staging deployment has not been performed or verified by this work.
+- [ ] Production deployment and production verification have not been
+      performed or claimed here.
+- [ ] Deployment, merge, and release actions remain with the project owners.
